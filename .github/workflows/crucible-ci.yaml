@@ -1,0 +1,34 @@
+name: crucible-ci
+
+on:
+  # run on push or pull request events for the main branch only
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # allow for manual invocation from the actions tab
+  workflow_dispatch:
+
+jobs:
+  crucible-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Show Environment
+      run: |
+        whoami
+        echo
+        pwd
+        echo
+        ls -la
+
+    - name: Setup CI Environment
+      run: |
+        sudo ./setup-ci-environment
+
+    - name: Run CI
+      run: |
+        sudo ./run-ci
