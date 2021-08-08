@@ -54,7 +54,7 @@ mkdir -p /etc/sysconfig
 if pushd ~/ > /dev/null; then
     wget ${CRUCIBLE_INSTALL_SRC}
     chmod +x ./crucible-install.sh
-    ./crucible-install.sh --client-server-registry --client-server-registry dir:/home/crucible-containers/client-server --name nobody --email nobody@nobody.nobody.com --verbose
+    ./crucible-install.sh --client-server-registry dir:/home/crucible-containers/client-server --name nobody --email nobody@nobody.nobody.com --verbose
     RC=$?
     if [ ${RC} != 0 ]; then
         exit ${RC}

@@ -2,4 +2,36 @@
 # -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 
-crucible repo info
+set -e
+
+function run_cmd {
+    local cmd
+    cmd=${1}
+    shift
+
+    echo "Running: ${cmd}"
+    echo
+    ${cmd}
+    echo
+    echo
+}
+
+run_cmd "cat /etc/sysconfig/crucible"
+
+run_cmd "crucible help"
+
+run_cmd "crucible repo info"
+
+run_cmd "crucible run fio --num-samples 3 --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1"
+
+run_cmd "crucible run fio --num-samples 3 --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1"
+
+run_cmd "crucible log info"
+
+run_cmd "crucible log view"
+
+run_cmd "podman ps --all --external"
+
+run_cmd "podman images"
+
+run_cmd "ls -laR /home/crucible-containers"
