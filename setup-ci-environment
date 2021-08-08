@@ -6,6 +6,39 @@ SCRIPT_DIR=$(dirname $0)
 SCRIPT_DIR=$(readlink -e ${SCRIPT_DIR})
 
 CRUCIBLE_INSTALL_SRC="https://raw.githubusercontent.com/perftool-incubator/crucible/master/crucible-install.sh"
+CI_TARGET=""
+CI_TARGET_DIR=""
+
+longopts="ci-target:,ci-target-dir:"
+opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
+if [ ${?} -ne 0 ]; then
+    echo "ERROR: Unrecognized option specified: $@"
+    exit 1
+fi
+eval set -- "${opts}"
+while true; do
+    case "${1}" in
+        --ci-target)
+            shift
+            CI_TARGET="${1}"
+            shift
+            ;;
+        --ci-target-dir)
+            shift
+            CI_TARGET_DIR="${1}"
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "ERROR: Unexpected argument [${1}]"
+            shift
+            break
+            ;;
+    esac
+done
 
 # configure SSH for loopback connectivity
 apt install openssh-server
@@ -23,6 +56,9 @@ if pushd ~/ > /dev/null; then
     chmod +x ./crucible-install.sh
     ./crucible-install.sh --client-server-registry --client-server-registry dir:/home/crucible-containers/client-server --name nobody --email nobody@nobody.nobody.com --verbose
     RC=$?
+    if [ ${RC} != 0 ]; then
+        exit ${RC}
+    fi
 
     popd > /dev/null
 else
@@ -30,4 +66,39 @@ else
     exit 1
 fi
 
-exit ${RC}
+if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" ]; then
+    echo "Handling --ci-target=${CI_TARGET} --ci-target-dir=${CI_TARGET_DIR}"
+
+    if pushd /opt/crucible/subprojects > /dev/null; then
+        STALE_LINK=$(find . -name ${CI_TARGET} -type l)
+
+        if [ -z "${STALE_LINK}" ]; then
+            echo "ERROR: Could not find --ci-target=${CI_TARGET}"
+            exit 1
+        fi
+
+        if pushd $(dirname ${STALE_LINK}) > /dev/null; then
+            echo "Found ${CI_TARGET} in $(pwd)"
+            echo "Removing ${CI_TARGET}:"
+            rm -v $(basename ${STALE_LINK})
+            echo "Creating new symbolic link:"
+            ln -sv ${CI_TARGET_DIR} $(basename ${STALE_LINK})
+        else
+            echo "ERROR: Could not pushd to $(dirname ${STALE_LINK})"
+            exit 1
+        fi
+    else
+        echo "ERROR: Could not pushd to /opt/crucible/subprojects"
+        exit 1
+    fi
+else
+    if [ -n "${CI_TARGET}" ]; then
+        echo "ERROR: You must set --ci-target-dir when setting --ci-target"
+        exit 1
+    fi
+
+    if [ -n "${CI_TARGET_DIR}" ]; then
+        echo "ERROR: You must set --ci-target when setting --ci-target-dir"
+        exit 1
+    fi
+fi
