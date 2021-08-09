@@ -72,30 +72,32 @@ else
     exit 1
 fi
 
-if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" -a "${CI_TARGET}" != "crucible" ]; then
-    echo "Handling --ci-target=${CI_TARGET} --ci-target-dir=${CI_TARGET_DIR}"
+if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" ]; then
+    if [ "${CI_TARGET}" != "crucible" ]; then
+        echo "Handling --ci-target=${CI_TARGET} --ci-target-dir=${CI_TARGET_DIR}"
 
-    if pushd /opt/crucible/subprojects > /dev/null; then
-        STALE_LINK=$(find . -name ${CI_TARGET} -type l)
+        if pushd /opt/crucible/subprojects > /dev/null; then
+            STALE_LINK=$(find . -name ${CI_TARGET} -type l)
 
-        if [ -z "${STALE_LINK}" ]; then
-            echo "ERROR: Could not find --ci-target=${CI_TARGET}"
-            exit 1
-        fi
+            if [ -z "${STALE_LINK}" ]; then
+                echo "ERROR: Could not find --ci-target=${CI_TARGET}"
+                exit 1
+            fi
 
-        if pushd $(dirname ${STALE_LINK}) > /dev/null; then
-            echo "Found ${CI_TARGET} in $(pwd)"
-            echo "Removing ${CI_TARGET}:"
-            rm -v $(basename ${STALE_LINK})
-            echo "Creating new symbolic link:"
-            ln -sv ${CI_TARGET_DIR} $(basename ${STALE_LINK})
+            if pushd $(dirname ${STALE_LINK}) > /dev/null; then
+                echo "Found ${CI_TARGET} in $(pwd)"
+                echo "Removing ${CI_TARGET}:"
+                rm -v $(basename ${STALE_LINK})
+                echo "Creating new symbolic link:"
+                ln -sv ${CI_TARGET_DIR} $(basename ${STALE_LINK})
+            else
+                echo "ERROR: Could not pushd to $(dirname ${STALE_LINK})"
+                exit 1
+            fi
         else
-            echo "ERROR: Could not pushd to $(dirname ${STALE_LINK})"
+            echo "ERROR: Could not pushd to /opt/crucible/subprojects"
             exit 1
         fi
-    else
-        echo "ERROR: Could not pushd to /opt/crucible/subprojects"
-        exit 1
     fi
 else
     if [ -n "${CI_TARGET}" ]; then
