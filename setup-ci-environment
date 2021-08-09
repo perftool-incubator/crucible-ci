@@ -58,7 +58,9 @@ if pushd ~/ > /dev/null; then
     if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" -a "${CI_TARGET}" == "crucible" ]; then
         INSTALL_ARGS=" --git-repo ${CI_TARGET_DIR}/.git"
     fi
-    ./crucible-install.sh --client-server-registry dir:/home/crucible-containers/client-server --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}
+    INSTALLER_CMD="./crucible-install.sh --client-server-registry dir:/home/crucible-containers/client-server --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
+    echo "Running: ${INSTALLER_CMD}"
+    ${INSTALLER_CMD}
     RC=$?
     if [ ${RC} != 0 ]; then
         exit ${RC}
