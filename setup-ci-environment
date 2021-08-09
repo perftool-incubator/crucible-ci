@@ -54,7 +54,13 @@ mkdir -p /etc/sysconfig
 if pushd ~/ > /dev/null; then
     wget ${CRUCIBLE_INSTALL_SRC}
     chmod +x ./crucible-install.sh
-    ./crucible-install.sh --client-server-registry dir:/home/crucible-containers/client-server --name nobody --email nobody@nobody.nobody.com --verbose
+    INSTALLER_ARGS=""
+    if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" -a "${CI_TARGET}" == "crucible" ]; then
+        INSTALL_ARGS=" --git-repo ${CI_TARGET_DIR}/.git"
+    fi
+    INSTALLER_CMD="./crucible-install.sh --client-server-registry dir:/home/crucible-containers/client-server --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
+    echo "Running: ${INSTALLER_CMD}"
+    ${INSTALLER_CMD}
     RC=$?
     if [ ${RC} != 0 ]; then
         exit ${RC}
@@ -67,6 +73,10 @@ else
 fi
 
 if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" ]; then
+    if [ "${CI_TARGET}" == "crucible" ]; then
+        break
+    fi
+
     echo "Handling --ci-target=${CI_TARGET} --ci-target-dir=${CI_TARGET_DIR}"
 
     if pushd /opt/crucible/subprojects > /dev/null; then
