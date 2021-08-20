@@ -2,6 +2,45 @@
 # -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 
+CI_SCENARIOS="fio"
+
+longopts="scenarios:"
+opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
+if [ ${?} -ne 0 ]; then
+    echo "ERROR: Unrecognized option specified: $@"
+    exit 1
+fi
+eval set -- "${opts}"
+while true; do
+    case "${1}" in
+        --scenarios)
+            shift
+            CI_SCENARIOS="${1}"
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "ERROR: Unexpected argument [${1}]"
+            shift
+            break
+            ;;
+    esac
+done
+
+for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
+    case "${scenario}" in
+        fio|uperf)
+            ;;
+        *)
+            echo "ERROR: Unknown CI scenario [${scenario}]"
+            exit 1
+            ;;
+    esac
+done
+
 set -e
 
 function run_cmd {
@@ -22,9 +61,20 @@ run_cmd "crucible help"
 
 run_cmd "crucible repo info"
 
-run_cmd "crucible run fio --num-samples 3 --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1"
+for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
+    case "${scenario}" in
+        fio)
+            run_cmd "crucible run fio --num-samples 3 --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1"
 
-run_cmd "crucible run fio --num-samples 3 --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1"
+            run_cmd "crucible run fio --num-samples 3 --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1"
+            ;;
+        uperf)
+            run_cmd "crucible run uperf --num-samples 3 --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,server:1"
+
+            run_cmd "crucible run uperf --num-samples 3 --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,server:1"
+            ;;
+    esac
+done
 
 run_cmd "crucible log info"
 
