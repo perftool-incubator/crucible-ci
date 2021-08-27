@@ -4,7 +4,9 @@
 
 CI_SCENARIOS="fio"
 
-longopts="scenarios:"
+CI_USERENVS="rhubi8"
+
+longopts="scenarios:,userenvs:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -16,6 +18,11 @@ while true; do
         --scenarios)
             shift
             CI_SCENARIOS="${1}"
+            shift
+            ;;
+        --userenvs)
+            shift
+            CI_USERENVS="${1}"
             shift
             ;;
         --)
@@ -41,6 +48,28 @@ for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     esac
 done
 
+CI_ACTIVE_USERENVS=""
+for userenv in $(echo "${CI_USERENVS}" | sed -e "s/,/ /g"); do
+    case "${userenv}" in
+        all)
+            CI_ACTIVE_USERENVS=""
+            for userenv in $(pushd /opt/crucible/subprojects/core/rickshaw/userenvs > /dev/null; ls -1 *.json; popd > /dev/null); do
+                userenv=$(echo "${userenv}" | sed -e "s/\.json$//")
+                CI_ACTIVE_USERENVS+="${userenv} "
+            done
+            break
+            ;;
+        *)
+            if [ -e /opt/crucible/subprojects/core/rickshaw/userenvs/${userenv}.json ]; then
+                CI_ACTIVE_USERENVS+="${userenv} "
+            else
+                echo "ERROR: Unknown userenv specified [${userenv}]"
+                exit 1
+            fi
+            ;;
+    esac
+done
+
 set -e
 
 function run_cmd {
@@ -61,19 +90,25 @@ run_cmd "crucible help"
 
 run_cmd "crucible repo info"
 
-for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
-    case "${scenario}" in
-        fio)
-            run_cmd "crucible run fio --num-samples 3 --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1"
+for userenv in ${CI_ACTIVE_USERENVS}; do
+    echo -e "*** Current userenv is ${userenv} ***\n"
 
-            run_cmd "crucible run fio --num-samples 3 --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1"
-            ;;
-        uperf)
-            run_cmd "crucible run uperf --num-samples 3 --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,server:1"
+    for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
+        echo -e "### Current scenario is ${scenario} ###\n"
 
-            run_cmd "crucible run uperf --num-samples 3 --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:rhubi8,osruntime:podman,server:1"
-            ;;
-    esac
+        case "${scenario}" in
+            fio)
+                run_cmd "crucible run fio --num-samples 3 --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+
+                run_cmd "crucible run fio --num-samples 3 --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                ;;
+            uperf)
+                run_cmd "crucible run uperf --num-samples 3 --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+
+                run_cmd "crucible run uperf --num-samples 3 --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                ;;
+        esac
+    done
 done
 
 run_cmd "crucible log info"
