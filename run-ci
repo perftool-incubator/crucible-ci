@@ -8,7 +8,9 @@ CI_USERENVS="rhubi8"
 
 CI_SAMPLES=1
 
-longopts="scenarios:,userenvs:,samples:"
+CI_REPEAT_RUNS="no"
+
+longopts="scenarios:,userenvs:,samples:,repeat-runs"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -31,6 +33,10 @@ while true; do
             shift
             CI_SAMPLES="${1}"
             shift
+            ;;
+        --repeat-runs)
+            shift
+            CI_REPEAT_RUNS="yes"
             ;;
         --)
             shift
@@ -107,12 +113,16 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
             fio)
                 run_cmd "crucible run fio --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
 
-                run_cmd "crucible run fio --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                    run_cmd "crucible run fio --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                fi
                 ;;
             uperf)
                 run_cmd "crucible run uperf --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
 
-                run_cmd "crucible run uperf --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                    run_cmd "crucible run uperf --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                fi
                 ;;
         esac
     done
