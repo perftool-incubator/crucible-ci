@@ -6,7 +6,9 @@ CI_SCENARIOS="fio"
 
 CI_USERENVS="rhubi8"
 
-longopts="scenarios:,userenvs:"
+CI_SAMPLES=1
+
+longopts="scenarios:,userenvs:,samples:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -23,6 +25,11 @@ while true; do
         --userenvs)
             shift
             CI_USERENVS="${1}"
+            shift
+            ;;
+        --samples)
+            shift
+            CI_SAMPLES="${1}"
             shift
             ;;
         --)
@@ -98,14 +105,14 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
 
         case "${scenario}" in
             fio)
-                run_cmd "crucible run fio --num-samples 3 --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                run_cmd "crucible run fio --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
 
-                run_cmd "crucible run fio --num-samples 3 --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                run_cmd "crucible run fio --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
                 ;;
             uperf)
-                run_cmd "crucible run uperf --num-samples 3 --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                run_cmd "crucible run uperf --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
 
-                run_cmd "crucible run uperf --num-samples 3 --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                run_cmd "crucible run uperf --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
                 ;;
         esac
     done
