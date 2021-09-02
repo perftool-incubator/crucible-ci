@@ -31,4 +31,4 @@ jobs:
 
     - name: Run CI
       run: |
-        sudo ./run-ci --scenarios fio,uperf
+        sudo ./run-ci --scenarios fio,uperf --userenvs all
