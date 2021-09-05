@@ -17,13 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Show Environment
-      run: |
-        whoami
-        echo
-        pwd
-        echo
-        ls -la
+    - uses: ./.github/actions/ci-environment-info
 
     - name: Setup CI Environment
       run: |
