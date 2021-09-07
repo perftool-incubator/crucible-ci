@@ -121,19 +121,21 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
     for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
         echo -e "### Current scenario is ${scenario} ###\n"
 
+        TAGS=",repeat:${CI_REPEAT_RUNS},userenv:${userenv}"
+
         case "${scenario}" in
             fio)
-                run_cmd "crucible run fio --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run fio --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                    run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
                 fi
                 ;;
             uperf)
-                run_cmd "crucible run uperf --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                run_cmd "crucible run uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run uperf --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                    run_cmd "crucible run uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
                 fi
                 ;;
         esac
