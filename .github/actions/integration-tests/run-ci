@@ -10,7 +10,7 @@ CI_SAMPLES=1
 
 CI_REPEAT_RUNS="no"
 
-longopts="scenarios:,userenvs:,samples:,repeat-runs"
+longopts="scenarios:,userenvs:,samples:,repeat-runs:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -36,7 +36,8 @@ while true; do
             ;;
         --repeat-runs)
             shift
-            CI_REPEAT_RUNS="yes"
+            CI_REPEAT_RUNS="${1}"
+            shift
             ;;
         --)
             shift
@@ -60,6 +61,15 @@ for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
             ;;
     esac
 done
+
+case "${CI_REPEAT_RUNS}" in
+    yes|no)
+        ;;
+    *)
+        echo "ERROR: Unknown value for --repeat-runs [${CI_REPEAT_RUNS}].  Acceptable values are 'yes' and 'no'."
+        exit 1
+        ;;
+esac
 
 CI_ACTIVE_USERENVS=""
 for userenv in $(echo "${CI_USERENVS}" | sed -e "s/,/ /g"); do

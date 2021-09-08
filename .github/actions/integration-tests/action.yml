@@ -1,0 +1,49 @@
+name: "crucible-ci integration test"
+description: "Crucible integration tests"
+inputs:
+  scenarios:
+    description: "What workload scenarios to execute"
+    required: false
+    default: "fio"
+  userenvs:
+    description: "Which rickshaw userenvs to execute"
+    required: false
+    default: "rhubi8"
+  ci_target:
+    description: "Which Crucible component to target for integration testing"
+    required: false
+    default: "none"
+  ci_target_dir:
+    description: "Where is the Crucible component to target located"
+    required: false
+    default: "none"
+  run_samples:
+    description: "How many samples to take for each run"
+    required: false
+    default: "1"
+  repeat_runs:
+    description: "Should repeat runs of the scenarios be run"
+    required: false
+    default: "no"
+  artifact_tag:
+    description: "Tag to include in the filename of the produced artifact"
+    required: false
+    default: "unset-tag"
+runs:
+  using: "composite"
+  steps:
+    - run: ${{ github.action_path }}/ci-environment-info
+      shell: bash
+
+    - run: sudo ${{ github.action_path }}/setup-ci-environment --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }}
+      shell: bash
+
+    - run: sudo ${{ github.action_path }}/run-ci --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --samples ${{ inputs.run_samples }} --repeat-runs ${{ inputs.repeat_runs }}
+      shell: bash
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: crucible-ci-artifact-${{ inputs.artifact_tag }}
+        path: /var/lib/crucible-ci-artifact*.tar.xz
+        retention-days: 5
+        if-no-files-found: error

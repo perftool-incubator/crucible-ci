@@ -17,25 +17,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
 
-    - uses: ./.github/actions/ci-environment-info
-
-    - name: Setup CI Environment
-      run: |
-        sudo ./setup-ci-environment
-
-    - name: Run fio CI
-      run: |
-        sudo ./run-ci --scenarios fio --userenvs all
-
-    - name: Archive run data
-      uses: actions/upload-artifact@v2
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
       with:
-        name: crucible-ci-artifact-fio
-        path: /var/lib/crucible-ci-artifact*.tar.xz
-        retention-days: 5
-        if-no-files-found: error
+        artifact_tag: "fio"
+        scenarios: "fio"
+        userenvs: "all"
 
   crucible-ci-all-userenvs-uperf:
     name: crucible-ci-all-userenvs-uperf
@@ -43,22 +33,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
 
-    - uses: ./.github/actions/ci-environment-info
-
-    - name: Setup CI Environment
-      run: |
-        sudo ./setup-ci-environment
-
-    - name: Run uperf CI
-      run: |
-        sudo ./run-ci --scenarios uperf --userenvs all
-
-    - name: Archive run data
-      uses: actions/upload-artifact@v2
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
       with:
-        name: crucible-ci-artifact-uperf
-        path: /var/lib/crucible-ci-artifact*.tar.xz
-        retention-days: 5
-        if-no-files-found: error
+        artifact_tag: "uperf"
+        scenarios: "uperf"
+        userenvs: "all"

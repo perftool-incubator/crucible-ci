@@ -6,8 +6,8 @@ SCRIPT_DIR=$(dirname $0)
 SCRIPT_DIR=$(readlink -e ${SCRIPT_DIR})
 
 CRUCIBLE_INSTALL_SRC="https://raw.githubusercontent.com/perftool-incubator/crucible/master/crucible-install.sh"
-CI_TARGET=""
-CI_TARGET_DIR=""
+CI_TARGET="none"
+CI_TARGET_DIR="none"
 
 longopts="ci-target:,ci-target-dir:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
@@ -72,7 +72,7 @@ else
     exit 1
 fi
 
-if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" ]; then
+if [ "${CI_TARGET}" != "none" -a "${CI_TARGET_DIR}" != "none" ]; then
     if [ "${CI_TARGET}" != "crucible" ]; then
         echo "Handling --ci-target=${CI_TARGET} --ci-target-dir=${CI_TARGET_DIR}"
 
@@ -100,12 +100,12 @@ if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" ]; then
         fi
     fi
 else
-    if [ -n "${CI_TARGET}" ]; then
+    if [ "${CI_TARGET}" != "none" ]; then
         echo "ERROR: You must set --ci-target-dir when setting --ci-target"
         exit 1
     fi
 
-    if [ -n "${CI_TARGET_DIR}" ]; then
+    if [ "${CI_TARGET_DIR}" != "none" ]; then
         echo "ERROR: You must set --ci-target when setting --ci-target-dir"
         exit 1
     fi
