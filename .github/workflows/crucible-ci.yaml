@@ -29,6 +29,14 @@ jobs:
       run: |
         sudo ./run-ci --scenarios fio --userenvs all
 
+    - name: Archive run data
+      uses: actions/upload-artifact@v2
+      with:
+        name: crucible-ci-artifact-fio
+        path: /var/lib/crucible-ci-artifact*.tar.xz
+        retention-days: 5
+        if-no-files-found: error
+
   crucible-ci-all-userenvs-uperf:
     name: crucible-ci-all-userenvs-uperf
 
@@ -46,3 +54,11 @@ jobs:
     - name: Run uperf CI
       run: |
         sudo ./run-ci --scenarios uperf --userenvs all
+
+    - name: Archive run data
+      uses: actions/upload-artifact@v2
+      with:
+        name: crucible-ci-artifact-uperf
+        path: /var/lib/crucible-ci-artifact*.tar.xz
+        retention-days: 5
+        if-no-files-found: error

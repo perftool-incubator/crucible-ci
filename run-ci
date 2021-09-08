@@ -83,18 +83,30 @@ for userenv in $(echo "${CI_USERENVS}" | sed -e "s/,/ /g"); do
     esac
 done
 
-set -e
+RC_STATUS=0
 
 function run_cmd {
-    local cmd
+    local cmd rc
     cmd=${1}
     shift
 
-    echo "Running: ${cmd}"
-    echo
-    ${cmd}
-    echo
-    echo
+    if [ ${RC_STATUS} == 0 ]; then
+        echo "Running: ${cmd}"
+        echo
+        ${cmd}
+        rc=${?}
+        echo "rc=${rc}"
+        echo
+        echo
+
+        if [ ${RC_STATUS} == 0 ]; then
+            RC_STATUS=${rc}
+        fi
+    else
+        echo "Skipping: ${cmd}"
+        echo
+        echo
+    fi
 }
 
 run_cmd "cat /etc/sysconfig/crucible"
@@ -109,19 +121,21 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
     for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
         echo -e "### Current scenario is ${scenario} ###\n"
 
+        TAGS=",repeat:${CI_REPEAT_RUNS},userenv:${userenv}"
+
         case "${scenario}" in
             fio)
-                run_cmd "crucible run fio --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run fio --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                    run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
                 fi
                 ;;
             uperf)
-                run_cmd "crucible run uperf --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                run_cmd "crucible run uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run uperf --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                    run_cmd "crucible run uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
                 fi
                 ;;
         esac
@@ -137,3 +151,30 @@ run_cmd "podman ps --all --external"
 run_cmd "podman images"
 
 run_cmd "ls -laR /home/crucible-containers"
+
+if pushd /var/lib > /dev/null; then
+    if [ ! -d "crucible" ]; then
+        echo "ERROR: /var/lib/crucible does not exist for creating an artifact"
+        exit 1
+    fi
+
+    tarball="crucible-ci-artifact_$(uuidgen).tar"
+    echo "Creating ${tarball} from /var/lib/crucible"
+    if tar -cf ${tarball} crucible; then
+        echo "Compressing ${tarball} with xz"
+        if ! xz -v -T0 ${tarball}; then
+            echo "ERROR: Failed to xz compress ${tarball}"
+            exit 1
+        fi
+    else
+        echo "ERROR: Failed to create tar archive of /var/lib/crucible"
+        exit 1
+    fi
+
+    popd > /dev/null
+else
+    echo "ERROR: Could not pushd to /var/lib"
+    exit 1
+fi
+
+exit ${RC_STATUS}
