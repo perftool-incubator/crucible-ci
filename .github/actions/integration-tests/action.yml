@@ -41,7 +41,8 @@ runs:
     - run: sudo ${{ github.action_path }}/run-ci --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --samples ${{ inputs.run_samples }} --repeat-runs ${{ inputs.repeat_runs }}
       shell: bash
 
-    - uses: actions/upload-artifact@v2
+    - if: always()
+      uses: actions/upload-artifact@v2
       with:
         name: crucible-ci-artifact-${{ inputs.artifact_tag }}
         path: /var/lib/crucible-ci-artifact*.tar.xz
