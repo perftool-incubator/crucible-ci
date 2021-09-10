@@ -25,7 +25,7 @@ jobs:
       with:
         artifact_tag: "fio"
         scenarios: "fio"
-        userenvs: "all"
+        #userenvs: "all"
 
   crucible-ci-all-userenvs-uperf:
     name: crucible-ci-all-userenvs-uperf
@@ -41,4 +41,4 @@ jobs:
       with:
         artifact_tag: "uperf"
         scenarios: "uperf"
-        userenvs: "all"
+        #userenvs: "all"
