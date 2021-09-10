@@ -44,10 +44,10 @@ runs:
     - run: false
       shell: bash
 
-    - if: always()
-      uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v2
       with:
         name: crucible-ci-artifact-${{ inputs.artifact_tag }}
         path: /var/lib/crucible-ci-artifact*.tar.xz
         retention-days: 5
         if-no-files-found: error
+      if: always()
