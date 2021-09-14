@@ -119,6 +119,37 @@ function run_cmd {
     fi
 }
 
+function run_and_capture_cmd {
+    local cmd rc
+    cmd=${1}
+    shift
+
+    if [ ${RC_STATUS} == 0 ]; then
+        echo "Running and capturing: ${cmd}"
+        echo
+        captured_output=$(${cmd})
+        rc=$?
+        echo "captured_output=${captured_output}"
+        echo "rc=${rc}"
+        echo
+        echo
+
+        if [ ${RC_STATUS} == 0 ]; then
+            RC_STATUS=${rc}
+        fi
+    else
+        echo "Skipping capture: ${cmd}"
+        echo
+        echo
+    fi
+}
+
+function post_run_cmd {
+    run_and_capture_cmd "crucible extract run-id /var/lib/crucible/run/latest"
+
+    run_cmd "crucible rm --run ${captured_output}"
+}
+
 run_cmd "cat /etc/sysconfig/crucible"
 
 run_cmd "crucible help"
@@ -136,16 +167,20 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         case "${scenario}" in
             fio)
                 run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                post_run_cmd
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
                     run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                    post_run_cmd
                 fi
                 ;;
             uperf)
                 run_cmd "crucible run uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                post_run_cmd
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
                     run_cmd "crucible run uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                    post_run_cmd
                 fi
                 ;;
         esac
