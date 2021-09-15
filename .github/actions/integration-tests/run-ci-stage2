@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
+# vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
+
+stage1_exit_status_file="/tmp/run-ci-stage1-exit-status"
+if [ -e "${stage1_exit_status_file}" ]; then
+    read stage1_exit_status < ${stage1_exit_status_file}
+
+    if [ -z "${stage1_exit_status}" ]; then
+        echo "ERROR: Read an empty stage 1 exit status from ${stage1_exit_status_file}"
+    else
+        echo "Read stage 1 exit status as ${stage1_exit_status} from ${stage1_exit_status_file}"
+        exit ${stage1_exit_status}
+    fi
+else
+    echo "ERROR: Could not find stage 1 exist status because ${stage1_exit_status_file} does not exist"
+fi
+
+exit 1

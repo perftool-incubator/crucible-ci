@@ -222,4 +222,8 @@ else
     exit 1
 fi
 
-exit ${RC_STATUS}
+stage1_exit_status_file="/tmp/run-ci-stage1-exit-status"
+echo "Logging stage 1 exit status ${RC_STATUS} to ${stage1_exit_status_file}"
+echo "${RC_STATUS}" > ${stage1_exit_status_file}
+
+exit 0
