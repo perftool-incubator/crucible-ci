@@ -187,9 +187,17 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
     done
 done
 
+run_cmd "crucible es init"
+
+run_cmd "crucible es rebuild"
+
 run_cmd "crucible log info"
 
 run_cmd "crucible log view"
+
+run_cmd "podman ps --all --external"
+
+run_cmd "crucible update"
 
 run_cmd "podman ps --all --external"
 
