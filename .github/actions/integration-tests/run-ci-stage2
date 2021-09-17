@@ -2,6 +2,52 @@
 # -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 
+SCRIPT_DIR=$(dirname $0)
+SCRIPT_DIR=$(readlink -e ${SCRIPT_DIR})
+
+. ${SCRIPT_DIR}/base
+
+CI_RUN_ENVIRONMENT="standalone"
+
+longopts="run-environment:"
+opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
+if [ ${?} -ne 0 ]; then
+    echo "ERROR: Unrecognized option specified: $@"
+    exit 1
+fi
+eval set -- "${opts}"
+while true; do
+    case "${1}" in
+        --run-environment)
+            shift
+            CI_RUN_ENVIRONMENT="${1}"
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "ERROR: Unexpected argument [${1}]"
+            shift
+            break
+            ;;
+    esac
+done
+
+case "${CI_RUN_ENVIRONMENT}" in
+    standalone|github)
+        echo "CI Run Environment is '${CI_RUN_ENVIRONMENT}'"
+        echo
+        ;;
+    *)
+        echo "ERROR: Unknown value for --run-environment [${CI_RUN_ENVIRONMENT}].  Acceptable values are 'standalone' and 'github'."
+        exit 1
+        ;;
+esac
+
+start_github_group "Determine stage 1 exit status"
+
 stage1_exit_status_file="/tmp/run-ci-stage1-exit-status"
 if [ -e "${stage1_exit_status_file}" ]; then
     read stage1_exit_status < ${stage1_exit_status_file}
@@ -17,3 +63,5 @@ else
 fi
 
 exit 1
+
+stop_github_group
