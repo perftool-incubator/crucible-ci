@@ -1,0 +1,32 @@
+# -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
+# vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
+
+function start_github_group {
+    local header
+    header="$@"
+
+    if [ "${CI_RUN_ENVIRONMENT}" == "github" ]; then
+        echo "::group::${header}"
+    fi
+}
+
+function stop_github_group {
+    if [ "${CI_RUN_ENVIRONMENT}" == "github" ]; then
+        echo "::endgroup::"
+    fi
+}
+
+function log_rc {
+    local rc
+    rc=${1}
+    
+    if [ "${CI_RUN_ENVIRONMENT}" == "github" ]; then
+        if [ ${rc} == 0 ]; then
+            echo "::notice::rc=${rc}"
+        else
+            echo "::error::rc=${rc}"
+        fi
+    else
+        echo "rc=${rc}"
+    fi
+}

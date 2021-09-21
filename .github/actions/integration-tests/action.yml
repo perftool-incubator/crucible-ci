@@ -32,13 +32,13 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: ${{ github.action_path }}/ci-environment-info
+    - run: ${{ github.action_path }}/ci-environment-info --run-environment github
       shell: bash
 
-    - run: sudo ${{ github.action_path }}/setup-ci-environment --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }}
+    - run: sudo ${{ github.action_path }}/setup-ci-environment --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }}
       shell: bash
 
-    - run: sudo ${{ github.action_path }}/run-ci-stage1 --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --samples ${{ inputs.run_samples }} --repeat-runs ${{ inputs.repeat_runs }}
+    - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --samples ${{ inputs.run_samples }} --repeat-runs ${{ inputs.repeat_runs }}
       shell: bash
 
     - uses: actions/upload-artifact@v2
@@ -48,5 +48,5 @@ runs:
         retention-days: 5
         if-no-files-found: error
 
-    - run: sudo ${{ github.action_path }}/run-ci-stage2
+    - run: sudo ${{ github.action_path }}/run-ci-stage2 --run-environment github
       shell: bash

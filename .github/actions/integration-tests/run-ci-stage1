@@ -2,6 +2,13 @@
 # -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 
+SCRIPT_DIR=$(dirname $0)
+SCRIPT_DIR=$(readlink -e ${SCRIPT_DIR})
+
+. ${SCRIPT_DIR}/base
+
+CI_RUN_ENVIRONMENT="standalone"
+
 CI_SCENARIOS="fio"
 
 CI_USERENVS="rhubi8"
@@ -10,7 +17,7 @@ CI_SAMPLES=1
 
 CI_REPEAT_RUNS="no"
 
-longopts="scenarios:,userenvs:,samples:,repeat-runs:"
+longopts="scenarios:,userenvs:,samples:,repeat-runs:,run-environment:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -19,6 +26,11 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --run-environment)
+            shift
+            CI_RUN_ENVIRONMENT="${1}"
+            shift
+            ;;
         --scenarios)
             shift
             CI_SCENARIOS="${1}"
@@ -50,6 +62,17 @@ while true; do
             ;;
     esac
 done
+
+case "${CI_RUN_ENVIRONMENT}" in
+    standalone|github)
+        echo "CI Run Environment is '${CI_RUN_ENVIRONMENT}'"
+        echo
+        ;;
+    *)
+        echo "ERROR: Unknown value for --run-environment [${CI_RUN_ENVIRONMENT}].  Acceptable values are 'standalone' and 'github'."
+        exit 1
+        ;;
+esac
 
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     case "${scenario}" in
@@ -96,16 +119,19 @@ done
 RC_STATUS=0
 
 function run_cmd {
-    local cmd rc
+    local cmd rc header
     cmd=${1}
     shift
 
     if [ ${RC_STATUS} == 0 ]; then
-        echo "Running: ${cmd}"
+        header="Running: ${cmd}"
+        start_github_group "${header}"
+        echo "${header}"
         echo
         ${cmd}
         rc=${?}
-        echo "rc=${rc}"
+
+        log_rc ${rc}
         echo
         echo
 
@@ -113,24 +139,31 @@ function run_cmd {
             RC_STATUS=${rc}
         fi
     else
-        echo "Skipping: ${cmd}"
+        header="Skipping: ${cmd}"
+        start_github_group "${header}"
+        echo "${header}"
         echo
         echo
     fi
+
+    stop_github_group
 }
 
 function run_and_capture_cmd {
-    local cmd rc
+    local cmd rc header
     cmd=${1}
     shift
 
     if [ ${RC_STATUS} == 0 ]; then
-        echo "Running and capturing: ${cmd}"
+        header="Running and capturing: ${cmd}"
+        start_github_group "${header}"
+        echo "${header}"
         echo
         captured_output=$(${cmd})
-        rc=$?
+        rc=${?}
         echo "captured_output=${captured_output}"
-        echo "rc=${rc}"
+
+        log_rc ${rc}
         echo
         echo
 
@@ -138,10 +171,14 @@ function run_and_capture_cmd {
             RC_STATUS=${rc}
         fi
     else
-        echo "Skipping capture: ${cmd}"
+        header="Skipping capture: ${cmd}"
+        start_github_group "${header}"
+        echo "${header}"
         echo
         echo
     fi
+
+    stop_github_group
 }
 
 function post_run_cmd {
@@ -157,10 +194,16 @@ run_cmd "crucible help"
 run_cmd "crucible repo info"
 
 for userenv in ${CI_ACTIVE_USERENVS}; do
-    echo -e "*** Current userenv is ${userenv} ***\n"
+    header="Current userenv is ${userenv}"
+    start_github_group "${header}"
+    echo -e "*** ${header} ***\n"
+    stop_github_group
 
     for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
-        echo -e "### Current scenario is ${scenario} ###\n"
+        header="Current scenario is ${scenario}"
+        start_github_group "${header}"
+        echo -e "### ${header} ###\n"
+        stop_github_group
 
         TAGS=",repeat:${CI_REPEAT_RUNS},userenv:${userenv}"
 
@@ -187,9 +230,17 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
     done
 done
 
+run_cmd "crucible es init"
+
+run_cmd "crucible es rebuild"
+
 run_cmd "crucible log info"
 
 run_cmd "crucible log view"
+
+run_cmd "podman ps --all --external"
+
+run_cmd "crucible update"
 
 run_cmd "podman ps --all --external"
 
@@ -197,33 +248,41 @@ run_cmd "podman images"
 
 run_cmd "ls -laR /home/crucible-containers"
 
-if pushd /var/lib > /dev/null; then
-    if [ ! -d "crucible" ]; then
-        echo "ERROR: /var/lib/crucible does not exist for creating an artifact"
-        exit 1
-    fi
-
-    tarball="crucible-ci-artifact_$(uuidgen).tar"
-    echo "Creating ${tarball} from /var/lib/crucible"
-    if tar -cf ${tarball} crucible; then
-        echo "Compressing ${tarball} with xz"
-        if ! xz -v -T0 ${tarball}; then
-            echo "ERROR: Failed to xz compress ${tarball}"
+if [ "${CI_RUN_ENVIRONMENT}" == "github" ]; then
+    start_github_group "Artifact Processing"
+    if pushd /var/lib > /dev/null; then
+        if [ ! -d "crucible" ]; then
+            echo "ERROR: /var/lib/crucible does not exist for creating an artifact"
             exit 1
         fi
+
+        tarball="crucible-ci-artifact_$(uuidgen).tar"
+        echo "Creating ${tarball} from /var/lib/crucible"
+        if tar -cf ${tarball} crucible; then
+            echo "Compressing ${tarball} with xz"
+            if ! xz -v -T0 ${tarball}; then
+                echo "ERROR: Failed to xz compress ${tarball}"
+                exit 1
+            fi
+        else
+            echo "ERROR: Failed to create tar archive of /var/lib/crucible"
+            exit 1
+        fi
+
+        popd > /dev/null
     else
-        echo "ERROR: Failed to create tar archive of /var/lib/crucible"
+        echo "ERROR: Could not pushd to /var/lib"
         exit 1
     fi
+    stop_github_group
 
-    popd > /dev/null
-else
-    echo "ERROR: Could not pushd to /var/lib"
-    exit 1
+    start_github_group "Return code processing"
+    stage1_exit_status_file="/tmp/run-ci-stage1-exit-status"
+    echo "Logging stage 1 exit status ${RC_STATUS} to ${stage1_exit_status_file}"
+    echo "${RC_STATUS}" > ${stage1_exit_status_file}
+    stop_github_group
+
+    exit 0
+elif [ "${CI_RUN_ENVIRONMENT}" == "standalone" ]; then
+    exit ${RC_STATUS}
 fi
-
-stage1_exit_status_file="/tmp/run-ci-stage1-exit-status"
-echo "Logging stage 1 exit status ${RC_STATUS} to ${stage1_exit_status_file}"
-echo "${RC_STATUS}" > ${stage1_exit_status_file}
-
-exit 0
