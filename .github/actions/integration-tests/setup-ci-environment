@@ -76,13 +76,16 @@ stop_github_group
 
 start_github_group "Install Crucible"
 if pushd ~/ > /dev/null; then
-    wget ${CRUCIBLE_INSTALL_SRC}
-    chmod +x ./crucible-install.sh
+    INSTALLER_PATH="./crucible-install.sh"
     INSTALLER_ARGS=""
     if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" -a "${CI_TARGET}" == "crucible" ]; then
+        INSTALLER_PATH="${CI_TARGET_DIR}/crucible-install.sh"
         INSTALLER_ARGS=" --git-repo ${CI_TARGET_DIR}/.git"
+    else
+        wget -O ${INSTALLER_PATH} ${CRUCIBLE_INSTALL_SRC}
+        chmod +x ${INSTALLER_PATH}
     fi
-    INSTALLER_CMD="./crucible-install.sh --client-server-registry dir:/home/crucible-containers/client-server --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
+    INSTALLER_CMD="${INSTALLER_PATH} --client-server-registry dir:/home/crucible-containers/client-server --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
     echo "Running: ${INSTALLER_CMD}"
     ${INSTALLER_CMD}
     RC=$?
