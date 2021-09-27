@@ -59,3 +59,15 @@ echo
 start_github_group "ls -la"
 echo -e "ls -la\n$(ls -la)"
 stop_github_group
+echo
+start_github_group "ip route show"
+echo -e "ip route show\n$(ip route show)"
+stop_github_group
+echo
+start_github_group "ip link show"
+echo -e "ip link show\n$(ip link show)"
+stop_github_group
+echo
+start_github_group "ip addr show"
+echo -e "ip addr show\n$(ip addr show)"
+stop_github_group

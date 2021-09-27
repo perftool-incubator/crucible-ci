@@ -11,8 +11,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  crucible-ci-all-userenvs-fio:
-    name: crucible-ci-all-userenvs-fio
+  crucible-ci-all-userenvs-fio-remotehost:
+    name: crucible-ci-all-userenvs-fio-remotehost
 
     runs-on: ubuntu-latest
 
@@ -23,12 +23,13 @@ jobs:
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:
-        artifact_tag: "fio"
+        artifact_tag: "fio-remotehost"
         scenarios: "fio"
         userenvs: "all"
+        ci_endpoint: "remotehost"
 
-  crucible-ci-all-userenvs-uperf:
-    name: crucible-ci-all-userenvs-uperf
+  crucible-ci-all-userenvs-fio-k8s:
+    name: crucible-ci-all-userenvs-fio-k8s
 
     runs-on: ubuntu-latest
 
@@ -39,6 +40,41 @@ jobs:
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:
-        artifact_tag: "uperf"
+        artifact_tag: "fio-k8s"
+        scenarios: "fio"
+        userenvs: "all"
+        ci_endpoint: "k8s"
+
+  crucible-ci-all-userenvs-uperf-remotehost:
+    name: crucible-ci-all-userenvs-uperf-remotehost
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
+
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
+      with:
+        artifact_tag: "uperf-remotehost"
         scenarios: "uperf"
         userenvs: "all"
+        ci_endpoint: "remotehost"
+
+  crucible-ci-all-userenvs-uperf-k8s:
+    name: crucible-ci-all-userenvs-uperf-k8s
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
+
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
+      with:
+        artifact_tag: "uperf-k8s"
+        scenarios: "uperf"
+        userenvs: "all"
+        ci_endpoint: "k8s"

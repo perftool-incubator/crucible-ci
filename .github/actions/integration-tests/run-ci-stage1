@@ -17,7 +17,9 @@ CI_SAMPLES=1
 
 CI_REPEAT_RUNS="no"
 
-longopts="scenarios:,userenvs:,samples:,repeat-runs:,run-environment:"
+CI_ENDPOINT="remotehost"
+
+longopts="scenarios:,userenvs:,samples:,repeat-runs:,run-environment:,ci-endpoint:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -26,6 +28,11 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --ci-endpoint)
+            shift
+            CI_ENDPOINT="${1}"
+            shift
+            ;;
         --run-environment)
             shift
             CI_RUN_ENVIRONMENT="${1}"
@@ -63,16 +70,9 @@ while true; do
     esac
 done
 
-case "${CI_RUN_ENVIRONMENT}" in
-    standalone|github)
-        echo "CI Run Environment is '${CI_RUN_ENVIRONMENT}'"
-        echo
-        ;;
-    *)
-        echo "ERROR: Unknown value for --run-environment [${CI_RUN_ENVIRONMENT}].  Acceptable values are 'standalone' and 'github'."
-        exit 1
-        ;;
-esac
+# validate inputs
+validate_ci_run_environment
+validate_ci_endpoint
 
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     case "${scenario}" in
@@ -193,6 +193,14 @@ run_cmd "crucible help"
 
 run_cmd "crucible repo info"
 
+# some endpoints (such as k8s) will require a "remote" address for the
+# controller to allow connectivity from separate network namespaces
+# (ie. a pod); provide this by determining which device is used for
+# the default route and then getting the IP address for this device;
+# then below this information can be used where needed
+CONTROLLER_DEFAULT_ROUTE_DEV=$(ip route | grep default | sed -E "s/.*dev\s(\w+)\s.*/\1/")
+CONTROLLER_IP=$(ip addr show dev ${CONTROLLER_DEFAULT_ROUTE_DEV} | egrep "inet\s" | sed -E "s/.*inet\s([0-9\.]+)\/.*/\1/")
+
 for userenv in ${CI_ACTIVE_USERENVS}; do
     header="Current userenv is ${userenv}"
     start_github_group "${header}"
@@ -209,20 +217,38 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
 
         case "${scenario}" in
             fio)
-                run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                case "${CI_ENDPOINT}" in
+                    k8s)
+                        ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:localhost,user:root,userenv:${userenv},kubeconfig:0,client:1-2"
+                        ;;
+                    remotehost)
+                        ENDPOINT_ARG="--endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                        ;;
+                esac
+
+                run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json ${ENDPOINT_ARG}"
                 post_run_cmd
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
+                    run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json ${ENDPOINT_ARG}"
                     post_run_cmd
                 fi
                 ;;
             uperf)
-                run_cmd "crucible run uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                case "${CI_ENDPOINT}" in
+                    k8s)
+                        ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:localhost,user:root,userenv:${userenv},kubeconfig:0,client:1-2,server:1-2"
+                        ;;
+                    remotehost)
+                        ENDPOINT_ARG="--endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                        ;;
+                esac
+
+                run_cmd "crucible run uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json ${ENDPOINT_ARG}"
                 post_run_cmd
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                    run_cmd "crucible run uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json ${ENDPOINT_ARG}"
                     post_run_cmd
                 fi
                 ;;
@@ -242,11 +268,22 @@ run_cmd "podman ps --all --external"
 
 run_cmd "crucible update"
 
-run_cmd "podman ps --all --external"
+case "${CI_ENDPOINT}" in
+    k8s)
+        run_cmd "ssh root@localhost kubectl get nodes"
 
-run_cmd "podman images"
+        run_cmd "ssh root@localhost kubectl get pods"
 
-run_cmd "ls -laR /home/crucible-containers"
+        run_cmd "microk8s ctr images list"
+        ;;
+    remotehost)
+        run_cmd "podman ps --all --external"
+
+        run_cmd "podman images"
+
+        run_cmd "ls -laR /home/crucible-containers"
+        ;;
+esac
 
 if [ "${CI_RUN_ENVIRONMENT}" == "github" ]; then
     start_github_group "Artifact Processing"
