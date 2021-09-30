@@ -11,8 +11,11 @@ CRUCIBLE_INSTALL_SRC="https://raw.githubusercontent.com/perftool-incubator/cruci
 CI_TARGET="none"
 CI_TARGET_DIR="none"
 CI_RUN_ENVIRONMENT="standalone"
+CI_ENDPOINT="remotehost"
 
-longopts="ci-target:,ci-target-dir:,run-environment:"
+REGISTRY_TLS_VERIFY="true"
+
+longopts="ci-target:,ci-target-dir:,run-environment:,ci-endpoint:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -21,6 +24,11 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --ci-endpoint)
+            shift
+            CI_ENDPOINT="${1}"
+            shift
+            ;;
         --run-environment)
             shift
             CI_RUN_ENVIRONMENT="${1}"
@@ -48,16 +56,9 @@ while true; do
     esac
 done
 
-case "${CI_RUN_ENVIRONMENT}" in
-    standalone|github)
-        echo "CI Run Environment is '${CI_RUN_ENVIRONMENT}'"
-        echo
-        ;;
-    *)
-        echo "ERROR: Unknown value for --run-environment [${CI_RUN_ENVIRONMENT}].  Acceptable values are 'standalone' and 'github'."
-        exit 1
-        ;;
-esac
+# validate inputs
+validate_ci_run_environment
+validate_ci_endpoint
 
 # configure SSH for loopback connectivity
 start_github_group "Configure loop SSH access"
@@ -68,6 +69,36 @@ bash -c "cat /root/.ssh/id_ed25519.pub > /root/.ssh/authorized_keys"
 chmod 600 /root/.ssh/authorized_keys
 ssh -o StrictHostKeyChecking=no localhost echo "password-less root login over ssh works"
 stop_github_group
+
+# ensure endpoint availability
+case "${CI_ENDPOINT}" in
+    k8s)
+        start_github_group "Configure k8s endpoint"
+
+        # fixup some microk8s dependencies before installing it
+        update-alternatives --set iptables /usr/sbin/iptables-legacy
+        update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+
+        snap install microk8s --classic
+        microk8s status --wait-ready
+
+        printf "#%s/bin/bash\n\nmicrok8s kubectl \$@\n" "!" > /usr/local/bin/kubectl
+        chmod +x /usr/local/bin/kubectl
+
+        microk8s enable registry
+        CONTAINER_REGISTRY="localhost:32000/client-server"
+        REGISTRY_TLS_VERIFY="false"
+
+        stop_github_group
+        ;;
+    remotehost)
+        start_github_group "Configure remotehost endpoint"
+
+        CONTAINER_REGISTRY="dir:/home/crucible-containers/client-server"
+
+        stop_github_group
+        ;;
+esac
 
 # condition environment for crucible
 start_github_group "Create /etc/sysconfig"
@@ -85,7 +116,7 @@ if pushd ~/ > /dev/null; then
         wget -O ${INSTALLER_PATH} ${CRUCIBLE_INSTALL_SRC}
         chmod +x ${INSTALLER_PATH}
     fi
-    INSTALLER_CMD="${INSTALLER_PATH} --client-server-registry dir:/home/crucible-containers/client-server --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
+    INSTALLER_CMD="${INSTALLER_PATH} --client-server-registry ${CONTAINER_REGISTRY} --client-server-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
     echo "Running: ${INSTALLER_CMD}"
     ${INSTALLER_CMD}
     RC=$?

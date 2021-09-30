@@ -29,16 +29,20 @@ inputs:
     description: "Tag to include in the filename of the produced artifact"
     required: false
     default: "unset-tag"
+  ci_endpoint:
+    description: "Which rickshaw endpoint to exercise"
+    required: false
+    default: "remotehost"
 runs:
   using: "composite"
   steps:
     - run: ${{ github.action_path }}/ci-environment-info --run-environment github
       shell: bash
 
-    - run: sudo ${{ github.action_path }}/setup-ci-environment --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }}
+    - run: sudo ${{ github.action_path }}/setup-ci-environment --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }} --ci-endpoint ${{ inputs.ci_endpoint }}
       shell: bash
 
-    - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --samples ${{ inputs.run_samples }} --repeat-runs ${{ inputs.repeat_runs }}
+    - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --samples ${{ inputs.run_samples }} --repeat-runs ${{ inputs.repeat_runs }} --ci-endpoint ${{ inputs.ci_endpoint }}
       shell: bash
 
     - uses: actions/upload-artifact@v2
