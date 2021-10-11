@@ -185,6 +185,16 @@ function post_run_cmd {
     run_and_capture_cmd "crucible extract run-id /var/lib/crucible/run/latest"
 
     run_cmd "crucible rm --run ${captured_output}"
+
+    run_cmd "crucible ls --result-dir /var/lib/crucible/run/latest --type run-id"
+
+    run_cmd "crucible ls --result-dir /var/lib/crucible/run/latest"
+
+    run_cmd "crucible tags --result-dir /var/lib/crucible/run/latest"
+
+    run_cmd "crucible tags --result-dir /var/lib/crucible/run/latest --action add --tags crucible-ci:post_run_cmd --tags testing1:value1 --tags testing2:value2"
+
+    run_cmd "crucible tags --result-dir /var/lib/crucible/run/latest --action remove --tags testing1 --tags testing2"
 }
 
 run_cmd "cat /etc/sysconfig/crucible"
@@ -255,6 +265,10 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         esac
     done
 done
+
+run_cmd "crucible ls --type run-id"
+
+run_cmd "crucible ls --type tags"
 
 run_cmd "crucible es init"
 
