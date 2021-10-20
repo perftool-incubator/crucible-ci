@@ -236,11 +236,11 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         ;;
                 esac
 
-                run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json ${ENDPOINT_ARG}"
+                run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json ${ENDPOINT_ARG} --requirements /opt/crucible/subprojects/benchmarks/fio/multiplex.json"
                 post_run_cmd
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json ${ENDPOINT_ARG}"
+                    run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json ${ENDPOINT_ARG} --requirements /opt/crucible/subprojects/benchmarks/fio/multiplex.json"
                     post_run_cmd
                 fi
                 ;;
