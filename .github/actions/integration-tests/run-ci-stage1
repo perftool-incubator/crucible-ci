@@ -19,6 +19,8 @@ CI_REPEAT_RUNS="no"
 
 CI_ENDPOINT="remotehost"
 
+CI_VERBOSE=0
+
 longopts="scenarios:,userenvs:,samples:,repeat-runs:,run-environment:,ci-endpoint:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
@@ -57,6 +59,10 @@ while true; do
             shift
             CI_REPEAT_RUNS="${1}"
             shift
+            ;;
+        --verbose)
+            shift
+            CI_VERBOSE=1
             ;;
         --)
             shift
@@ -138,15 +144,18 @@ function run_cmd {
         if [ ${RC_STATUS} == 0 ]; then
             RC_STATUS=${rc}
         fi
-    else
-        header="Skipping: ${cmd}"
-        start_github_group "${header}"
-        echo "${header}"
-        echo
-        echo
-    fi
 
-    stop_github_group
+        stop_github_group
+    else
+        if [ ${CI_VERBOSE} == 1 ]; then
+            header="Skipping: ${cmd}"
+            start_github_group "${header}"
+            echo "${header}"
+            echo
+            echo
+            stop_github_group
+        fi
+    fi
 }
 
 function run_and_capture_cmd {
@@ -170,15 +179,18 @@ function run_and_capture_cmd {
         if [ ${RC_STATUS} == 0 ]; then
             RC_STATUS=${rc}
         fi
-    else
-        header="Skipping capture: ${cmd}"
-        start_github_group "${header}"
-        echo "${header}"
-        echo
-        echo
-    fi
 
-    stop_github_group
+        stop_github_group
+    else
+        if [ ${CI_VERBOSE} == 1 ]; then
+            header="Skipping capture: ${cmd}"
+            start_github_group "${header}"
+            echo "${header}"
+            echo
+            echo
+            stop_github_group
+        fi
+    fi
 }
 
 function post_run_cmd {
@@ -212,12 +224,20 @@ CONTROLLER_DEFAULT_ROUTE_DEV=$(ip route | grep default | sed -E "s/.*dev\s(\w+)\
 CONTROLLER_IP=$(ip addr show dev ${CONTROLLER_DEFAULT_ROUTE_DEV} | egrep "inet\s" | sed -E "s/.*inet\s([0-9\.]+)\/.*/\1/")
 
 for userenv in ${CI_ACTIVE_USERENVS}; do
+    if [ ${CI_VERBOSE} == 0 -a ${RC_STATUS} != 0 ]; then
+        break
+    fi
+
     header="Current userenv is ${userenv}"
     start_github_group "${header}"
     echo -e "*** ${header} ***\n"
     stop_github_group
 
     for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
+        if [ ${CI_VERBOSE} == 0 -a ${RC_STATUS} != 0 ]; then
+            break
+        fi
+
         header="Current scenario is ${scenario}"
         start_github_group "${header}"
         echo -e "### ${header} ###\n"
