@@ -215,14 +215,6 @@ run_cmd "crucible help"
 
 run_cmd "crucible repo info"
 
-# some endpoints (such as k8s) will require a "remote" address for the
-# controller to allow connectivity from separate network namespaces
-# (ie. a pod); provide this by determining which device is used for
-# the default route and then getting the IP address for this device;
-# then below this information can be used where needed
-CONTROLLER_DEFAULT_ROUTE_DEV=$(ip route | grep default | sed -E "s/.*dev\s(\w+)\s.*/\1/")
-CONTROLLER_IP=$(ip addr show dev ${CONTROLLER_DEFAULT_ROUTE_DEV} | egrep "inet\s" | sed -E "s/.*inet\s([0-9\.]+)\/.*/\1/")
-
 for userenv in ${CI_ACTIVE_USERENVS}; do
     if [ ${CI_VERBOSE} == 0 -a ${RC_STATUS} != 0 ]; then
         break
@@ -249,7 +241,7 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
             fio)
                 case "${CI_ENDPOINT}" in
                     k8s)
-                        ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:localhost,user:root,userenv:${userenv},kubeconfig:0,client:1-2"
+                        ENDPOINT_ARG="--endpoint k8s,host:localhost,user:root,userenv:${userenv},kubeconfig:0,client:1-2"
                         ;;
                     remotehost)
                         ENDPOINT_ARG="--endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1"
@@ -267,7 +259,7 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
             uperf)
                 case "${CI_ENDPOINT}" in
                     k8s)
-                        ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:localhost,user:root,userenv:${userenv},kubeconfig:0,client:1-2,server:1-2"
+                        ENDPOINT_ARG="--endpoint k8s,host:localhost,user:root,userenv:${userenv},kubeconfig:0,client:1-2,server:1-2"
                         ;;
                     remotehost)
                         ENDPOINT_ARG="--endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
