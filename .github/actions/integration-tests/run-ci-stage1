@@ -214,6 +214,12 @@ function post_run_cmd {
     run_cmd "crucible tags --result-dir /var/lib/crucible/run/latest --action remove --tags testing1 --tags testing2"
 }
 
+function remove_microk8s_images {
+    for image in $(microk8s ctr images list "name~=client-server" | grep -v REF | awk '{ print $1 }'); do
+        microk8s ctr images remove --sync ${image}
+    done
+}
+
 run_cmd "cat /etc/sysconfig/crucible"
 
 run_cmd "crucible help"
@@ -289,6 +295,17 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                 ;;
         esac
     done
+
+    run_cmd "df -h"
+    case "${CI_ENDPOINT}" in
+        k8s)
+            run_cmd "remove_microk8s_images"
+            ;;
+        remotehost)
+            run_cmd "rm -Rfv /home/crucible-containers/*"
+            ;;
+    esac
+    run_cmd "df -h"
 done
 
 run_cmd "crucible ls --type run-id"
