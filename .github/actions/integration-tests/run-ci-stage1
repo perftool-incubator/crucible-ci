@@ -316,6 +316,12 @@ run_cmd "crucible es init"
 
 run_cmd "crucible es rebuild"
 
+for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
+    run_cmd "crucible archive /var/lib/crucible/run/${scenario}*"
+
+    run_cmd "crucible unarchive /var/lib/crucible/archive/${scenario}*"
+done
+
 run_cmd "crucible log info" "force"
 
 run_cmd "crucible log view" "force"
