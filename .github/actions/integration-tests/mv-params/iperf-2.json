@@ -1,0 +1,22 @@
+{
+    "global-options": [
+	{
+	    "name": "required",
+	    "params": [
+		{ "arg": "time", "vals": [ "10" ], "role": "client" },
+		{ "arg": "protocol", "vals": [ "udp" ] },
+		{ "arg": "bitrate", "vals": [ "0" ] },
+
+		{ "arg": "ifname", "vals" : [ "eth0" ], "role": "server" }
+	    ]
+	}
+    ],
+    "sets": [
+	{
+	    "include": "required",
+	    "params": [
+		{ "arg": "length", "vals": [ "128" ] }
+	    ]
+        }
+    ]
+}

@@ -82,7 +82,7 @@ validate_ci_endpoint
 
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     case "${scenario}" in
-        fio|uperf)
+        fio|uperf|iperf)
             ;;
         *)
             echo "ERROR: Unknown CI scenario [${scenario}]"
@@ -257,6 +257,24 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         TAGS=",repeat:${CI_REPEAT_RUNS},userenv:${userenv}"
 
         case "${scenario}" in
+            iperf)
+                case "${CI_ENDPOINT}" in
+                    k8s)
+                        ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:localhost,user:root,userenv:${userenv},kubeconfig:0,client:1-2,server:1-2"
+                        ;;
+                    remotehost)
+                        ENDPOINT_ARG="--endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:localhost,user:root,userenv:${userenv},osruntime:podman,server:1"
+                        ;;
+                esac
+
+                run_cmd "crucible run iperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/iperf-1.json ${ENDPOINT_ARG}"
+                post_run_cmd
+
+                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                    run_cmd "crucible run iperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/iperf-2.json ${ENDPOINT_ARG}"
+                    post_run_cmd
+                fi
+                ;;
             fio)
                 case "${CI_ENDPOINT}" in
                     k8s)

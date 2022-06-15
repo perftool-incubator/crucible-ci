@@ -78,3 +78,37 @@ jobs:
         scenarios: "uperf"
         userenvs: "all"
         ci_endpoint: "k8s"
+
+  crucible-ci-all-userenvs-iperf-remotehost:
+    name: crucible-ci-all-userenvs-iperf-remotehost
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
+
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
+      with:
+        artifact_tag: "iperf-remotehost"
+        scenarios: "iperf"
+        userenvs: "all"
+        ci_endpoint: "remotehost"
+
+  crucible-ci-all-userenvs-iperf-k8s:
+    name: crucible-ci-all-userenvs-iperf-k8s
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
+
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
+      with:
+        artifact_tag: "iperf-k8s"
+        scenarios: "iperf"
+        userenvs: "all"
+        ci_endpoint: "k8s"
