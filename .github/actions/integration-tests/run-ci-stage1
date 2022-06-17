@@ -285,11 +285,11 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         ;;
                 esac
 
-                run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/fio-1.json ${ENDPOINT_ARG}"
+                run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/fio-1.json ${ENDPOINT_ARG}"
                 post_run_cmd
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/fio-2.json ${ENDPOINT_ARG}"
+                    run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/fio-2.json ${ENDPOINT_ARG}"
                     post_run_cmd
                 fi
                 ;;
@@ -303,11 +303,11 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         ;;
                 esac
 
-                run_cmd "crucible run uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params /opt/crucible/tests/end-to-end/uperf-1.json ${ENDPOINT_ARG}"
+                run_cmd "crucible run uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/uperf-1.json ${ENDPOINT_ARG}"
                 post_run_cmd
 
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params /opt/crucible/tests/end-to-end/uperf-2.json ${ENDPOINT_ARG}"
+                    run_cmd "crucible run uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/uperf-2.json ${ENDPOINT_ARG}"
                     post_run_cmd
                 fi
                 ;;
@@ -350,15 +350,15 @@ run_cmd "crucible update"
 
 case "${CI_ENDPOINT}" in
     k8s)
-        run_cmd "ssh root@localhost kubectl get nodes" "force"
+        run_cmd "ssh root@localhost kubectl get nodes --output=wide" "force"
 
-        run_cmd "ssh root@localhost kubectl get pods" "force"
+        run_cmd "ssh root@localhost kubectl get namespaces --output=wide" "force"
+
+        run_cmd "ssh root@localhost kubectl get pods --all-namespaces --output=wide" "force"
 
         run_cmd "microk8s ctr images list" "force"
         ;;
     remotehost)
-        run_cmd "podman ps --all --external" "force"
-
         run_cmd "podman images" "force"
 
         run_cmd "ls -laR /home/crucible-containers" "force"
