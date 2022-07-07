@@ -488,5 +488,6 @@ if [ "${CI_RUN_ENVIRONMENT}" == "github" ]; then
 
     exit 0
 elif [ "${CI_RUN_ENVIRONMENT}" == "standalone" ]; then
+    echo "Stage 1 exiting with status ${RC_STATUS}"
     exit ${RC_STATUS}
 fi
