@@ -67,7 +67,10 @@ systemctl start sshd
 ssh-keygen -t ed25519 -q -f /root/.ssh/id_ed25519 -N ""
 bash -c "cat /root/.ssh/id_ed25519.pub > /root/.ssh/authorized_keys"
 chmod 600 /root/.ssh/authorized_keys
-ssh -o StrictHostKeyChecking=no localhost echo "password-less root login over ssh works"
+if ! do_ssh -o StrictHostKeyChecking=no localhost echo "password-less root login over ssh works"; then
+    echo "ERROR: loopback ssh connection test failed"
+    exit 1
+fi
 stop_github_group
 
 # ensure endpoint availability
