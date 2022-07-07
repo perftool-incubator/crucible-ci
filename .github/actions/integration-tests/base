@@ -56,3 +56,7 @@ function validate_ci_endpoint {
             ;;
     esac
 }
+
+function do_ssh {
+    ssh -o PasswordAuthentication=no $@
+}
