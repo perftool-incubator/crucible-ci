@@ -47,7 +47,10 @@ CI_ENDPOINT_HOST="localhost"
 
 CI_ENDPOINT_USER="root"
 
+CI_RUN_UPDATE="yes"
+
 longopts="scenarios:,userenvs:,samples:,repeat-runs:,run-environment:,ci-endpoint:,ci-endpoint-host:,ci-endpoint-user:"
+longopts+=",disable-update-test"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -56,6 +59,10 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --disable-update-test)
+            shift
+            CI_RUN_UPDATE="no"
+            ;;
         --ci-endpoint-user)
             shift
             CI_ENDPOINT_USER="${1}"
@@ -423,7 +430,11 @@ run_cmd "crucible log view" "force"
 
 run_cmd "podman ps --all --external" "force"
 
-run_cmd "crucible update"
+if [ "${CI_RUN_UPDATE}" == "yes" ]; then
+    run_cmd "crucible update"
+else
+    echo "Skipping crucible update due to explicit user requested disablement"
+fi
 
 case "${CI_ENDPOINT}" in
     k8s)
