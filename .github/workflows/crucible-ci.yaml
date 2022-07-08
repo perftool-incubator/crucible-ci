@@ -1,9 +1,7 @@
 name: crucible-ci
 
 on:
-  # run on push or pull request events for the main branch only
-  push:
-    branches: [ main ]
+  # run on pull request events for the main branch only
   pull_request:
     branches: [ main ]
 
