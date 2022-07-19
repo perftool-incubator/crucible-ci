@@ -7,7 +7,7 @@
 		{ "arg": "protocol", "vals": [ "udp" ] },
 		{ "arg": "bitrate", "vals": [ "0" ] },
 
-		{ "arg": "ifname", "vals" : [ "eth0" ], "role": "server" }
+		{ "arg": "ifname", "vals" : [ "default-route" ], "role": "server" }
 	    ]
 	}
     ],
