@@ -339,7 +339,8 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},kubeconfig:0,client:1-2,server:1-2"
                         ;;
                     remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:podman,server:1"
+                        ENDPOINT_ARG="--endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
+                        ENDPOINT_ARG+=" --endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:chroot,profiler:1"
                         ;;
                 esac
 
@@ -357,7 +358,8 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},kubeconfig:0,client:1-2"
                         ;;
                     remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:podman,client:1"
+                        ENDPOINT_ARG="--endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:client-1:podman,osruntime:client-2:chroot,client:1-2"
+                        ENDPOINT_ARG+=" --endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:chroot,profiler:1"
                         ;;
                 esac
 
@@ -375,7 +377,8 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},kubeconfig:0,client:1-2,server:1-2"
                         ;;
                     remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:podman,client:1 --endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:podman,server:1"
+                        ENDPOINT_ARG="--endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
+                        ENDPOINT_ARG+=" --endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:chroot,profiler:1"
                         ;;
                 esac
 
