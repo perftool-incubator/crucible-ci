@@ -302,6 +302,15 @@ run_cmd "crucible help"
 
 run_cmd "crucible repo info"
 
+for action in start stop; do
+    for service in httpd es redis; do
+        run_cmd "podman ps --all --external"
+
+        run_cmd "crucible ${action} ${service}"
+    done
+done
+run_cmd "podman ps --all --external"
+
 # some endpoints (such as k8s) will require a "remote" address for the
 # controller to allow connectivity from separate network namespaces
 # (ie. a pod); provide this by determining which device is used for
