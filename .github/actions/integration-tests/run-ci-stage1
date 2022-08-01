@@ -269,8 +269,31 @@ function run_and_capture_cmd {
 
 function post_run_cmd {
     run_and_capture_cmd "crucible extract run-id /var/lib/crucible/run/latest"
+    local run_id="${captured_output}"
 
-    run_cmd "crucible rm --run ${captured_output}"
+    run_and_capture_cmd "crucible extract primary-periods /var/lib/crucible/run/latest"
+    local primary_periods="${captured_output}"
+
+    if [ ${RC_STATUS} == 0 -a -n "${primary_periods}" ]; then
+        tmp_file=$(mktemp)
+        echo -e "${primary_periods}" > ${tmp_file}
+
+        OLD_IFS=${IFS}
+        while IFS=$'\n' read -r -u 9 line; do
+            echo -e "${line}\n"
+
+            period_id=$(echo "${line}" | awk '{ print $1 }')
+
+            run_cmd "crucible get metric --run ${run_id} --period ${period_id} --source mpstat --type Busy-CPU --breakout cstype,csid"
+
+            echo
+        done 9< ${tmp_file}
+        IFS=${OLD_IFS}
+
+        rm ${tmp_file}
+    fi
+
+    run_cmd "crucible rm --run ${run_id}"
 
     run_cmd "crucible ls --result-dir /var/lib/crucible/run/latest --type run-id"
 
