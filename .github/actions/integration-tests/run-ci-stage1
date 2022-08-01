@@ -241,7 +241,10 @@ function run_and_capture_cmd {
         echo
         captured_output=$(${cmd})
         rc=${?}
-        echo "captured_output=${captured_output}"
+        echo "captured_output:"
+        echo ">>>>>"
+        echo "${captured_output}"
+        echo "<<<<<"
 
         log_rc ${rc}
         echo
