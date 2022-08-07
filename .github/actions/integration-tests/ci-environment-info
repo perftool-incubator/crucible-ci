@@ -48,6 +48,14 @@ esac
 
 echo "CI Environment Information:"
 echo
+start_github_group "os-release"
+echo -e "os-release\n$(cat /etc/os-release)"
+stop_github_group
+echo
+start_github_group "hostname --all-fqdns"
+echo -e "hostname -f: $(hostname --all-fqdns)"
+stop_github_group
+echo
 start_github_group "whoami"
 echo "whoami: $(whoami)"
 stop_github_group
