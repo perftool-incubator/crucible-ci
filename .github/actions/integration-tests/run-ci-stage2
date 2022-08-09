@@ -9,7 +9,9 @@ SCRIPT_DIR=$(readlink -e ${SCRIPT_DIR})
 
 CI_RUN_ENVIRONMENT="standalone"
 
-longopts="run-environment:"
+CI_CLEAN_ENVIRONMENT="yes"
+
+longopts="run-environment:,clean-environment"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -18,6 +20,11 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --clean-environment)
+            shift
+            CI_CLEAN_ENVIRONMENT="${1}"
+            shift
+            ;;
         --run-environment)
             shift
             CI_RUN_ENVIRONMENT="${1}"
@@ -35,6 +42,17 @@ while true; do
     esac
 done
 
+case "${CI_CLEAN_ENVIRONMENT}" in
+    yes|no)
+        echo "CI Clean Evironment is '${CI_CLEAN_ENVIRONMENT}'"
+        echo
+        ;;
+    *)
+        echo "ERROR: Unknown value for --clean-environment [${CI_CLEAN_ENVIRONMENT}].  Acceptable values are 'yes' and 'no'."
+        exit 1
+        ;;
+esac
+
 case "${CI_RUN_ENVIRONMENT}" in
     standalone|github)
         echo "CI Run Environment is '${CI_RUN_ENVIRONMENT}'"
@@ -46,11 +64,62 @@ case "${CI_RUN_ENVIRONMENT}" in
         ;;
 esac
 
-start_github_group "Determine stage 1 exit status"
+if [ "${CI_CLEAN_ENVIRONMENT}" == "yes" ]; then
+    header="Clean CI environment"
+    start_github_group "${header}"
+    echo -e "*** ${header} ***\n"
+    stop_github_group
+
+    header="Stopping Crucible Services"
+    start_github_group "${header}"
+    echo -e "### ${header} ###\n"
+    echo
+    crucible stop es
+    crucible stop httpd
+    crucible stop redis
+    stop_github_group
+
+    header="Removing podman resources (containers and images)"
+    start_github_group "${header}"
+    echo -e "### ${header} ###\n"
+    echo
+    cmd="podman stop --all"
+    echo "${cmd}"
+    ${cmd}
+    cmd="podman rm --all"
+    echo "${cmd}"
+    ${cmd}
+    cmd="buildah rm --all"
+    echo "${cmd}"
+    ${cmd}
+    cmd="podman rmi --all"
+    echo "${cmd}"
+    ${cmd}
+    stop_github_group
+
+    header="Removing Crucible installed/created files"
+    start_github_group "${header}"
+    echo -e "### ${header} ###\n"
+    echo
+    cmd="rm -Rfv /opt/crucible* /var/lib/crucible* /etc/sysconfig/crucible  /root/.crucible /etc/profile.d/crucible_completions.sh /home/crucible-containers"
+    echo "${cmd}"
+    ${cmd}
+    stop_github_group
+else
+    header="Environment cleaning disabled"
+    start_github_group "${header}"
+    echo -e "*** ${header} ***\n"
+    stop_github_group
+fi
+
+header="Determine stage 1 exit status"
+start_github_group "${header}"
+echo -e "*** ${header} ***\n"
 
 stage1_exit_status_file="/tmp/run-ci-stage1-exit-status"
 if [ -e "${stage1_exit_status_file}" ]; then
     read stage1_exit_status < ${stage1_exit_status_file}
+    rm ${stage1_exit_status_file}
 
     if [ -z "${stage1_exit_status}" ]; then
         echo "ERROR: Read an empty stage 1 exit status from ${stage1_exit_status_file}"
@@ -59,7 +128,7 @@ if [ -e "${stage1_exit_status_file}" ]; then
         exit ${stage1_exit_status}
     fi
 else
-    echo "ERROR: Could not find stage 1 exist status because ${stage1_exit_status_file} does not exist"
+    echo "ERROR: Could not find stage 1 exit status because ${stage1_exit_status_file} does not exist"
 fi
 
 exit 1

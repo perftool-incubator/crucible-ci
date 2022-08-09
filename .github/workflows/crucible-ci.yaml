@@ -9,6 +9,40 @@ on:
   workflow_dispatch:
 
 jobs:
+  crucible-ci-all-userenvs-oslat-remotehost:
+    name: crucible-ci-all-userenvs-oslat-remotehost
+
+    runs-on: [self-hosted, cpu-partitioning]
+
+    steps:
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
+
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
+      with:
+        artifact_tag: "oslat-remotehost"
+        scenarios: "oslat"
+        userenvs: "all"
+        ci_endpoint: "remotehost"
+
+  crucible-ci-iteration-repeat-runs-oslat-remotehost:
+    name: crucible-ci-iteration-repeat-runs-oslat-remotehost
+
+    runs-on: [self-hosted, cpu-partitioning]
+
+    steps:
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
+
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
+      with:
+        artifact_tag: "oslat-iteration-repeat-runs-remotehost"
+        scenarios: "oslat"
+        repeat_runs: "yes"
+        ci_endpoint: "remotehost"
+
   crucible-ci-all-userenvs-fio-remotehost:
     name: crucible-ci-all-userenvs-fio-remotehost
 

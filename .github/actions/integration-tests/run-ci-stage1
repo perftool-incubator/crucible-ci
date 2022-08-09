@@ -125,7 +125,7 @@ validate_ci_endpoint
 
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     case "${scenario}" in
-        fio|uperf|iperf)
+        fio|uperf|iperf|oslat)
             ;;
         *)
             echo "ERROR: Unknown CI scenario [${scenario}]"
@@ -367,15 +367,37 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
 
         TAGS=",repeat:${CI_REPEAT_RUNS},userenv:${userenv}"
 
+        COMMON_ENDPOINT_ARGS="controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv}"
+        COMMON_K8S_ENDPOINT_ARGS="kubeconfig:0"
+
         case "${scenario}" in
+            oslat)
+                case "${CI_ENDPOINT}" in
+                    k8s)
+                        ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1,cpu-partitioning:default:1"
+                        ;;
+                    remotehost)
+                        ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1,cpu-partitioning:default:1"
+                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
+                    ;;
+                esac
+
+                run_cmd "crucible run oslat --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/oslat-1.json ${ENDPOINT_ARG}"
+                post_run_cmd
+
+                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                    run_cmd "crucible run oslat --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/oslat-2.json ${ENDPOINT_ARG}"
+                    post_run_cmd
+                fi
+                ;;
             iperf)
                 case "${CI_ENDPOINT}" in
                     k8s)
-                        ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},kubeconfig:0,client:1-2,server:1-2"
+                        ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
                         ;;
                     remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
-                        ENDPOINT_ARG+=" --endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:chroot,profiler:1"
+                        ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
+                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
                         ;;
                 esac
 
@@ -390,11 +412,11 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
             fio)
                 case "${CI_ENDPOINT}" in
                     k8s)
-                        ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},kubeconfig:0,client:1-2"
+                        ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2"
                         ;;
                     remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:client-1:podman,osruntime:client-2:chroot,client:1-2"
-                        ENDPOINT_ARG+=" --endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:chroot,profiler:1"
+                        ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,client:1-2"
+                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
                         ;;
                 esac
 
@@ -409,11 +431,11 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
             uperf)
                 case "${CI_ENDPOINT}" in
                     k8s)
-                        ENDPOINT_ARG="--endpoint k8s,controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},kubeconfig:0,client:1-2,server:1-2"
+                        ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
                         ;;
                     remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
-                        ENDPOINT_ARG+=" --endpoint remotehost,host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv},osruntime:chroot,profiler:1"
+                        ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
+                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
                         ;;
                 esac
 
