@@ -12,7 +12,7 @@ jobs:
   crucible-ci-all-userenvs-oslat-remotehost:
     name: crucible-ci-all-userenvs-oslat-remotehost
 
-    runs-on: [self-hosted, cpu-partitioning]
+    runs-on: [self-hosted, cpu-partitioning, remotehost]
 
     steps:
     - name: checkout crucible-ci
@@ -29,7 +29,7 @@ jobs:
   crucible-ci-iteration-repeat-runs-oslat-remotehost:
     name: crucible-ci-iteration-repeat-runs-oslat-remotehost
 
-    runs-on: [self-hosted, cpu-partitioning]
+    runs-on: [self-hosted, cpu-partitioning, remotehost]
 
     steps:
     - name: checkout crucible-ci
