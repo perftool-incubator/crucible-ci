@@ -170,13 +170,13 @@ case "${CI_ENDPOINT}" in
         echo
         echo "Determining K8S type:"
 
-        if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} oc version; then
+        if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} oc cluster-info; then
             CI_K8S_TYPE="OCP"
             echo "K8S type is OpenShift"
-        elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s ctr version; then
+        elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s kubectl cluster-info; then
             CI_K8S_TYPE="MICROK8S"
             echo "K8S type is MicroK8S"
-        elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} kubectl version; then
+        elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} kubectl cluster-info; then
             CI_K8S_type="GENERIC"
             echo "K8S type is generic"
         else
