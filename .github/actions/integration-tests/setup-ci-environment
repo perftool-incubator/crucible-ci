@@ -12,10 +12,11 @@ CI_TARGET="none"
 CI_TARGET_DIR="none"
 CI_RUN_ENVIRONMENT="standalone"
 CI_ENDPOINT="remotehost"
+CI_CLEAN_ENVIRONMENT="yes"
 
 REGISTRY_TLS_VERIFY="true"
 
-longopts="ci-target:,ci-target-dir:,run-environment:,ci-endpoint:"
+longopts="ci-target:,ci-target-dir:,run-environment:,ci-endpoint:,clean-environment:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -24,6 +25,11 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --clean-environment)
+            shift
+            CI_CLEAN_ENVIRONMENT="${1}"
+            shift
+            ;;
         --ci-endpoint)
             shift
             CI_ENDPOINT="${1}"
@@ -59,6 +65,8 @@ done
 # validate inputs
 validate_ci_run_environment
 validate_ci_endpoint
+
+clean_ci_environment
 
 # configure SSH for loopback connectivity
 start_github_group "Configure loop SSH access"
