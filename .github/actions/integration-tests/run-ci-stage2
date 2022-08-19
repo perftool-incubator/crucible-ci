@@ -11,7 +11,7 @@ CI_RUN_ENVIRONMENT="standalone"
 
 CI_CLEAN_ENVIRONMENT="yes"
 
-longopts="run-environment:,clean-environment"
+longopts="run-environment:,clean-environment:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
