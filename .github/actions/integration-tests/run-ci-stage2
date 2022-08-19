@@ -42,6 +42,9 @@ while true; do
     esac
 done
 
+# validate inputs
+validate_ci_run_environment
+
 case "${CI_CLEAN_ENVIRONMENT}" in
     yes|no)
         echo "CI Clean Evironment is '${CI_CLEAN_ENVIRONMENT}'"
@@ -49,17 +52,6 @@ case "${CI_CLEAN_ENVIRONMENT}" in
         ;;
     *)
         echo "ERROR: Unknown value for --clean-environment [${CI_CLEAN_ENVIRONMENT}].  Acceptable values are 'yes' and 'no'."
-        exit 1
-        ;;
-esac
-
-case "${CI_RUN_ENVIRONMENT}" in
-    standalone|github)
-        echo "CI Run Environment is '${CI_RUN_ENVIRONMENT}'"
-        echo
-        ;;
-    *)
-        echo "ERROR: Unknown value for --run-environment [${CI_RUN_ENVIRONMENT}].  Acceptable values are 'standalone' and 'github'."
         exit 1
         ;;
 esac
