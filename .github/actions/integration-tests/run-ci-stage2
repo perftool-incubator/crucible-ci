@@ -44,17 +44,7 @@ done
 
 # validate inputs
 validate_ci_run_environment
-
-case "${CI_CLEAN_ENVIRONMENT}" in
-    yes|no)
-        echo "CI Clean Evironment is '${CI_CLEAN_ENVIRONMENT}'"
-        echo
-        ;;
-    *)
-        echo "ERROR: Unknown value for --clean-environment [${CI_CLEAN_ENVIRONMENT}].  Acceptable values are 'yes' and 'no'."
-        exit 1
-        ;;
-esac
+validate_ci_clean_environment
 
 if [ "${CI_CLEAN_ENVIRONMENT}" == "yes" ]; then
     header="Clean CI environment"
