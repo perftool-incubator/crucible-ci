@@ -9,10 +9,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  crucible-ci-all-userenvs-oslat-remotehost:
-    name: crucible-ci-all-userenvs-oslat-remotehost
+  crucible-ci-all-userenvs-oslat-remotehost-rt:
+    name: crucible-ci-all-userenvs-oslat-remotehost-rt
 
-    runs-on: [self-hosted, cpu-partitioning, remotehost]
+    runs-on: [self-hosted, cpu-partitioning, remotehost, rt]
 
     steps:
     - name: checkout crucible-ci
@@ -21,15 +21,15 @@ jobs:
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:
-        artifact_tag: "oslat-remotehost"
+        artifact_tag: "oslat-remotehost-rt"
         scenarios: "oslat"
         userenvs: "all"
         ci_endpoint: "remotehost"
 
-  crucible-ci-iteration-repeat-runs-oslat-remotehost:
-    name: crucible-ci-iteration-repeat-runs-oslat-remotehost
+  crucible-ci-all-userenvs-oslat-remotehost-non-RT:
+    name: crucible-ci-all-userenvs-oslat-remotehost-non-RT
 
-    runs-on: [self-hosted, cpu-partitioning, remotehost]
+    runs-on: [self-hosted, cpu-partitioning, remotehost, non-RT]
 
     steps:
     - name: checkout crucible-ci
@@ -38,211 +38,7 @@ jobs:
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:
-        artifact_tag: "oslat-iteration-repeat-runs-remotehost"
+        artifact_tag: "oslat-remotehost-non-RT"
         scenarios: "oslat"
-        repeat_runs: "yes"
-        ci_endpoint: "remotehost"
-
-  crucible-ci-all-userenvs-fio-remotehost:
-    name: crucible-ci-all-userenvs-fio-remotehost
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "fio-remotehost"
-        scenarios: "fio"
         userenvs: "all"
         ci_endpoint: "remotehost"
-
-  crucible-ci-iteration-repeat-runs-fio-remotehost:
-    name: crucible-ci-iteration-repeat-runs-fio-remotehost
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "fio-iteration-repeat-runs-remotehost"
-        scenarios: "fio"
-        repeat_runs: "yes"
-        ci_endpoint: "remotehost"
-
-  crucible-ci-all-userenvs-fio-k8s:
-    name: crucible-ci-all-userenvs-fio-k8s
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "fio-k8s"
-        scenarios: "fio"
-        userenvs: "all"
-        ci_endpoint: "k8s"
-
-  crucible-ci-iteration-repeat-runs-fio-k8s:
-    name: crucible-ci-iteration-repeat-runs-fio-k8s
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "fio-iteration-repeat-runs-k8s"
-        scenarios: "fio"
-        repeat_runs: "yes"
-        ci_endpoint: "k8s"
-
-  crucible-ci-all-userenvs-uperf-remotehost:
-    name: crucible-ci-all-userenvs-uperf-remotehost
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "uperf-remotehost"
-        scenarios: "uperf"
-        userenvs: "all"
-        ci_endpoint: "remotehost"
-
-  crucible-ci-iteration-repeat-runs-uperf-remotehost:
-    name: crucible-ci-iteration-repeat-runs-uperf-remotehost
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "uperf-iteration-repeat-runs-remotehost"
-        scenarios: "uperf"
-        repeat_runs: "yes"
-        ci_endpoint: "remotehost"
-
-  crucible-ci-all-userenvs-uperf-k8s:
-    name: crucible-ci-all-userenvs-uperf-k8s
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "uperf-k8s"
-        scenarios: "uperf"
-        userenvs: "all"
-        ci_endpoint: "k8s"
-
-  crucible-ci-iteration-repeat-runs-uperf-k8s:
-    name: crucible-ci-iteration-repeat-runs-uperf-k8s
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "uperf-iteration-repeat-runs-k8s"
-        scenarios: "uperf"
-        repeat_runs: "yes"
-        ci_endpoint: "k8s"
-
-  crucible-ci-all-userenvs-iperf-remotehost:
-    name: crucible-ci-all-userenvs-iperf-remotehost
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "iperf-remotehost"
-        scenarios: "iperf"
-        userenvs: "all"
-        ci_endpoint: "remotehost"
-
-  crucible-ci-iteration-repeat-runs-iperf-remotehost:
-    name: crucible-ci-iteration-repeat-runs-iperf-remotehost
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "iperf-iteration-repeat-runs-remotehost"
-        scenarios: "iperf"
-        repeat_runs: "yes"
-        ci_endpoint: "remotehost"
-
-  crucible-ci-all-userenvs-iperf-k8s:
-    name: crucible-ci-all-userenvs-iperf-k8s
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "iperf-k8s"
-        scenarios: "iperf"
-        userenvs: "all"
-        ci_endpoint: "k8s"
-
-  crucible-ci-iteration-repeat-runs-iperf-k8s:
-    name: crucible-ci-iteration-repeat-runs-iperf-k8s
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v2
-
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "iperf-iteration-repeat-runs-k8s"
-        scenarios: "iperf"
-        repeat_runs: "yes"
-        ci_endpoint: "k8s"
