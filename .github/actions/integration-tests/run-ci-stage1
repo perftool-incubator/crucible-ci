@@ -33,7 +33,7 @@ CI_RUN_ENVIRONMENT="standalone"
 
 CI_SCENARIOS="fio"
 
-CI_USERENVS="rhubi8"
+CI_USERENVS="default"
 
 CI_SAMPLES=1
 
@@ -146,6 +146,9 @@ esac
 CI_ACTIVE_USERENVS=""
 for userenv in $(echo "${CI_USERENVS}" | sed -e "s/,/ /g"); do
     case "${userenv}" in
+        default)
+            CI_ACTIVE_USERENVS+="${userenv} "
+            ;;
         all)
             CI_ACTIVE_USERENVS=""
             for userenv in $(pushd /opt/crucible/subprojects/core/rickshaw/userenvs > /dev/null; ls -1 *.json; popd > /dev/null); do
@@ -367,7 +370,10 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
 
         TAGS=",repeat:${CI_REPEAT_RUNS},userenv:${userenv}"
 
-        COMMON_ENDPOINT_ARGS="controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER},userenv:${userenv}"
+        COMMON_ENDPOINT_ARGS="controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER}"
+        if [ "${userenv}" != "default" ]; then
+            COMMON_ENDPOINT_ARGS+=",userenv:${userenv}"
+        fi
         COMMON_K8S_ENDPOINT_ARGS=""
         case "${CI_K8S_TYPE}" in
             "MICROK8S"|"GENERIC")
