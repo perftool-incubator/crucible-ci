@@ -368,6 +368,9 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         echo -e "### ${header} ###\n"
         stop_github_group
 
+        # shutdown ES before each run to free up memory for image building
+        run_cmd "crucible stop es"
+
         TAGS=",repeat:${CI_REPEAT_RUNS},userenv:${userenv}"
 
         COMMON_ENDPOINT_ARGS="controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER}"
