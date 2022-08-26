@@ -9,6 +9,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  crucible-ci-build-controller:
+    name: crucible-ci-build-controller
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
+
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
+      with:
+        artifact_tag: "build-controller"
+        ci_build_controller: "yes"
+
   crucible-ci-all-userenvs-oslat-remotehost:
     name: crucible-ci-all-userenvs-oslat-remotehost
 
