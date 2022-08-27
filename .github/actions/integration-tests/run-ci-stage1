@@ -210,7 +210,7 @@ function run_cmd {
 
     if [ "${force}" != "no" -o ${RC_STATUS} == 0 ]; then
         header="Running: ${cmd}"
-        if [ "${force}" != "no" ]; then
+        if [ "${force}" != "no" -a ${RC_STATUS} != 0 ]; then
             header+=" (forced)"
         fi
         start_github_group "${header}"
