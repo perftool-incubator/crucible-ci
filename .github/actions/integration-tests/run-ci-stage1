@@ -179,7 +179,10 @@ done
 case "${CI_ENDPOINT}" in
     k8s)
         echo
-        echo "Determining K8S type:"
+        header="Determining K8S type"
+        start_github_group "${header}"
+        echo "${header}"
+        echo
 
         if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} oc cluster-info; then
             CI_K8S_TYPE="OCP"
@@ -196,6 +199,7 @@ case "${CI_ENDPOINT}" in
         fi
 
         echo
+        stop_github_group
 esac
 
 
