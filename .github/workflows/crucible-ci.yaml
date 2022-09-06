@@ -15,6 +15,7 @@ jobs:
       endpoints_self: ${{ steps.get-endpoints-self.outputs.endpoints }}
       benchmarks_github: ${{ steps.get-benchmarks-github.outputs.benchmarks }}
       benchmarks_self: ${{ steps.get-benchmarks-self.outputs.benchmarks }}
+      build_controller: ${{ steps.check-controller-build.outputs.build-controller }}
 
     steps:
     - name: checkout crucible-ci
@@ -28,6 +29,14 @@ jobs:
         repository: perftool-incubator/rickshaw
         ref: master
         path: rickshaw
+
+    - name: checkout crucible
+      uses: actions/checkout@v2
+      with:
+        repository: perftool-incubator/crucible
+        ref: master
+        path: crucible
+        fetch-depth: 2
 
     - name: run get-userenvs
       id: get-userenvs
@@ -58,6 +67,12 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-benchmarks
       with:
         runner-type: "self"
+
+    - name: run check-controller-build
+      id: check-controller-build
+      uses: ./crucible-ci/.github/actions/check-controller-build
+      with:
+        crucible-directory: "./crucible"
 
   display-job-matrix-parameters:
     runs-on: ubuntu-latest

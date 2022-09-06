@@ -1,0 +1,21 @@
+name: "crucible-ci check controller build"
+description: "Determine if the crucible changes require a controller rebuild for testing"
+inputs:
+  crucible-directory:
+    description: "Where is the crucible repository to check for controller image related changes"
+    required: true
+outputs:
+  build-controller:
+    description: "Should the controller image be rebuilt or not"
+    value: ${{ steps.check-controller-build.outputs.build-controller }}
+runs:
+  using: "composite"
+  steps:
+    - name: "Validate crucible-directory"
+      shell: bash
+      run: ${{ github.action_path }}/validate-inputs.sh ${{ inputs.crucible-directory }}
+    - name: "Check for controller build status"
+      id: check-controller-build
+      shell: bash
+      run: ${{ github.action_path }}/check-controller-build.sh ${{ inputs.crucible-directory}}
+
