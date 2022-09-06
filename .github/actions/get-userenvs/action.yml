@@ -1,0 +1,20 @@
+name: "crucible-ci get userenvs"
+description: "Gets a list of userenvs from rickshaw"
+inputs:
+  rickshaw-directory:
+    description: "Where is the rickshaw repository to query for userenvs"
+    required: true
+outputs:
+  userenvs:
+    description: "The list of userenvs that were found"
+    value: ${{ steps.generate-userenvs-list.outputs.userenvs }}
+runs:
+  using: "composite"
+  steps:
+    - name: "Validate rickshaw-directory"
+      shell: bash
+      run: ${{ github.action_path }}/validate-inputs.sh ${{ inputs.rickshaw-directory }}
+    - name: "Generate userenvs list"
+      id: generate-userenvs-list
+      shell: bash
+      run: ${{ github.action_path }}/generate-userenv-list.sh ${{ inputs.rickshaw-directory }}

@@ -319,6 +319,9 @@ function post_run_cmd {
     run_cmd "crucible tags --result-dir /var/lib/crucible/run/latest --action add --tags crucible-ci:post_run_cmd --tags testing1:value1 --tags testing2:value2"
 
     run_cmd "crucible tags --result-dir /var/lib/crucible/run/latest --action remove --tags testing1 --tags testing2"
+
+    # shutdown ES before each run to free up memory for image building
+    run_cmd "crucible stop es"
 }
 
 function remove_microk8s_images {
@@ -407,9 +410,6 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         start_github_group "${header}"
         echo -e "### ${header} ###\n"
         stop_github_group
-
-        # shutdown ES before each run to free up memory for image building
-        run_cmd "crucible stop es"
 
         TAGS=",repeat:${CI_REPEAT_RUNS},userenv:${userenv}"
 
