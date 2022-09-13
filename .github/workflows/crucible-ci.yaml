@@ -3,6 +3,9 @@ name: crucible-ci
 on:
   pull_request:
     branches: [ main ]
+    paths-ignore:
+    - LICENSE
+    - '**.md'
   workflow_dispatch:
 
 jobs:
