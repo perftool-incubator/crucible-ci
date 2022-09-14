@@ -1,7 +1,7 @@
 name: crucible-ci
 
 on:
-  pull_requesst:
+  pull_request:
     branches: [ main ]
     paths:
     - LICENSE
