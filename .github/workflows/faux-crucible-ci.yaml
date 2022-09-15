@@ -1,4 +1,4 @@
-name: crucible-ci
+name: faux-crucible-ci
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
     paths:
     - LICENSE
     - '**.md'
+    - .github/workflows/faux-crucible-ci.yaml
 
 jobs:
   crucible-ci-complete:
