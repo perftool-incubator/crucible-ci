@@ -60,7 +60,7 @@ The integration test is comprised of multiple shell scripts that perform differe
 
 ## Testing Crucible-CI
 
-Crucible-CI is a subproject in the Crucible family just like any other.  This means, that Crucible-CI can be used to test itself when changes to it are proposed.  It also means that Crucible-CI has an [embedded workflow](.github/workflows/crucible-ci.yaml) implemented that demonstrates how it's various actions can be used together to provide a scale-out integration test.
+Crucible-CI is a subproject in the Crucible family just like any other.  This means that Crucible-CI can be used to test itself when changes to it are proposed.  It also means that Crucible-CI has an [embedded workflow](.github/workflows/crucible-ci.yaml) implemented that demonstrates how it's various actions can be used together to provide a scale-out integration test.
 
 The workflow is comprised of multiple jobs that execute in a coordinated sequence:
 
@@ -70,4 +70,8 @@ The workflow is comprised of multiple jobs that execute in a coordinated sequenc
 - The fifth job, `crucible-ci-build-controller`, is a single targeted job that tests the Crucible controller build logic.
 - The sixth job, `crucible-ci-complete`, executes when all of the jobs created by `crucible-ci-github-runners`, `crucible-ci-self-hosted-runners`, and `crucible-ci-build-controller` complete.  This is the job that is gating the ability to merge the pull request through GitHub's [branch protection rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-status-checks-before-merging).
 
-When the other projects in the Crucible family use Crucible-CI it should be in a workflow that is, at least in part, derived from this one.  Each project has it's own testing needs and requirements so there may be a fair amount of deviation in some cases, but the general structure and flow should be identifiable.
+The general workflow looks like this when it runs to completion without any failures:
+
+![GitHub workflow example](docs/crucible-ci.png)
+
+When the other projects in the Crucible family use Crucible-CI it should be in a workflow that is most likely, at least in part, derived from this one.  Each project has it's own testing needs and requirements so there may be a fair amount of deviation in some cases, but the general structure and flow should be identifiable.
