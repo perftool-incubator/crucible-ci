@@ -1,0 +1,5 @@
+"securityContext": {
+    "capabilities": {
+	"add": [ "SYS_NICE", "IPC_LOCK" ]
+    }
+}
