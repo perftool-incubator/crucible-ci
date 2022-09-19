@@ -9,7 +9,7 @@ case "${runner_type}" in
 	benchmarks_list="fio uperf iperf oslat"
 	;;
     "github")
-	benchmarks_list="fio uperf iperf"
+	benchmarks_list="fio uperf iperf oslat"
 	;;
     "self")
 	benchmarks_list="oslat"
