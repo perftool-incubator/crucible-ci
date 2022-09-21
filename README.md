@@ -1,6 +1,6 @@
 # crucible-ci
 
-[![CI Actions Status](https://github.com/perftool-incubator/crucible-ci/workflows/CI/badge.svg)](https://github.com/perftool-incubator/crucible-ci/actions)
+[![CI Actions Status](https://github.com/perftool-incubator/crucible-ci/workflows/crucible-ci/badge.svg)](https://github.com/perftool-incubator/crucible-ci/actions)
 
 ## Introduction
 
