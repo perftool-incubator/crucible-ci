@@ -14,3 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - run: 'echo "No build required" '
+    - env:
+        TEST_SECRET: ${{ secrets.TEST_SECRET }}
+      run: 'echo "${TEST_SECRET}" '
