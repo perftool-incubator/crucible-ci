@@ -37,6 +37,10 @@ inputs:
     description: "Should the crucible controller be rebuilt and tested"
     required: false
     default: "no"
+  ci_param_mode:
+    description: "Should crucible use --mv-params or --from-file (single json)"
+    required: false
+    default: "mv-params"
 runs:
   using: "composite"
   steps:
@@ -46,7 +50,7 @@ runs:
     - run: sudo ${{ github.action_path }}/setup-ci-environment --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }} --ci-endpoint ${{ inputs.ci_endpoint }}
       shell: bash
 
-    - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --samples ${{ inputs.run_samples }} --repeat-runs ${{ inputs.repeat_runs }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-build-controller ${{ inputs.ci_build_controller }}
+    - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --samples ${{ inputs.run_samples }} --repeat-runs ${{ inputs.repeat_runs }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-build-controller ${{ inputs.ci_build_controller }} --ci-param-mode ${{ inputs.ci_param_mode }}
       shell: bash
 
     - uses: actions/upload-artifact@v2

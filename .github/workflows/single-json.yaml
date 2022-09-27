@@ -1,0 +1,41 @@
+name: single-json
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+    - LICENSE
+    - '**.md'
+    - .github/workflows/faux-crucible-ci.yaml
+    - 'docs/**'
+  workflow_dispatch:
+
+jobs:
+  crucible-single-json:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        endpoint: [ "k8s" ]
+        benchmark: [ "oslat" ]
+        userenv: [ "alma8" ]
+        param_mode: [ "from-file" ]
+    steps:
+    - name: Matrix Parameters => (${{ matrix.endpoint }}, ${{ matrix.benchmark }}, ${{ matrix.userenv }}, ${{ matrix.param_mode }})
+      run: |
+        echo "endpoint=${{ matrix.endpoint }}"
+        echo "benchmark=${{ matrix.benchmark }}"
+        echo "userenv=${{ matrix.userenv }}"
+        echo "param_mode=${{ matrix.param_mode }}"
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
+      with:
+        artifact_tag: "crucible-ci-github-runners__${{ matrix.endpoint }}-${{ matrix.benchmark }}-${{ matrix.userenv }}"
+        ci_endpoint: "${{ matrix.endpoint }}"
+        scenarios: "${{ matrix.benchmark }}"
+        userenvs: "${{ matrix.userenv }}"
+        ci_param_mode: "${{ matrix.param_mode }}"
+        run_samples: 1
+        repeat_runs: "no"

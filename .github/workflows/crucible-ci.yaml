@@ -1,13 +1,13 @@
 name: crucible-ci
 
 on:
-  pull_request:
-    branches: [ main ]
-    paths-ignore:
-    - LICENSE
-    - '**.md'
-    - .github/workflows/faux-crucible-ci.yaml
-    - 'docs/**'
+  #pull_request:
+  #  branches: [ main ]
+  #  paths-ignore:
+  #  - LICENSE
+  #  - '**.md'
+  #  - .github/workflows/faux-crucible-ci.yaml
+  #  - 'docs/**'
   workflow_dispatch:
 
 jobs:
