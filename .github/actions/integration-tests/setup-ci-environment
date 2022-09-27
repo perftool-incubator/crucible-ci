@@ -65,6 +65,7 @@ done
 # validate inputs
 validate_ci_run_environment
 validate_ci_endpoint
+validate_ci_clean_environment
 
 clean_ci_environment
 
