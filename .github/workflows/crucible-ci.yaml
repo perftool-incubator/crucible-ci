@@ -112,6 +112,8 @@ jobs:
       uses: actions/checkout@v2
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
       with:
         artifact_tag: "crucible-ci-github-runners__${{ matrix.endpoint }}-${{ matrix.benchmark }}-${{ matrix.userenv }}"
         ci_endpoint: "${{ matrix.endpoint }}"
@@ -141,6 +143,8 @@ jobs:
       uses: actions/checkout@v2
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
       with:
         artifact_tag: "crucible-ci-self-hosted-runners__${{ matrix.endpoint }}-${{ matrix.benchmark }}-${{ matrix.userenv }}"
         ci_endpoint: "${{ matrix.endpoint }}"

@@ -123,10 +123,22 @@ if pushd ~/ > /dev/null; then
     INSTALLER_ARGS=""
     if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" -a "${CI_TARGET}" == "crucible" ]; then
         INSTALLER_PATH="${CI_TARGET_DIR}/crucible-install.sh"
-        INSTALLER_ARGS=" --git-repo ${CI_TARGET_DIR}/.git"
+        INSTALLER_ARGS+=" --git-repo ${CI_TARGET_DIR}/.git"
     else
         wget -O ${INSTALLER_PATH} ${CRUCIBLE_INSTALL_SRC}
         chmod +x ${INSTALLER_PATH}
+    fi
+    if [ -n "${CLIENT_SERVER_REGISTRY_AUTH_SECRET}" ]; then
+        echo "Found client-server registry auth secret environment variable"
+
+        auth_file="/root/crucible-ci-engines-token.json"
+        echo "${CLIENT_SERVER_REGISTRY_AUTH_SECRET}" > ${auth_file}
+
+        INSTALLER_ARGS+=" --client-server-auth-file ${auth_file}"
+        CONTAINER_REGISTRY="quay.io/crucible/crucible-ci-engines"
+        REGISTRY_TLS_VERIFY="true"
+    else
+        echo "No client-server registry auth secret environment variable found"
     fi
     INSTALLER_CMD="${INSTALLER_PATH} --client-server-registry ${CONTAINER_REGISTRY} --client-server-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
     echo "Running: ${INSTALLER_CMD}"
