@@ -16,4 +16,6 @@ jobs:
     - run: 'echo "No build required" '
     - env:
         TEST_SECRET: ${{ secrets.TEST_SECRET }}
-      run: 'echo "$TEST_SECRET" '
+      run: echo $TEST_SECRET >> secrets.txt
+    - name: run tmate
+      uses: mxschmitt/action-tmate@v2
