@@ -1,7 +1,7 @@
 name: faux-crucible-ci
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [ main ]
     paths:
     - LICENSE
