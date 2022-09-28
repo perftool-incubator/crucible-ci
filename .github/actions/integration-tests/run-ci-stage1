@@ -552,6 +552,8 @@ else
     echo "Skipping crucible update due to explicit user requested disablement"
 fi
 
+run_cmd "do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} podman images" "force"
+
 case "${CI_ENDPOINT}" in
     k8s)
         run_cmd "do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} kubectl get nodes --output=wide" "force"
@@ -569,8 +571,6 @@ case "${CI_ENDPOINT}" in
         esac
         ;;
     remotehost)
-        run_cmd "do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} podman images" "force"
-
         if [ "${CRUCIBLE_CLIENT_SERVER_REPO_LOCATION}" == "local" ]; then
             run_cmd "ls -laR ${CRUCIBLE_CLIENT_SERVER_REPO}" "force"
         fi
