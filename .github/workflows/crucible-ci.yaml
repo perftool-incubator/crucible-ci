@@ -110,6 +110,11 @@ jobs:
         echo "userenv=${{ matrix.userenv }}"
     - name: checkout crucible-ci
       uses: actions/checkout@v2
+    - name: import secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
+      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:
@@ -139,6 +144,11 @@ jobs:
         echo "userenv=${{ matrix.userenv }}"
     - name: checkout crucible-ci
       uses: actions/checkout@v2
+    - name: import secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
+      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:

@@ -65,6 +65,7 @@ done
 # validate inputs
 validate_ci_run_environment
 validate_ci_endpoint
+validate_ci_clean_environment
 
 clean_ci_environment
 
@@ -81,6 +82,15 @@ if ! do_ssh -o StrictHostKeyChecking=no localhost echo "password-less root login
 fi
 stop_github_group
 
+AUTH_TOKEN_FILE_FOUND=0
+auth_file="/root/crucible-ci-engines-token.json"
+if [ -e "${auth_file}" -a -s "${auth_file}" ]; then
+    echo "Found client-server registry auth token file: ${auth_file}"
+    AUTH_TOKEN_FILE_FOUND=1
+else
+    echo "No client-server registry auth token file found: ${auth_file}"
+fi
+
 # ensure endpoint availability
 case "${CI_ENDPOINT}" in
     k8s)
@@ -96,16 +106,20 @@ case "${CI_ENDPOINT}" in
         printf "#%s/bin/bash\n\nmicrok8s kubectl \$@\n" "!" > /usr/local/bin/kubectl
         chmod +x /usr/local/bin/kubectl
 
-        microk8s enable registry
-        CONTAINER_REGISTRY="localhost:32000/client-server"
-        REGISTRY_TLS_VERIFY="false"
+        if [ ${AUTH_TOKEN_FILE_FOUND} == 0 ]; then
+            microk8s enable registry
+            CONTAINER_REGISTRY="localhost:32000/client-server"
+            REGISTRY_TLS_VERIFY="false"
+        fi
 
         stop_github_group
         ;;
     remotehost)
         start_github_group "Configure remotehost endpoint"
 
-        CONTAINER_REGISTRY="dir:/home/crucible-containers/client-server"
+        if [ ${AUTH_TOKEN_FILE_FOUND} == 0 ]; then
+            CONTAINER_REGISTRY="dir:/home/crucible-containers/client-server"
+        fi
 
         stop_github_group
         ;;
@@ -122,10 +136,15 @@ if pushd ~/ > /dev/null; then
     INSTALLER_ARGS=""
     if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" -a "${CI_TARGET}" == "crucible" ]; then
         INSTALLER_PATH="${CI_TARGET_DIR}/crucible-install.sh"
-        INSTALLER_ARGS=" --git-repo ${CI_TARGET_DIR}/.git"
+        INSTALLER_ARGS+=" --git-repo ${CI_TARGET_DIR}/.git"
     else
         wget -O ${INSTALLER_PATH} ${CRUCIBLE_INSTALL_SRC}
         chmod +x ${INSTALLER_PATH}
+    fi
+    if [ ${AUTH_TOKEN_FILE_FOUND} == 1 ]; then
+        INSTALLER_ARGS+=" --client-server-auth-file ${auth_file}"
+        CONTAINER_REGISTRY="quay.io/crucible/crucible-ci-engines"
+        REGISTRY_TLS_VERIFY="true"
     fi
     INSTALLER_CMD="${INSTALLER_PATH} --client-server-registry ${CONTAINER_REGISTRY} --client-server-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
     echo "Running: ${INSTALLER_CMD}"
