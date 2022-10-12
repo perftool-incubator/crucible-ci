@@ -22,19 +22,19 @@ jobs:
 
     steps:
     - name: checkout crucible-ci
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: crucible-ci
 
     - name: checkout rickshaw
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: perftool-incubator/rickshaw
         ref: master
         path: rickshaw
 
     - name: checkout crucible
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: perftool-incubator/crucible
         ref: master
@@ -93,7 +93,7 @@ jobs:
         echo "benchmark=${{ matrix.scenario.benchmark }}"
         echo "userenv=${{ matrix.userenv }}"
     - name: checkout crucible-ci
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: import secret
       env:
         CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
@@ -131,7 +131,7 @@ jobs:
         echo "benchmark=${{ matrix.scenario.benchmark }}"
         echo "userenv=${{ matrix.userenv }}"
     - name: checkout crucible-ci
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: import secret
       env:
         CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
@@ -158,7 +158,7 @@ jobs:
     - display-job-matrix-parameters
     steps:
     - name: checkout crucible-ci
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:
