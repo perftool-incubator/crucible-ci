@@ -1,0 +1,25 @@
+name: "crucible-ci get scenarios"
+description: "Gets a list of scenarios (benchmarks + endpoint) supported by crucible-ci for the specified environment"
+inputs:
+  runner-type:
+    description: "What type of runner is this for (github or self)?"
+    required: true
+  runner-tags:
+    description: "Comma separated list of tags the runner has"
+    required: false
+    default: ""
+  benchmark:
+    description: "Which benchmark to restrict the scenarios to"
+    required: false
+    default: ""
+outputs:
+  scenarios:
+    description: "The supported scenarios"
+    value: ${{ steps.get-scenarios.outputs.scenarios }}
+runs:
+  using: "composite"
+  steps:
+    - name: "get scenarios"
+      id: get-scenarios
+      shell: bash
+      run: ${{ github.action_path }}/get-scenarios.sh --runner-type "${{ inputs.runner-type }}" --runner-tags "${{ inputs.runner-tags }}" --benchmark "${{ inputs.benchmark }}"
