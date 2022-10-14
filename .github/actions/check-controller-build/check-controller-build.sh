@@ -22,7 +22,11 @@ if pushd ${crucible_directory}; then
     fi
 
     echo "Setting build-controller to '${build_controller}'"
-    echo "::set-output name=build-controller::${build_controller}"
+    if [ -n "${GITHUB_OUTPUT}" ]; then
+        echo "build-controller=${build_controller}" >> ${GITHUB_OUTPUT}
+    else
+        echo "WARNING: \$GITHUB_OUTPUT not defined"
+    fi
 else
     exit 1
 fi
