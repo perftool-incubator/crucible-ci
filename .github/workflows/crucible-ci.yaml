@@ -114,7 +114,7 @@ jobs:
       run: echo "crucible-ci->integration-tests not enabled"
 
   crucible-ci-self-hosted-runners:
-    runs-on: [ self-hosted ]
+    runs-on: [ self-hosted, cpu-partitioning, remotehost ]
     needs:
     - generate-job-matrix-parameters
     - display-job-matrix-parameters
