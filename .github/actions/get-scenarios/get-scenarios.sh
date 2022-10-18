@@ -217,5 +217,8 @@ scenarios_json=$(echo "${scenarios_json}" | sed -e "s/,$//")
 scenarios_json+="]"
 
 echo "scenarios_json=${scenarios_json}"
-echo
-echo "::set-output name=scenarios::${scenarios_json}"
+if [ -n "${GITHUB_OUTPUT}" ]; then
+    echo "scenarios=${scenarios_json}" >> ${GITHUB_OUTPUT}
+else
+    echo "WARNING: \$GITHUB_OUTPUT not defined"
+fi

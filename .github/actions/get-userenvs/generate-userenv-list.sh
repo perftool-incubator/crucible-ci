@@ -13,8 +13,11 @@ if pushd ${rickshaw_directory}; then
     userenvs_json=$(echo "${userenvs_json}" | sed -e "s/,$//")
     userenvs_json+="]"
     echo "userenvs_json=${userenvs_json}"
-    echo
-    echo "::set-output name=userenvs::${userenvs_json}"
+    if [ -n "${GITHUB_OUTPUT}" ]; then
+        echo "userenvs=${userenvs_json}" >> ${GITHUB_OUTPUT}
+    else
+        echo "WARNING: \$GITHUB_OUTPUT not defined"
+    fi
     exit 0
 else
     exit 1
