@@ -23,6 +23,7 @@ Crucible-CI is a collection of [GitHub Actions](https://docs.github.com/en/actio
   - [get-benchmarks](README.md#get-benchmarks)
   - [get-endpoints](README.md#get-endpoints)
   - [get-userenvs](README.md#get-userenvs)
+  - [get-scenarios](README.md#get-scenarios)
 - Primary Actions
   - [integration-tests](README.md#integration-tests)
 
@@ -38,15 +39,23 @@ The [check-controller-build](.github/actions/check-controller-build) action is u
 
 #### get-benchmarks
 
+NOTE: This action is **DEPRECATED** in favor of [get-scenarios](README.md#get-scenarios)
+
 The [get-benchmarks](.github/actions/get-benchmarks) action is used to determine which benchmarks can be run in the specified runner type.  This is necessary because some benchmarks have requirements that cannot be met by a certain type of runner.  For example, GitHub hosted runners do not provide a CPU isolation environment which some benchmarks require.  Additionally, not all Crucible supported benchmarks are currently supported by Crucible-CI (usually due to special hardware requirements that cannot be met in a runner environment due to cost/complexity).
 
 #### get-endpoints
+
+NOTE: This action is **DEPRECATED** in favor of [get-scenarios](README.md#get-scenarios)
 
 The [get-endpoints](.github/actions/get-endpoints) action is used to determine which endpoints can be run in the specified runner type.  Some runner environments (such as self hosted) are specifically targeting at testing specific endpoints and this action provides that information.
 
 #### get-userenvs
 
 The [get-userenvs](.github/actions/get-userenvs) action is used to look at a ricksaw repository to determine what the list of currently supported userenvs is.
+
+#### get-scenarios
+
+The [get-scenarios](.github/actions/get-scenarios) action is used to determine what "scenarios" should be executed as part of a specific job (where a scenario is a combination of an endpoint and a benchmark).  The parameters are combined because they cannot be adequately evaluated in isolation with respect to the different runner environments (GitHub hosted vs. self hosted).
 
 ### Primary Actions
 
