@@ -1,0 +1,16 @@
+{
+    "global-options": [
+	{
+	    "name": "required",
+	    "params": [
+                { "arg": "duration", "vals": [ "10" ], "role": "client" },
+	        { "arg": "priority", "vals": [ "1" ], "role": "client" }
+	    ]
+	}
+    ],
+    "sets": [
+	{
+	    "include": "required"
+        }
+    ]
+}

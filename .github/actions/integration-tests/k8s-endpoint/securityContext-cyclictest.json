@@ -1,0 +1,3 @@
+"securityContext": {
+    "privileged": true
+}
