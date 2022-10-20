@@ -62,7 +62,7 @@ esac
 
 if [ -n "${BENCHMARK_QUERY}" ]; then
     case "${BENCHMARK_QUERY}" in
-        "fio"|"uperf"|"iperf"|"oslat")
+        "fio"|"uperf"|"iperf"|"oslat"|"cyclictest")
             echo "Benchmark is '${BENCHMARK_QUERY}'"
             ;;
         *)
@@ -132,7 +132,7 @@ case "${RUNNER_TYPE}" in
                         scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
                     done
                     ;;
-                "oslat")
+                "oslat"|"cyclictest")
                     for endpoint in "k8s"; do
                         log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
                         scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
@@ -182,7 +182,7 @@ case "${RUNNER_TYPE}" in
         if [ ${TAG_CPU_PARTITIONING} -eq 1 -a ${TAG_REMOTEHOST} -eq 1 ]; then
             if [ -n "${BENCHMARK_QUERY}" ]; then
                 case "${BENCHMARK_QUERY}" in
-                    "oslat")
+                    "oslat"|"cyclictest")
                         for endpoint in "remotehost"; do
                             log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
                             scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
