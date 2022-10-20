@@ -165,12 +165,49 @@ jobs:
         artifact_tag: "build-controller"
         ci_build_controller: "yes"
 
+  crucible-single-json:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        endpoint: [ "k8s" ]
+        benchmark: [ "oslat" ]
+        userenv: [ "alma8" ]
+        param_mode: [ "from-file" ]
+    steps:
+    - name: Matrix Parameters => (${{ matrix.endpoint }}, ${{ matrix.benchmark }}, ${{ matrix.userenv }}, ${{ matrix.param_mode }})
+      run: |
+        echo "endpoint=${{ matrix.endpoint }}"
+        echo "benchmark=${{ matrix.benchmark }}"
+        echo "userenv=${{ matrix.userenv }}"
+        echo "param_mode=${{ matrix.param_mode }}"
+    - name: checkout crucible-ci
+      uses: actions/checkout@v2
+    - name: import secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
+      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: run crucible-ci->integration-tests
+      uses: ./.github/actions/integration-tests
+      with:
+        artifact_tag: "crucible-ci-github-runners__${{ matrix.endpoint }}-${{ matrix.benchmark }}-${{ matrix.userenv }}"
+        ci_endpoint: "${{ matrix.endpoint }}"
+        scenarios: "${{ matrix.benchmark }}"
+        userenvs: "${{ matrix.userenv }}"
+        ci_param_mode: "${{ matrix.param_mode }}"
+        run_samples: 1
+        repeat_runs: "no"
+
   crucible-ci-complete:
     runs-on: ubuntu-latest
     needs:
     - crucible-ci-github-runners
     - crucible-ci-self-hosted-runners
     - crucible-ci-build-controller
+    - crucible-single-json
     steps:
     - name: Confirm Success
       run: echo "crucible-ci-complete"
+
+
