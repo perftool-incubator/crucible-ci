@@ -5,7 +5,7 @@
 	    "params": [
                 { "arg": "duration", "vals": [ "10", "15" ], "role": "client" },
 	        { "arg": "priority", "vals": [ "2" ], "role": "client" },
-                { "arg": "smi", "vals": [ "off" ], "role", "client" }
+                { "arg": "smi", "vals": [ "off" ], "role": "client" }
 	    ]
 	}
     ],
