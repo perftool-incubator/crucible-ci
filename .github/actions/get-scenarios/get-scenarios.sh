@@ -143,7 +143,7 @@ case "${RUNNER_TYPE}" in
             for endpoint in "k8s" "remotehost"; do
                 case "${endpoint}" in
                     "k8s")
-                        for benchmark in "fio" "uperf" "iperf" "oslat"; do
+                        for benchmark in "fio" "uperf" "iperf" "oslat" "cyclictest"; do
                             log_enabled "${endpoint}" "${benchmark}"
                             scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}")
                         done
@@ -197,7 +197,7 @@ case "${RUNNER_TYPE}" in
                 for endpoint in "remotehost"; do
                     case "${endpoint}" in
                         "remotehost")
-                            for benchmark in "oslat"; do
+                            for benchmark in "oslat" "cyclictest"; do
                                 echo "Adding scenario: endpoint=${endpoint} benchmark=${benchmark}"
                                 scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}" )
                             done
