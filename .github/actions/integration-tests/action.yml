@@ -51,7 +51,7 @@ runs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: crucible-ci-artifact-${{ inputs.artifact_tag }}
+        name: crucible-ci-artifact__integration-tests__${{ github.run_id }}.${{ github.run_attempt }}__${{ inputs.artifact_tag }}
         path: /var/lib/crucible-ci-artifact*.tar.xz
         retention-days: 5
         if-no-files-found: error

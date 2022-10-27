@@ -101,7 +101,10 @@ case "${CI_ENDPOINT}" in
         update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 
         snap install microk8s --classic
-        microk8s status --wait-ready
+        if ! microk8s status --wait-ready; then
+            echo "ERROR: Failed to install and initialize microk8s"
+            exit 1
+        fi
 
         printf "#%s/bin/bash\n\nmicrok8s kubectl \$@\n" "!" > /usr/local/bin/kubectl
         chmod +x /usr/local/bin/kubectl
