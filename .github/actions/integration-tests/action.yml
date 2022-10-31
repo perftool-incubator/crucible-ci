@@ -47,7 +47,10 @@ runs:
     - run: ${{ github.action_path }}/ci-environment-info --run-environment github
       shell: bash
 
-    - run: sudo ${{ github.action_path }}/setup-ci-environment --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }} --ci-endpoint ${{ inputs.ci_endpoint }}
+    - run: sudo ${{ github.action_path }}/../install-crucible/install-crucible.sh --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }} --ci-endpoint ${{ inputs.ci_endpoint }}
+      shell: bash
+
+    - run: sudo ${{ github.action_path }}/setup-ci-endpoint --run-environment github --ci-endpoint ${{ inputs.ci_endpoint }}
       shell: bash
 
     - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --samples ${{ inputs.run_samples }} --repeat-runs ${{ inputs.repeat_runs }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-build-controller ${{ inputs.ci_build_controller }} --ci-param-mode ${{ inputs.ci_param_mode }}
