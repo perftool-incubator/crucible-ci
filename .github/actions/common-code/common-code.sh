@@ -44,19 +44,6 @@ function validate_ci_build_controller {
     esac
 }
 
-function validate_ci_clean_environment {
-    case "${CI_CLEAN_ENVIRONMENT}" in
-        yes|no)
-            echo "CI Clean Evironment is '${CI_CLEAN_ENVIRONMENT}'"
-            echo
-            ;;
-        *)
-            echo "ERROR: Unknown value for --clean-environment [${CI_CLEAN_ENVIRONMENT}].  Acceptable values are 'yes' and 'no'."
-            exit 1
-            ;;
-    esac
-}
-
 function validate_ci_run_environment {
     case "${CI_RUN_ENVIRONMENT}" in
         standalone|github)
@@ -85,54 +72,4 @@ function validate_ci_endpoint {
 
 function do_ssh {
     ssh -o PasswordAuthentication=no $@
-}
-
-function clean_ci_environment {
-    if [ "${CI_CLEAN_ENVIRONMENT}" == "yes" ]; then
-        header="Clean CI environment"
-        start_github_group "${header}"
-        echo -e "*** ${header} ***\n"
-        stop_github_group
-
-        header="Stopping Crucible Services"
-        start_github_group "${header}"
-        echo -e "### ${header} ###\n"
-        echo
-        crucible stop es
-        crucible stop httpd
-        crucible stop redis
-        stop_github_group
-
-        header="Removing podman resources (containers and images)"
-        start_github_group "${header}"
-        echo -e "### ${header} ###\n"
-        echo
-        cmd="podman stop --all"
-        echo "${cmd}"
-        ${cmd}
-        cmd="podman rm --all"
-        echo "${cmd}"
-        ${cmd}
-        cmd="buildah rm --all"
-        echo "${cmd}"
-        ${cmd}
-        cmd="podman rmi --all"
-        echo "${cmd}"
-        ${cmd}
-        stop_github_group
-
-        header="Removing Crucible installed/created files"
-        start_github_group "${header}"
-        echo -e "### ${header} ###\n"
-        echo
-        cmd="rm -Rfv /opt/crucible* /var/lib/crucible* /etc/sysconfig/crucible  /root/.crucible /etc/profile.d/crucible_completions.sh /home/crucible-containers"
-        echo "${cmd}"
-        ${cmd}
-        stop_github_group
-    else
-        header="Environment cleaning disabled"
-        start_github_group "${header}"
-        echo -e "*** ${header} ***\n"
-        stop_github_group
-    fi
 }
