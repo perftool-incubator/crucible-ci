@@ -44,6 +44,9 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - run: sudo ${{ github.action_path }}/../clean-environment/clean-environment.sh --run-environment github
+      shell: bash
+
     - run: ${{ github.action_path }}/ci-environment-info --run-environment github
       shell: bash
 
@@ -62,6 +65,9 @@ runs:
         path: /var/lib/crucible-ci-artifact*.tar.xz
         retention-days: 5
         if-no-files-found: error
+
+    - run: sudo ${{ github.action_path }}/../clean-environment/clean-environment.sh --run-environment github
+      shell: bash
 
     - run: sudo ${{ github.action_path }}/run-ci-stage2 --run-environment github
       shell: bash

@@ -12,11 +12,10 @@ CI_TARGET="none"
 CI_TARGET_DIR="none"
 CI_RUN_ENVIRONMENT="standalone"
 CI_ENDPOINT="remotehost"
-CI_CLEAN_ENVIRONMENT="yes"
 
 REGISTRY_TLS_VERIFY="true"
 
-longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:,clean-environment:"
+longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -25,11 +24,6 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
-        --clean-environment)
-            shift
-            CI_CLEAN_ENVIRONMENT="${1}"
-            shift
-            ;;
         --run-environment)
             shift
             CI_RUN_ENVIRONMENT="${1}"
@@ -65,9 +59,6 @@ done
 # validate inputs
 validate_ci_run_environment
 validate_ci_endpoint
-validate_ci_clean_environment
-
-clean_ci_environment
 
 AUTH_TOKEN_FILE_FOUND=0
 auth_file="/root/crucible-ci-engines-token.json"
