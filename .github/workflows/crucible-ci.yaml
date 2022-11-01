@@ -157,9 +157,6 @@ jobs:
 
   crucible-ci-build-controller:
     runs-on: ubuntu-latest
-    needs:
-    - generate-job-matrix-parameters
-    - display-job-matrix-parameters
     steps:
     - name: checkout crucible-ci
       uses: actions/checkout@v3
