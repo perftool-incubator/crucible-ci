@@ -174,7 +174,7 @@ jobs:
       matrix:
         endpoint: [ "k8s" ]
         benchmark: [ "oslat" ]
-        userenv: [ "alma8" ]
+        userenv: [ "default" ]
         param_mode: [ "from-file" ]
     steps:
     - name: Matrix Parameters => (${{ matrix.endpoint }}, ${{ matrix.benchmark }}, ${{ matrix.userenv }}, ${{ matrix.param_mode }})
