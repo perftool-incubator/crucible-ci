@@ -73,3 +73,82 @@ function validate_ci_endpoint {
 function do_ssh {
     ssh -o PasswordAuthentication=no $@
 }
+
+RC_STATUS=0
+
+function run_cmd {
+    local cmd rc header force
+    cmd=${1}
+    shift
+    force=${1:-"no"}
+    shift
+
+    if [ "${force}" != "no" -o ${RC_STATUS} == 0 ]; then
+        header="Running: ${cmd}"
+        if [ "${force}" != "no" -a ${RC_STATUS} != 0 ]; then
+            header+=" (forced)"
+        fi
+        start_github_group "${header}"
+        echo "${header}"
+        echo
+        ${cmd}
+        rc=${?}
+
+        log_rc ${rc}
+        echo
+        echo
+
+        if [ ${RC_STATUS} == 0 ]; then
+            RC_STATUS=${rc}
+        fi
+
+        stop_github_group
+    else
+        if [ ${CI_VERBOSE} == 1 ]; then
+            header="Skipping: ${cmd}"
+            start_github_group "${header}"
+            echo "${header}"
+            echo
+            echo
+            stop_github_group
+        fi
+    fi
+}
+
+function run_and_capture_cmd {
+    local cmd rc header
+    cmd=${1}
+    shift
+
+    if [ ${RC_STATUS} == 0 ]; then
+        header="Running and capturing: ${cmd}"
+        start_github_group "${header}"
+        echo "${header}"
+        echo
+        captured_output=$(${cmd})
+        rc=${?}
+        echo "captured_output:"
+        echo ">>>>>"
+        echo "${captured_output}"
+        echo "<<<<<"
+
+        log_rc ${rc}
+        echo
+        echo
+
+        if [ ${RC_STATUS} == 0 ]; then
+            RC_STATUS=${rc}
+        fi
+
+        stop_github_group
+    else
+        if [ ${CI_VERBOSE} == 1 ]; then
+            header="Skipping capture: ${cmd}"
+            start_github_group "${header}"
+            echo "${header}"
+            echo
+            echo
+            stop_github_group
+        fi
+    fi
+}
