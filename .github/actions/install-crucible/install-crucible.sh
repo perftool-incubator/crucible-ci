@@ -5,18 +5,17 @@
 SCRIPT_DIR=$(dirname $0)
 SCRIPT_DIR=$(readlink -e ${SCRIPT_DIR})
 
-. ${SCRIPT_DIR}/base
+source ${SCRIPT_DIR}/base
 
 CRUCIBLE_INSTALL_SRC="https://raw.githubusercontent.com/perftool-incubator/crucible/master/crucible-install.sh"
 CI_TARGET="none"
 CI_TARGET_DIR="none"
 CI_RUN_ENVIRONMENT="standalone"
 CI_ENDPOINT="remotehost"
-CI_CLEAN_ENVIRONMENT="yes"
 
 REGISTRY_TLS_VERIFY="true"
 
-longopts="ci-target:,ci-target-dir:,run-environment:,ci-endpoint:,clean-environment:"
+longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -25,16 +24,6 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
-        --clean-environment)
-            shift
-            CI_CLEAN_ENVIRONMENT="${1}"
-            shift
-            ;;
-        --ci-endpoint)
-            shift
-            CI_ENDPOINT="${1}"
-            shift
-            ;;
         --run-environment)
             shift
             CI_RUN_ENVIRONMENT="${1}"
@@ -48,6 +37,11 @@ while true; do
         --ci-target-dir)
             shift
             CI_TARGET_DIR="${1}"
+            shift
+            ;;
+        --ci-endpoint)
+            shift
+            CI_ENDPOINT="${1}"
             shift
             ;;
         --)
@@ -65,22 +59,6 @@ done
 # validate inputs
 validate_ci_run_environment
 validate_ci_endpoint
-validate_ci_clean_environment
-
-clean_ci_environment
-
-# configure SSH for loopback connectivity
-start_github_group "Configure loop SSH access"
-apt install openssh-server
-systemctl start sshd
-ssh-keygen -t ed25519 -q -f /root/.ssh/id_ed25519 -N ""
-bash -c "cat /root/.ssh/id_ed25519.pub > /root/.ssh/authorized_keys"
-chmod 600 /root/.ssh/authorized_keys
-if ! do_ssh -o StrictHostKeyChecking=no localhost echo "password-less root login over ssh works"; then
-    echo "ERROR: loopback ssh connection test failed"
-    exit 1
-fi
-stop_github_group
 
 AUTH_TOKEN_FILE_FOUND=0
 auth_file="/root/crucible-ci-engines-token.json"
@@ -94,37 +72,19 @@ fi
 # ensure endpoint availability
 case "${CI_ENDPOINT}" in
     k8s)
-        start_github_group "Configure k8s endpoint"
-
-        # fixup some microk8s dependencies before installing it
-        update-alternatives --set iptables /usr/sbin/iptables-legacy
-        update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
-
-        snap install microk8s --classic
-        if ! microk8s status --wait-ready; then
-            echo "ERROR: Failed to install and initialize microk8s"
-            exit 1
-        fi
-
-        printf "#%s/bin/bash\n\nmicrok8s kubectl \$@\n" "!" > /usr/local/bin/kubectl
-        chmod +x /usr/local/bin/kubectl
-
         if [ ${AUTH_TOKEN_FILE_FOUND} == 0 ]; then
-            microk8s enable registry
+            start_github_group "Configuring Crucible for local k8s registry"
             CONTAINER_REGISTRY="localhost:32000/client-server"
             REGISTRY_TLS_VERIFY="false"
+            stop_github_group
         fi
-
-        stop_github_group
         ;;
     remotehost)
-        start_github_group "Configure remotehost endpoint"
-
         if [ ${AUTH_TOKEN_FILE_FOUND} == 0 ]; then
+            start_github_group "Configuring Crucible for local remotehost registry"
             CONTAINER_REGISTRY="dir:/home/crucible-containers/client-server"
+            stop_github_group
         fi
-
-        stop_github_group
         ;;
 esac
 

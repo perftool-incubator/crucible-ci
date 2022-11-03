@@ -157,12 +157,14 @@ jobs:
 
   crucible-ci-build-controller:
     runs-on: ubuntu-latest
-    needs:
-    - generate-job-matrix-parameters
-    - display-job-matrix-parameters
     steps:
     - name: checkout crucible-ci
       uses: actions/checkout@v3
+    - name: import secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
+      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:
@@ -186,7 +188,7 @@ jobs:
         echo "userenv=${{ matrix.userenv }}"
         echo "param_mode=${{ matrix.param_mode }}"
     - name: checkout crucible-ci
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: import secret
       env:
         CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
@@ -195,7 +197,7 @@ jobs:
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:
-        artifact_tag: "crucible-ci-github-runners__${{ matrix.endpoint }}-${{ matrix.benchmark }}-${{ matrix.userenv }}"
+        artifact_tag: "github-runners__${{ matrix.endpoint }}-${{ matrix.benchmark }}-${{ matrix.userenv }}"
         ci_endpoint: "${{ matrix.endpoint }}"
         scenarios: "${{ matrix.benchmark }}"
         userenvs: "${{ matrix.userenv }}"

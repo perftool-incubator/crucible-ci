@@ -5,7 +5,7 @@
 SCRIPT_DIR=$(dirname $0)
 SCRIPT_DIR=$(readlink -e ${SCRIPT_DIR})
 
-. ${SCRIPT_DIR}/base
+source ${SCRIPT_DIR}/base
 
 CI_RUN_ENVIRONMENT="standalone"
 
@@ -38,25 +38,43 @@ done
 # validate inputs
 validate_ci_run_environment
 
-header="Determine stage 1 exit status"
+header="Clean CI environment"
 start_github_group "${header}"
 echo -e "*** ${header} ***\n"
+stop_github_group
 
-stage1_exit_status_file="/tmp/run-ci-stage1-exit-status"
-if [ -e "${stage1_exit_status_file}" ]; then
-    read stage1_exit_status < ${stage1_exit_status_file}
-    rm ${stage1_exit_status_file}
+header="Stopping Crucible Services"
+start_github_group "${header}"
+echo -e "### ${header} ###\n"
+echo
+crucible stop es
+crucible stop httpd
+crucible stop redis
+stop_github_group
 
-    if [ -z "${stage1_exit_status}" ]; then
-        echo "ERROR: Read an empty stage 1 exit status from ${stage1_exit_status_file}"
-    else
-        echo "Read stage 1 exit status as ${stage1_exit_status} from ${stage1_exit_status_file}"
-        exit ${stage1_exit_status}
-    fi
-else
-    echo "ERROR: Could not find stage 1 exit status because ${stage1_exit_status_file} does not exist"
-fi
+header="Removing podman resources (containers and images)"
+start_github_group "${header}"
+echo -e "### ${header} ###\n"
+echo
+cmd="podman stop --all"
+echo "${cmd}"
+${cmd}
+cmd="podman rm --all"
+echo "${cmd}"
+${cmd}
+cmd="buildah rm --all"
+echo "${cmd}"
+${cmd}
+cmd="podman rmi --all"
+echo "${cmd}"
+${cmd}
+stop_github_group
 
-exit 1
-
+header="Removing Crucible installed/created files"
+start_github_group "${header}"
+echo -e "### ${header} ###\n"
+echo
+cmd="rm -Rfv /opt/crucible* /var/lib/crucible* /etc/sysconfig/crucible  /root/.crucible /etc/profile.d/crucible_completions.sh /home/crucible-containers"
+echo "${cmd}"
+${cmd}
 stop_github_group

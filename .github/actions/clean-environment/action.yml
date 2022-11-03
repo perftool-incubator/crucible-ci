@@ -1,0 +1,7 @@
+name: "clean environment"
+description: "cleanup any remnants of a crucible installation"
+runs:
+  using: "composite"
+  steps:
+    - run: sudo ${{ github.action_path }}/clean-environment.sh --run-environment github
+      shell: bash
