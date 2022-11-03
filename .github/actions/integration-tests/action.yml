@@ -17,14 +17,6 @@ inputs:
     description: "Where is the Crucible component to target located"
     required: false
     default: "none"
-  run_samples:
-    description: "How many samples to take for each run"
-    required: false
-    default: "1"
-  repeat_runs:
-    description: "Should repeat runs of the scenarios be run"
-    required: false
-    default: "no"
   artifact_tag:
     description: "Tag to include in the filename of the produced artifact"
     required: false
@@ -56,7 +48,7 @@ runs:
     - run: sudo ${{ github.action_path }}/setup-ci-endpoint --run-environment github --ci-endpoint ${{ inputs.ci_endpoint }}
       shell: bash
 
-    - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --samples ${{ inputs.run_samples }} --repeat-runs ${{ inputs.repeat_runs }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-build-controller ${{ inputs.ci_build_controller }} --ci-param-mode ${{ inputs.ci_param_mode }}
+    - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-build-controller ${{ inputs.ci_build_controller }} --ci-param-mode ${{ inputs.ci_param_mode }}
       shell: bash
 
     - uses: actions/upload-artifact@v3

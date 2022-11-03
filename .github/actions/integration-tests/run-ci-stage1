@@ -37,9 +37,9 @@ CI_SCENARIOS="fio"
 
 CI_USERENVS="default"
 
-CI_SAMPLES=1
+CI_SAMPLES=""
 
-CI_REPEAT_RUNS="no"
+CI_REPEAT_RUNS=""
 
 CI_ENDPOINT="remotehost"
 
@@ -151,14 +151,16 @@ for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     esac
 done
 
-case "${CI_REPEAT_RUNS}" in
-    yes|no)
-        ;;
-    *)
-        echo "ERROR: Unknown value for --repeat-runs [${CI_REPEAT_RUNS}].  Acceptable values are 'yes' and 'no'."
-        exit 1
-        ;;
-esac
+if [ -n "${CI_REPEAT_RUNS}" ]; then
+    case "${CI_REPEAT_RUNS}" in
+        yes|no)
+            ;;
+        *)
+            echo "ERROR: Unknown value for --repeat-runs [${CI_REPEAT_RUNS}].  Acceptable values are 'yes' and 'no'."
+            exit 1
+            ;;
+    esac
+fi
 
 CI_ACTIVE_USERENVS=""
 for userenv in $(echo "${CI_USERENVS}" | sed -e "s/,/ /g"); do
@@ -408,6 +410,26 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
     header="Current userenv is ${userenv}"
     start_github_group "${header}"
     echo -e "*** ${header} ***\n"
+    echo
+    echo "Configuring run parameters based on userenv:"
+
+    if [ -z "${CI_SAMPLES}" ]; then
+        if [ "${userenv}" == "default" ]; then
+            CI_SAMPLES=3
+        else
+            CI_SAMPLES=1
+        fi
+    fi
+
+    if [ -z "${CI_REPEAT_RUNS}" ]; then
+        if [ "${userenv}" == "default" ]; then
+            CI_REPEAT_RUNS="yes"
+        else
+            CI_REPEAT_RUNS="no"
+        fi
+    fi
+    echo "Samples = ${CI_SAMPLES}"
+    echo "Repeat Runs = ${CI_REPEAT_RUNS}"
     stop_github_group
 
     for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
@@ -420,7 +442,7 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         echo -e "### ${header} ###\n"
         stop_github_group
 
-        TAGS=",repeat:${CI_REPEAT_RUNS},userenv:${userenv}"
+        TAGS=",repeat:${CI_REPEAT_RUNS},samples:${CI_SAMPLES},userenv:${userenv}"
 
         COMMON_ENDPOINT_ARGS="controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER}"
         if [ "${userenv}" != "default" ]; then
