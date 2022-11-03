@@ -15,6 +15,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  crucible-ci-controller-build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout crucible-ci
+      uses: actions/checkout@v3
+      with:
+        path: crucible-ci
+    - name: import secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
+      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: run crucible-ci->install-crucible
+      uses: ./crucible-ci/.github/actions/install-crucible
+      with:
+        ci_target: "crucible-ci"
+        ci_target_dir: ${{ github.workspace }}/crucible-ci
+    - name: display crucible config
+      run: cat /etc/sysconfig/crucible
+    - name: verify crucible functionality
+      run: sudo crucible repo info
+    - name: run crucible-ci->build-controller
+      uses: ./crucible-ci/.github/actions/build-controller
+      with:
+        push_tag: crucible-ci-${{ github.run_number }}
+
   generate-job-matrix-parameters:
     runs-on: ubuntu-latest
 
