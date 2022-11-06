@@ -223,7 +223,7 @@ jobs:
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:
-        artifact_tag: "github-runners__${{ matrix.endpoint }}-${{ matrix.benchmark }}-${{ matrix.userenv }}"
+        artifact_tag: "single-json__${{ matrix.endpoint }}-${{ matrix.benchmark }}-${{ matrix.userenv }}-${{ matrix.param_mode }}-${{ matrix.ci_controller }}"
         ci_endpoint: "${{ matrix.endpoint }}"
         scenarios: "${{ matrix.benchmark }}"
         userenvs: "${{ matrix.userenv }}"
