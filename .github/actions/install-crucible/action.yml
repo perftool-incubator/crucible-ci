@@ -13,8 +13,16 @@ inputs:
     description: "Which rickshaw endpoint to exercise"
     required: false
     default: "remotehost"
+  ci_controller:
+    description: "Whether a CI built controller should be used or not"
+    required: false
+    default: "no"
+  controller_tag:
+    description: "A controller tag to pull from the ci controller repository"
+    required: false
+    default: "none"
 runs:
   using: "composite"
   steps:
-    - run: sudo ${{ github.action_path }}/install-crucible.sh --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }} --ci-endpoint ${{ inputs.ci_endpoint }}
+    - run: sudo ${{ github.action_path }}/install-crucible.sh --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-controller ${{ inputs.ci_controller }} --controller-tag ${{ inputs.controller_tag }}
       shell: bash
