@@ -15,6 +15,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  crucible-ci-controller-build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout crucible-ci
+      uses: actions/checkout@v3
+      with:
+        path: crucible-ci
+    - name: import secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
+      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: run crucible-ci->install-crucible
+      uses: ./crucible-ci/.github/actions/install-crucible
+      with:
+        ci_target: "crucible-ci"
+        ci_target_dir: ${{ github.workspace }}/crucible-ci
+    - name: display crucible config
+      run: cat /etc/sysconfig/crucible
+    - name: verify crucible functionality
+      run: sudo crucible repo info
+    - name: run crucible-ci->build-controller
+      uses: ./crucible-ci/.github/actions/build-controller
+      with:
+        push_tag: crucible-ci-${{ github.run_number }}
+
   generate-job-matrix-parameters:
     runs-on: ubuntu-latest
 
@@ -151,24 +177,10 @@ jobs:
       if: ${{ ! matrix.scenario.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
 
-  crucible-ci-build-controller:
-    runs-on: ubuntu-latest
-    steps:
-    - name: checkout crucible-ci
-      uses: actions/checkout@v3
-    - name: import secret
-      env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
-      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
-      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
-    - name: run crucible-ci->integration-tests
-      uses: ./.github/actions/integration-tests
-      with:
-        artifact_tag: "build-controller"
-        ci_build_controller: "yes"
-
   crucible-single-json:
     runs-on: ubuntu-latest
+    needs:
+    - crucible-ci-controller-build
     strategy:
       fail-fast: false
       matrix:
@@ -176,13 +188,15 @@ jobs:
         benchmark: [ "oslat" ]
         userenv: [ "default" ]
         param_mode: [ "from-file" ]
+        ci_controller: [ "no", "yes" ]
     steps:
-    - name: Matrix Parameters => (${{ matrix.endpoint }}, ${{ matrix.benchmark }}, ${{ matrix.userenv }}, ${{ matrix.param_mode }})
+    - name: Matrix Parameters => (${{ matrix.endpoint }}, ${{ matrix.benchmark }}, ${{ matrix.userenv }}, ${{ matrix.param_mode }}, ${{ matrix.ci_controller }})
       run: |
         echo "endpoint=${{ matrix.endpoint }}"
         echo "benchmark=${{ matrix.benchmark }}"
         echo "userenv=${{ matrix.userenv }}"
         echo "param_mode=${{ matrix.param_mode }}"
+        echo "ci_controller=${{ matrix.ci_controller }}"
     - name: checkout crucible-ci
       uses: actions/checkout@v3
     - name: import secret
@@ -193,20 +207,19 @@ jobs:
     - name: run crucible-ci->integration-tests
       uses: ./.github/actions/integration-tests
       with:
-        artifact_tag: "github-runners__${{ matrix.endpoint }}-${{ matrix.benchmark }}-${{ matrix.userenv }}"
+        artifact_tag: "single-json__${{ matrix.endpoint }}-${{ matrix.benchmark }}-${{ matrix.userenv }}-${{ matrix.param_mode }}-${{ matrix.ci_controller }}"
         ci_endpoint: "${{ matrix.endpoint }}"
         scenarios: "${{ matrix.benchmark }}"
         userenvs: "${{ matrix.userenv }}"
         ci_param_mode: "${{ matrix.param_mode }}"
-        run_samples: 1
-        repeat_runs: "no"
+        controller_tag: crucible-ci-${{ github.run_number }}
+        ci_controller: "${{ matrix.ci_controller }}"
 
   crucible-ci-complete:
     runs-on: ubuntu-latest
     needs:
     - crucible-ci-github-runners
     - crucible-ci-self-hosted-runners
-    - crucible-ci-build-controller
     - crucible-single-json
     steps:
     - name: Confirm Success

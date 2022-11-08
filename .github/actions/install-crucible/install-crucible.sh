@@ -12,10 +12,12 @@ CI_TARGET="none"
 CI_TARGET_DIR="none"
 CI_RUN_ENVIRONMENT="standalone"
 CI_ENDPOINT="remotehost"
+CI_CONTROLLER_TAG="none"
+CI_CONTROLLER="no"
 
 REGISTRY_TLS_VERIFY="true"
 
-longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:"
+longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:,controller-tag:,ci-controller:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -24,6 +26,16 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --ci-controller)
+            shift
+            CI_CONTROLLER="${1}"
+            shift
+            ;;
+        --controller-tag)
+            shift
+            CI_CONTROLLER_TAG="${1}"
+            shift
+            ;;
         --run-environment)
             shift
             CI_RUN_ENVIRONMENT="${1}"
@@ -109,7 +121,11 @@ if pushd ~/ > /dev/null; then
         CONTAINER_REGISTRY="quay.io/crucible/crucible-ci-engines"
         REGISTRY_TLS_VERIFY="true"
     fi
-    INSTALLER_CMD="${INSTALLER_PATH} --client-server-registry ${CONTAINER_REGISTRY} --client-server-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
+    CONTROLLER_REGISTRY_ARGS=""
+    if [ "${CI_CONTROLLER}" == "yes" ]; then
+        CONTROLLER_REGISTRY_ARGS="--controller-registry quay.io/crucible/crucible-ci-controller:${CI_CONTROLLER_TAG}"
+    fi
+    INSTALLER_CMD="${INSTALLER_PATH} ${CONTROLLER_REGISTRY_ARGS} --client-server-registry ${CONTAINER_REGISTRY} --client-server-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
     echo "Running: ${INSTALLER_CMD}"
     ${INSTALLER_CMD}
     RC=$?

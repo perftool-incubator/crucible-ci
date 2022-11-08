@@ -1,0 +1,11 @@
+name: "build controller"
+description: "Build a Crucible controller and upload it for use by other jobs"
+inputs:
+  push_tag:
+    description: "What tag to push the controller image with"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - run: sudo ${{ github.action_path }}/build-controller.sh --run-environment github --push-tag ${{ inputs.push_tag }}
+      shell: bash
