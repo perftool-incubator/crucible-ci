@@ -116,12 +116,17 @@ function run_cmd {
 }
 
 function run_and_capture_cmd {
-    local cmd rc header
+    local cmd rc header force
     cmd=${1}
     shift
+    force=${1:-"no"}
+    shift
 
-    if [ ${RC_STATUS} == 0 ]; then
+    if [ "${force}" != "no" -o ${RC_STATUS} == 0 ]; then
         header="Running and capturing: ${cmd}"
+        if [ "${force}" != "no" -a ${RC_STATUS} != 0 ]; then
+            header+=" (forced)"
+        fi
         start_github_group "${header}"
         echo "${header}"
         echo
