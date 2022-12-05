@@ -412,7 +412,7 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     sed -i "s|SCRIPT_DIR|${SCRIPT_DIR}|g" ${SCRIPT_DIR}/run-file/oslat.json
                     sed -i "s|COMMON_ENDPOINT_ARGS|${COMMON_ENDPOINT_ARGS}|g" ${SCRIPT_DIR}/run-file/oslat.json
                     sed -i "s|COMMON_K8S_ENDPOINT_ARGS|${COMMON_K8S_ENDPOINT_ARGS}|g" ${SCRIPT_DIR}/run-file/oslat.json
-                    run_cmd "crucible run oslat --num-samples ${CI_SAMPLES} --test-order s --from-file ${SCRIPT_DIR}/run-file/oslat.json"
+                    run_cmd "crucible run oslat --from-file ${SCRIPT_DIR}/run-file/oslat.json"
                     post_run_cmd
                 else
                     # mv-params param mode
