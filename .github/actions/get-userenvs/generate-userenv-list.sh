@@ -4,6 +4,9 @@
 
 rickshaw_directory=${1}
 
+#white space change
+FOO=1
+
 if pushd ${rickshaw_directory}; then
     userenvs=$(find userenvs/ -maxdepth 1 -name '*.json' | sed -e 's|userenvs/||' -e 's|\.json||')
     userenvs_json="[\"default\","
