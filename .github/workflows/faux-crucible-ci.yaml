@@ -10,7 +10,17 @@ on:
     - 'docs/**'
 
 jobs:
-  crucible-ci-complete:
+  test-benchmark-crucible-ci-complete:
+    runs-on: ubuntu-latest
+    steps:
+    - run: 'echo "No build required" '
+
+  test-core-crucible-ci-complete:
+    runs-on: ubuntu-latest
+    steps:
+    - run: 'echo "No build required" '
+
+  run-core-crucible-ci-complete:
     runs-on: ubuntu-latest
     steps:
     - run: 'echo "No build required" '
