@@ -1,0 +1,21 @@
+name: run-core-crucible-ci
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - LICENSE
+      - '**.md'
+      - .github/workflows/faux-crucible-ci.yaml
+      - 'docs/**'
+  workflow_dispatch:
+
+jobs:
+  call-core-crucible-ci:
+    uses: ./.github/workflows/core-crucible-ci.yaml
+    with:
+      ci_target: "crucible-ci"
+      ci_target_branch: "${{ github.ref }}"
+      github_workspace: "$GITHUB_WORKSPACE"
+    secrets:
+      registry_auth: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
