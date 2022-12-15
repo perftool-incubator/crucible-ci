@@ -1,0 +1,13 @@
+name: "crucible-ci get repo name"
+description: "Returns the repository name for the running workflow"
+outputs:
+  repo-name:
+    description: "The repository name for the running workflow"
+    value: ${{ steps.get-repo-name.outputs.repo-name }}
+runs:
+  using: "composite"
+  steps:
+    - name: "get repo name"
+      id: get-repo-name
+      shell: bash
+      run: ${{ github.action_path }}/get-repo-name.sh ${{ github.repository }}

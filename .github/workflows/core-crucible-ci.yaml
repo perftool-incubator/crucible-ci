@@ -1,0 +1,314 @@
+name: core-crucible-ci
+
+on:
+  workflow_call:
+    inputs:
+      ci_target:
+        required: true
+        type: string
+      crucible_ci_test:
+        required: false
+        type: string
+        default: "no"
+      ci_target_branch:
+        required: true
+        type: string
+      crucible_ci_test_branch:
+        required: false
+        type: string
+      github_workspace:
+        required: true
+        type: string
+    secrets:
+      registry_auth:
+        required: false
+
+concurrency:
+  group: ${{ inputs.crucible_ci_test }}/${{ inputs.ci_target }}/${{ github.ref }}/core-crucible-ci
+  cancel-in-progress: true
+
+env:
+  GITHUB_WORKSPACE: ${{ inputs.github_workspace }}
+
+jobs:
+  gen-params:
+    runs-on: ubuntu-latest
+    outputs:
+      userenvs: ${{ steps.get-userenvs.outputs.userenvs }}
+      build_controller: ${{ steps.check-controller-build.outputs.build-controller }}
+      github_hosted_scenarios: ${{ steps.get-scenarios-github.outputs.scenarios }}
+      self_hosted_scenarios: ${{ steps.get-scenarios-self.outputs.scenarios }}
+      repo_name: ${{ steps.get-repo-name.outputs.repo-name }}
+    steps:
+
+    - name: checkout crucible default
+      if: ${{ inputs.ci_target != 'crucible' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/crucible
+        ref: master
+        path: crucible
+    - name: checkout crucible ci_target
+      if: ${{ inputs.ci_target == 'crucible' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: crucible
+        fetch-depth: 2
+
+    - name: checkout crucible-ci default
+      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: main
+        path: crucible-ci
+    - name: checkout crucible-ci ci_target
+      if: ${{ inputs.ci_target == 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: crucible-ci
+    - name: checkout crucible-ci crucible_ci_test
+      if: ${{ inputs.crucible_ci_test == 'yes' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: ${{ inputs.crucible_ci_test_branch }}
+        path: crucible-ci
+
+    - name: checkout rickshaw default
+      if: ${{ inputs.ci_target != 'rickshaw' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/rickshaw
+        ref: master
+        path: rickshaw
+    - name: checkout rickshaw ci_target
+      if: ${{ inputs.ci_target == 'rickshaw' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: rickshaw
+
+    - name: run get-userenvs
+      id: get-userenvs
+      uses: ./crucible-ci/.github/actions/get-userenvs
+      with:
+        rickshaw-directory: "./rickshaw"
+    - name: run get-scenarios-github
+      id: get-scenarios-github
+      uses: ./crucible-ci/.github/actions/get-scenarios
+      with:
+        runner-type: "github"
+    - name: run get-scenarios-self
+      id: get-scenarios-self
+      uses: ./crucible-ci/.github/actions/get-scenarios
+      with:
+        runner-type: "self"
+        runner-tags: "cpu-partitioning,remotehost"
+    - name: run check-controller-build
+      id: check-controller-build
+      uses: ./crucible-ci/.github/actions/check-controller-build
+      with:
+        crucible-directory: "./crucible"
+    - name: run get-repo-name
+      id: get-repo-name
+      uses: ./crucible-ci/.github/actions/get-repo-name
+
+  display-params:
+    runs-on: ubuntu-latest
+    needs: gen-params
+    steps:
+    - name: Echo gen-params outputs
+      run: echo "${{ toJSON(needs.gen-params.outputs) }}"
+
+  build-controller:
+    runs-on: ubuntu-latest
+    needs:
+    - gen-params
+    - display-params
+    steps:
+    - name: checkout crucible-ci default
+      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: main
+        path: crucible-ci
+    - name: checkout crucible-ci ci_target
+      if: ${{ inputs.ci_target == 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: crucible-ci
+    - name: checkout crucible-ci crucible_ci_test
+      if: ${{ inputs.crucible_ci_test == 'yes' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: ${{ inputs.crucible_ci_test_branch }}
+        path: crucible-ci
+    - name: import secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: run crucible-ci->install-crucible
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
+      uses: ./crucible-ci/.github/actions/install-crucible
+    - name: display crucible config
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
+      run: cat /etc/sysconfig/crucible
+    - name: verify crucible functionality
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
+      run: sudo crucible repo info
+    - name: run crucible-ci->build-controller
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
+      uses: ./crucible-ci/.github/actions/build-controller
+      with:
+        push_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
+    - name: no build required
+      if: ${{ needs.gen-params.outputs.build_controller == 'no' }}
+      run: echo "no controller build required"
+
+  github-runners:
+    runs-on: ubuntu-latest
+    needs:
+    - gen-params
+    - display-params
+    - build-controller
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: ${{ fromJSON(needs.gen-params.outputs.github_hosted_scenarios) }}
+        userenv: ${{ fromJSON(needs.gen-params.outputs.userenvs) }}
+        ci_controller: [ "${{ needs.gen-params.outputs.build_controller }}" ]
+    steps:
+    - name: Matrix Parameters => (${{ matrix.scenario.enabled }}, ${{ matrix.scenario.endpoint }}, ${{ matrix.scenario.benchmark }}, ${{ matrix.userenv }}, ${{ matrix.ci_controller }})
+      run: |
+        echo "enabled=${{ matrix.scenario.enabled }}"
+        echo "endpoint=${{ matrix.scenario.endpoint }}"
+        echo "benchmark=${{ matrix.scenario.benchmark }}"
+        echo "userenv=${{ matrix.userenv }}"
+        echo "ci_controller=${{ matrix.ci_controller }}"
+
+    - name: checkout ${{ inputs.ci_target }} ci_target
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: ${{ inputs.ci_target }}
+
+    - name: checkout crucible-ci default
+      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: main
+        path: crucible-ci
+    - name: checkout crucible-ci crucible_ci_test
+      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test == 'yes' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: ${{ inputs.crucible_ci_test_branch }}
+        path: crucible-ci
+
+    - name: import secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth }}
+      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: run crucible-ci->integration-tests
+      if: ${{ matrix.scenario.enabled }}
+      uses: ./crucible-ci/.github/actions/integration-tests
+      with:
+        artifact_tag: "${{ inputs.ci_target }}__github-runners__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}"
+        ci_endpoint: "${{ matrix.scenario.endpoint }}"
+        scenarios: "${{ matrix.scenario.benchmark }}"
+        userenvs: "${{ matrix.userenv }}"
+        ci_target: "${{ inputs.ci_target }}"
+        ci_target_dir: ${{ github.workspace }}/${{ inputs.ci_target }}
+        ci_controller: ${{ matrix.ci_controller }}
+        controller_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
+    - name: skip crucible-ci->integration-tests
+      if: ${{ ! matrix.scenario.enabled }}
+      run: echo "crucible-ci->integration-tests not enabled"
+
+  self-hosted-runners:
+    runs-on: [ self-hosted, cpu-partitioning, remotehost ]
+    needs:
+    - gen-params
+    - display-params
+    - build-controller
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: ${{ fromJSON(needs.gen-params.outputs.self_hosted_scenarios) }}
+        userenv: ${{ fromJSON(needs.gen-params.outputs.userenvs) }}
+        ci_controller: [ "${{ needs.gen-params.outputs.build_controller }}" ]
+    steps:
+    - name: Matrix Parameters => (${{ matrix.scenario.enabled }}, ${{ matrix.scenario.endpoint }}, ${{ matrix.scenario.benchmark }}, ${{ matrix.userenv }}, ${{ matrix.ci_controller }})
+      run: |
+        echo "enabled=${{ matrix.scenario.enabled }}"
+        echo "endpoint=${{ matrix.scenario.endpoint }}"
+        echo "benchmark=${{ matrix.scenario.benchmark }}"
+        echo "userenv=${{ matrix.userenv }}"
+        echo "ci_controller=${{ matrix.ci_controller }}"
+
+    - name: checkout ${{ inputs.ci_target }} ci_target
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: ${{ inputs.ci_target }}
+
+    - name: checkout crucible-ci default
+      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: main
+        path: crucible-ci
+    - name: checkout crucible-ci crucible_ci_test
+      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test == 'yes' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: ${{ inputs.crucible_ci_test_branch }}
+        path: crucible-ci
+
+    - name: import secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth }}
+      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: run crucible-ci->integration-tests
+      if: ${{ matrix.scenario.enabled }}
+      uses: ./crucible-ci/.github/actions/integration-tests
+      with:
+        artifact_tag: "${{ inputs.ci_target }}__self-hosted-runners__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}"
+        ci_endpoint: "${{ matrix.scenario.endpoint }}"
+        scenarios: "${{ matrix.scenario.benchmark }}"
+        userenvs: "${{ matrix.userenv }}"
+        ci_target: "${{ inputs.ci_target }}"
+        ci_target_dir: ${{ github.workspace }}/${{ inputs.ci_target }}
+        ci_controller: ${{ matrix.ci_controller }}
+        controller_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
+    - name: skip crucible-ci->integration-tests
+      if: ${{ ! matrix.scenario.enabled }}
+      run: echo "crucible-ci->integration-tests not enabled"
+
+  core-crucible-ci-complete:
+    runs-on: ubuntu-latest
+    needs:
+    - github-runners
+    - self-hosted-runners
+    steps:
+    - name: Confirm Success
+      run: echo "core-crucible-ci-complete"
