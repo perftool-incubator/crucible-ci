@@ -12,75 +12,130 @@ The intent/goal here is that the upstream code in the primary branch for all rep
 
 ## Target Environment
 
-Crucible-CI is primarily intended to be executed in the GitHub runner environment (both GitHub hosted and self-hosted runners).  However, some of it's components can be executed outside of a GitHub runner environment in order to provide developers with the ability to integration test their changes prior to pull request submission.  More details on this in the details below.
+Crucible-CI is primarily intended to be executed in the GitHub runner environment (both GitHub hosted and self-hosted runners).  However, some of it's components can be executed outside of a GitHub runner environment in order to provide developers with the ability to integration test their changes prior to pull request submission.  More on this in the details below.
 
 ## Details
 
-Crucible-CI is a collection of [GitHub Actions](https://docs.github.com/en/actions).  Each action in Crucible-CI is unique and can be consumed in one or more [GitHub Action workflows](https://docs.github.com/en/actions/using-workflows/about-workflows).  Here is the current list of provided actions:
+Crucible-CI is essentially a collection of [GitHub Actions](https://docs.github.com/en/actions) and [reusable GitHub workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows).
+
+### Actions
+
+Each action in Crucible-CI is unique and can be consumed in one or more [GitHub Action workflows](https://docs.github.com/en/actions/using-workflows/about-workflows).  Here is the current list of provided actions:
 
 - Helper Actions
+  - [build-controller](README.md#build-controller)
   - [check-controller-build](README.md#check-controller-build)
+  - [clean-environment](README.md#clean-environment)
   - [get-benchmarks](README.md#get-benchmarks)
   - [get-endpoints](README.md#get-endpoints)
-  - [get-userenvs](README.md#get-userenvs)
+  - [get-repo-name](README.md#get-repo-name)
   - [get-scenarios](README.md#get-scenarios)
+  - [get-userenvs](README.md#get-userenvs)
+  - [install-crucible](README.md#install-crucible)
 - Primary Actions
   - [integration-tests](README.md#integration-tests)
 
 The actions are, for the most part, implemented as shell scripts that are provided to GitHub's workflow framework via `action.yml`.  The way in which they are aggregated together is very GitHub specific, but since they are simple shell scripts at their core we can potentially re-use them outside of the GitHub environment.  Where applicable/useful that is described below.
 
-### Helper Actions
+#### Helper Actions
 
 These actions are used to provide information that can be used in the workflows in a variety of different ways.  These are not performing any testing of Crucible as it is meant to be used by an end user.
 
-#### check-controller-build
+##### build-controller
+
+The [build-controller](.github/actions/build-controller) action is used to build a Crucible controller image for use in one or more jobs.
+
+##### check-controller-build
 
 The [check-controller-build](.github/actions/check-controller-build) action is used to determine if changes to the main Crucible repository require the controller image to be rebuilt.
 
-#### get-benchmarks
+##### clean-environment
+
+The [clean-environment](.github/actions/clean-environment) action is used to cleanup the runner environment after a run.  This really isn't necessary for GitHub hosted runners (since they are ephemeral) but self-hosted runners are not and must have their environments cleaned to avoid influencing future jobs.
+
+##### get-benchmarks
 
 NOTE: This action is **DEPRECATED** in favor of [get-scenarios](README.md#get-scenarios)
 
 The [get-benchmarks](.github/actions/get-benchmarks) action is used to determine which benchmarks can be run in the specified runner type.  This is necessary because some benchmarks have requirements that cannot be met by a certain type of runner.  For example, GitHub hosted runners do not provide a CPU isolation environment which some benchmarks require.  Additionally, not all Crucible supported benchmarks are currently supported by Crucible-CI (usually due to special hardware requirements that cannot be met in a runner environment due to cost/complexity).
 
-#### get-endpoints
+##### get-endpoints
 
 NOTE: This action is **DEPRECATED** in favor of [get-scenarios](README.md#get-scenarios)
 
 The [get-endpoints](.github/actions/get-endpoints) action is used to determine which endpoints can be run in the specified runner type.  Some runner environments (such as self hosted) are specifically targeting at testing specific endpoints and this action provides that information.
 
-#### get-userenvs
+##### get-repo-name
 
-The [get-userenvs](.github/actions/get-userenvs) action is used to look at a ricksaw repository to determine what the list of currently supported userenvs is.
+The [get-repo-name](.github/actions/get-repo-name) action is used to extract a repository name from the `github.repository` context variable (which includes the owner/project name.
 
-#### get-scenarios
+##### get-scenarios
 
 The [get-scenarios](.github/actions/get-scenarios) action is used to determine what "scenarios" should be executed as part of a specific job (where a scenario is a combination of an endpoint and a benchmark).  The parameters are combined because they cannot be adequately evaluated in isolation with respect to the different runner environments (GitHub hosted vs. self hosted).
 
-### Primary Actions
+##### get-userenvs
+
+The [get-userenvs](.github/actions/get-userenvs) action is used to look at a ricksaw repository to determine what the list of currently supported userenvs is.
+
+##### install-crucible
+
+The [install-crucible](.github/actions/install-crucible) action provides a reusable Crucible installation tool that can be configured to properly install upstream code for repositories not being tested while properly using the pull request code for the subproject being tested.
+
+#### Primary Actions
 
 These actions are where actual Crucible testing is performed.
 
-#### integration-tests
+##### integration-tests
 
 The [integration-tests](.github/actions/integration-tests) action is where, as the name implies, the integration testing is performed.  This action has several different possible inputs, but all of them are optional.  By default it will run a very simple integration test based on the default values.  By specifying one or more of the available inputs the action can be "tuned" for the type of testing that is desired in the calling workflow.
 
 The integration test is comprised of multiple shell scripts that perform different actions.  Some of these scripts are usually specific to the GitHub runner environment, such as [setup-ci-environment](.github/actions/integration-tests/setup-ci-environment) (since it performs a custon install of Crucible), while others can be used outside of the Github runner environment to perform testing in a development environment with an existing running Crucible installation.  An example of this is the use of [run-ci-stage1](.github/actions/integration-tests/run-ci-stage1) (which is the actual "test" in this action, the other scripts are primarily for setup and reporting) by the Crucible [`run-ci`](https://github.com/perftool-incubator/crucible/blob/bcdde354c751baff60f8cb9d68203113ec4c3439/bin/_help#L48) command.
 
+### Workflows
+
+There are two different kinds of workflows present in Crucible-CI.  They are:
+
+- Reusable Workflows
+  - [benchmark-crucible-ci](README.md#benchmark-crucible-ci)
+  - [core-crucible-ci](README.md#core-crucible-ci)
+- Runnable Workflows
+  - [faux-crucible-ci](README.md#faux-crucible-ci)
+  - [run-core-crucible-ci](README.md#run-core-crucible-ci)
+  - [test-benchmark-crucible-ci](README.md#test-benchmark-crucible-ci)
+  - [test-core-crucible-ci](README.md#test-core-crucible-ci)
+
+#### Reusable Workflows
+
+These workflows can be called from any Crucible subproject to easily provide a detailed CI test based on provided input.
+
+##### benchmark-crucible-ci
+
+The [benchmark-crucible-ci](.github/workflows/benchmark-crucible-ci.yaml) workflow is intended to be called from Crucible benchmark subprojects.  It limits it's testing focus to benchmark specific jobs.
+
+##### core-crucible-ci
+
+The [core-crucible-ci](.github/workflows/core-crucible-ci.yaml) workflow is intended to be called by any of the core Crucible subprojects.  Some of the core subprojects required more detailed testing (such as controller building under certain conditions) which is implemented in this workflow.
+
+#### Runnable Workflows
+
+These workflows are what run as part of pull requests that are submitted against the Crucible-CI subproject itself.
+
+##### faux-crucible-ci
+
+The [faux-crucible-ci](.github/workflows/faux-crucible-ci.yaml) workflow is a "fake" workflow that is run when the pull request in question does not actually affect runtime behavior (such as documentation only changes).  It provides "null" jobs that satisfy Crucible-CI's GitHub branch protection rules.
+
+##### run-core-crucible-ci
+
+The [run-core-crucible-ci](.github/workflows/run-core-crucible-ci.yaml) workflow is used to execute the [core-crucible-ci](README.md#core-crucible-ci) reusable workflow with Crucible-CI being the target core subproject.  This workflow is an excellent example to base a workflow off of for use in another core subproject.
+
+##### test-benchmark-crucible-ci
+
+The [test-benchmark-crucible-ci](.github/workflows/test-benchmark-crucible-ci.yaml) workflow is used to test the [benchmark-crucible-ci](README.md#benchmark-crucible-ci) reusable workflow using different benchmarks.
+
+##### test-core-crucible-ci
+
+The [test-core-crucible-ci](.github/workflows/test-core-crucible-ci.yaml) workflow is used to test the [core-crucible-ci](README.md#core-crucible-ci) reusable workflow using different core subprojects.
+
 ## Testing Crucible-CI
 
-Crucible-CI is a subproject in the Crucible family just like any other.  This means that Crucible-CI can be used to test itself when changes to it are proposed.  It also means that Crucible-CI has an [embedded workflow](.github/workflows/crucible-ci.yaml) implemented that demonstrates how it's various actions can be used together to provide a scale-out integration test.
-
-The workflow is comprised of multiple jobs that execute in a coordinated sequence:
-
-- The first job, `generate-job-matrix-parameters`, uses the helper actions described above to obtain information that controls later jobs.
-- The second job, `display-job-matrix-parameters`, is a simple one that just reports the information that was obtained in `generate-job-matrix-parameters` in case it is needed for debugging.
-- The third job, `crucible-ci-github-runners`, and the forth job, `crucible-ci-self-hosted-runners`, use the information from `generate-job-matrix-parameters` in a "stategy" to generate (potentially large) matrices of test combinations to execute.  Each test that is generated creates a unique job that runs the [integration-tests](README.md#integration-tests) action with the appropriate parameters.  All of the jobs that are created here are queued for execution by the GitHub runners (GitHub hosted or self-hosted depending on the job) and then are executed according to their scheduler and the applicable [usage limits](https://docs.github.com/en/actions/learn-github-actions/usage-limits-billing-and-administration#usage-limits) (currently our GitHub plan is the Free tier).
-- The fifth job, `crucible-ci-build-controller`, is a single targeted job that tests the Crucible controller build logic.
-- The sixth job, `crucible-ci-complete`, executes when all of the jobs created by `crucible-ci-github-runners`, `crucible-ci-self-hosted-runners`, and `crucible-ci-build-controller` complete.  This is the job that is gating the ability to merge the pull request through GitHub's [branch protection rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-status-checks-before-merging).
-
-The general workflow looks like this when it runs to completion without any failures:
-
-![GitHub workflow example](docs/crucible-ci.png)
-
-When the other projects in the Crucible family use Crucible-CI it should be in a workflow that is most likely, at least in part, derived from this one.  Each project has it's own testing needs and requirements so there may be a fair amount of deviation in some cases, but the general structure and flow should be identifiable.
+Crucible-CI is a subproject in the Crucible family just like any other.  This means that Crucible-CI can be used to test itself when changes to it are proposed.  As mentioned above, it also means that Crucible-CI has an [embedded workflow](README.md#run-core-crucible-ci) implemented that demonstrates how it's reusable workflows can be called.
