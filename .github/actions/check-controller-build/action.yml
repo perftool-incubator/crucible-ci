@@ -4,6 +4,9 @@ inputs:
   crucible-directory:
     description: "Where is the crucible repository to check for controller image related changes"
     required: true
+  workshop-directory:
+    description: "Where is the workshop repository to check for workshop updates"
+    required: true
 outputs:
   build-controller:
     description: "Should the controller image be rebuilt or not"
@@ -13,9 +16,9 @@ runs:
   steps:
     - name: "Validate crucible-directory"
       shell: bash
-      run: ${{ github.action_path }}/validate-inputs.sh ${{ inputs.crucible-directory }}
+      run: ${{ github.action_path }}/validate-inputs.sh ${{ inputs.crucible-directory }} ${{ inputs.workshop-directory }}
     - name: "Check for controller build status"
       id: check-controller-build
       shell: bash
-      run: ${{ github.action_path }}/check-controller-build.sh ${{ inputs.crucible-directory}}
+      run: ${{ github.action_path }}/check-controller-build.sh ${{ inputs.crucible-directory}} ${{ inputs.workshop-directory }}
 
