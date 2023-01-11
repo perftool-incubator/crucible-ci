@@ -57,6 +57,22 @@ jobs:
         path: crucible
         fetch-depth: 2
 
+    - name: checkout workshop default
+      if: ${{ inputs.ci_target != 'workshop' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/workshop
+        ref: master
+        path: workshop
+    - name: checkout workshop ci_target
+      if: ${{ inputs.ci_target == 'workshop' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: workshop
+        fetch-depth: 2
+
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
       uses: actions/checkout@v3
@@ -115,6 +131,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/check-controller-build
       with:
         crucible-directory: "./crucible"
+        workshop-directory: "./workshop"
     - name: run get-repo-name
       id: get-repo-name
       uses: ./crucible-ci/.github/actions/get-repo-name
