@@ -142,7 +142,7 @@ validate_ci_build_controller
 
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     case "${scenario}" in
-        fio|uperf|iperf|oslat|cyclictest)
+        fio|uperf|iperf|oslat|cyclictest|multi)
             ;;
         *)
             echo "ERROR: Unknown CI scenario [${scenario}]"
@@ -376,6 +376,25 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         esac
 
         case "${scenario}" in
+            multi)
+                case "${CI_ENDPOINT}" in
+                    k8s)
+                        ENDPOINT_ARG="--bench-ids iperf:1,uperf:2 --endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
+                        ;;
+                    remotehost)
+                        ENDPOINT_ARG="--bench-ids iperf:1,uperf:2 --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1-2"
+                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
+                        ;;
+                esac
+
+                run_cmd "crucible run iperf,uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/iperf-1.json,${SCRIPT_DIR}/mv-params/uperf-1.json ${ENDPOINT_ARG}"
+                post_run_cmd
+
+                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                    run_cmd "crucible run iperf,uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/iperf-2.json,${SCRIPT_DIR}/mv-params/uperf-2.json ${ENDPOINT_ARG}"
+                    post_run_cmd
+                fi
+                ;;
             cyclictest)
                 case "${CI_ENDPOINT}" in
                     k8s)
@@ -513,6 +532,10 @@ run_cmd "crucible es init"
 run_cmd "crucible es rebuild"
 
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
+    if [ "${scenario}" == "multi" ]; then
+        scenario="iperf-and-uperf"
+    fi
+
     run_cmd "crucible archive /var/lib/crucible/run/${scenario}*"
 
     run_cmd "crucible unarchive /var/lib/crucible/archive/${scenario}*"
