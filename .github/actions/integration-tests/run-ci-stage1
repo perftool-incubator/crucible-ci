@@ -232,6 +232,8 @@ function post_run_cmd {
 
             run_cmd "crucible get metric --run ${run_id} --period ${period_id} --source mpstat --type Busy-CPU --breakout cstype,csid"
 
+            run_cmd "crucible get metric --run ${run_id} --period ${period_id} --source procstat --type interrupts-sec --breakout cstype,csid"
+
             echo
         done 9< ${tmp_file}
         IFS=${OLD_IFS}
