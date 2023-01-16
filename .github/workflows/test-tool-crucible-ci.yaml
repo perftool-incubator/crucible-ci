@@ -1,0 +1,38 @@
+name: test-tool-crucible-ci
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - LICENSE
+      - '**.md'
+      - .github/workflows/faux-crucible-ci.yaml
+      - 'docs/**'
+  workflow_dispatch:
+
+jobs:
+  call-tool-crucible-ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        repos:
+        - tool: "sysstat"
+          branch: "master"
+        - tool: "procstat"
+          branch: "master"
+    uses: ./.github/workflows/tool-crucible-ci.yaml
+    with:
+      ci_target: "${{ matrix.repos.tool }}"
+      ci_target_branch: "${{ matrix.repos.branch }}"
+      crucible_ci_test: "yes"
+      crucible_ci_test_branch: "${{ github.ref }}"
+      github_workspace: "$GITHUB_WORKSPACE"
+    secrets:
+      registry_auth: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
+
+  test-tool-crucible-ci-complete:
+    runs-on: ubuntu-latest
+    needs: call-tool-crucible-ci
+    steps:
+    - name: Confirm Success
+      run: echo "test-tool-crucible-ci-complete"
