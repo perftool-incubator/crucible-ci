@@ -1,0 +1,10 @@
+name: core-crucible-ci
+
+on:
+  workflow_call:
+
+jobs:
+  core-crucible-ci-complete:
+    runs-on: ubuntu-latest
+    steps:
+    - run: 'echo "faux-core-crucible-ci-complete"'
