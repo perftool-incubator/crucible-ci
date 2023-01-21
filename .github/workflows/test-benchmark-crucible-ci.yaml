@@ -7,6 +7,9 @@ on:
       - LICENSE
       - '**.md'
       - .github/workflows/faux-crucible-ci.yaml
+      - .github/workflows/faux-benchmark-crucible-ci.yaml
+      - .github/workflows/faux-core-crucible-ci.yaml
+      - .github/workflows/faux-tool-crucible-ci.yaml
       - 'docs/**'
   workflow_dispatch:
 
