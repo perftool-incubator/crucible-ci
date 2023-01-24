@@ -4,10 +4,13 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-    - LICENSE
-    - '**.md'
-    - .github/workflows/faux-crucible-ci.yaml
-    - 'docs/**'
+      - LICENSE
+      - '**.md'
+      - .github/workflows/faux-crucible-ci.yaml
+      - .github/workflows/faux-benchmark-crucible-ci.yaml
+      - .github/workflows/faux-core-crucible-ci.yaml
+      - .github/workflows/faux-tool-crucible-ci.yaml
+      - 'docs/**'
 
 jobs:
   test-benchmark-crucible-ci-complete:
@@ -20,7 +23,10 @@ jobs:
     steps:
     - run: 'echo "No build required" '
 
-  run-core-crucible-ci-complete:
+  test-tool-crucible-ci-complete:
     runs-on: ubuntu-latest
     steps:
     - run: 'echo "No build required" '
+
+  call-core-crucible-ci:
+    uses: ./.github/workflows/faux-core-crucible-ci.yaml

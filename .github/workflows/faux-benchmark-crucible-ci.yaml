@@ -1,0 +1,10 @@
+name: benchmark-crucible-ci
+
+on:
+  workflow_call:
+
+jobs:
+  benchmark-crucible-ci-complete:
+    runs-on: ubuntu-latest
+    steps:
+    - run: 'echo "faux-benchmark-crucible-ci-complete"'

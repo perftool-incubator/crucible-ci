@@ -1,0 +1,10 @@
+name: tool-crucible-ci
+
+on:
+  workflow_call:
+
+jobs:
+  tool-crucible-ci-complete:
+    runs-on: ubuntu-latest
+    steps:
+    - run: 'echo "faux-tool-crucible-ci-complete"'
