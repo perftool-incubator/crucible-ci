@@ -427,22 +427,24 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     ;;
                 esac
 
-                if [ "${CI_PARAM_MODE}" == "from-file" ]; then
-                    # from-file param mode
-                    sed -i "s|TAGS|${TAGS}|g" ${SCRIPT_DIR}/run-file/oslat.json
-                    sed -i "s|SCRIPT_DIR|${SCRIPT_DIR}|g" ${SCRIPT_DIR}/run-file/oslat.json
-                    sed -i "s|COMMON_ENDPOINT_ARGS|${COMMON_ENDPOINT_ARGS}|g" ${SCRIPT_DIR}/run-file/oslat.json
-                    sed -i "s|COMMON_K8S_ENDPOINT_ARGS|${COMMON_K8S_ENDPOINT_ARGS}|g" ${SCRIPT_DIR}/run-file/oslat.json
-                    run_cmd "crucible run oslat --from-file ${SCRIPT_DIR}/run-file/oslat.json"
+                run_cmd "crucible run oslat --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/oslat-1.json ${ENDPOINT_ARG}"
+                post_run_cmd
+                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                    run_cmd "crucible run oslat --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/oslat-2.json ${ENDPOINT_ARG}"
                     post_run_cmd
-                else
-                    # mv-params param mode
-                    run_cmd "crucible run oslat --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/oslat-1.json ${ENDPOINT_ARG}"
+                fi
+
+                # Only run all-in-one json test if the runfile exists for the endpoint/userenv
+                if [ -f "${SCRIPT_DIR}/run-file/oslat-${CI_ENDPOINT}-${userenv}.json" ]; then
+                    RUN_FILE="${SCRIPT_DIR}/run-file/oslat-${CI_ENDPOINT}-${userenv}.json"
+                    sed -i "s|CI_REPEAT_RUNS|${CI_REPEAT_RUNS}|g" ${RUN_FILE}
+                    sed -i "s|USERENV|${userenv}|g" ${RUN_FILE}
+                    sed -i "s|SCRIPT_DIR|${SCRIPT_DIR}|g" ${RUN_FILE}
+                    sed -i "s|CONTROLLER_IP|${CONTROLLER_IP}|g" ${RUN_FILE}
+                    sed -i "s|CI_ENDPOINT_HOST|${CI_ENDPOINT_HOST}|g" ${RUN_FILE}
+                    sed -i "s|CI_ENDPOINT_USER|${CI_ENDPOINT_USER}|g" ${RUN_FILE}
+                    run_cmd "crucible run oslat --from-file ${RUN_FILE}"
                     post_run_cmd
-                    if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                        run_cmd "crucible run oslat --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/oslat-2.json ${ENDPOINT_ARG}"
-                        post_run_cmd
-                    fi
                 fi
                 ;;
             iperf)
