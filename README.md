@@ -12,7 +12,7 @@ The intent/goal here is that the upstream code in the primary branch for all rep
 
 ## Target Environment
 
-Crucible-CI is primarily intended to be executed in the GitHub runner environment (both GitHub hosted and self-hosted runners).  However, some of it's components can be executed outside of a GitHub runner environment in order to provide developers with the ability to integration test their changes prior to pull request submission.  More on this in the details below.
+Crucible-CI is primarily intended to be executed in the GitHub runner environment (both GitHub hosted and self-hosted runners).  However, some of its components can be executed outside of a GitHub runner environment in order to provide developers with the ability to integration test their changes prior to pull request submission.  More on this in the details below.
 
 ## Details
 
@@ -67,7 +67,7 @@ The [get-endpoints](.github/actions/get-endpoints) action is used to determine w
 
 ##### get-repo-name
 
-The [get-repo-name](.github/actions/get-repo-name) action is used to extract a repository name from the `github.repository` context variable (which includes the owner/project name.
+The [get-repo-name](.github/actions/get-repo-name) action is used to extract a repository name from the `github.repository` context variable (which includes the owner/project name).
 
 ##### get-scenarios
 
@@ -75,7 +75,7 @@ The [get-scenarios](.github/actions/get-scenarios) action is used to determine w
 
 ##### get-userenvs
 
-The [get-userenvs](.github/actions/get-userenvs) action is used to look at a ricksaw repository to determine what the list of currently supported userenvs is.
+The [get-userenvs](.github/actions/get-userenvs) action is used to look at a rickshaw repository to determine what the list of currently supported userenvs is.
 
 ##### install-crucible
 
@@ -110,7 +110,7 @@ These workflows can be called from any Crucible subproject to easily provide a d
 
 ##### benchmark-crucible-ci
 
-The [benchmark-crucible-ci](.github/workflows/benchmark-crucible-ci.yaml) workflow is intended to be called from Crucible benchmark subprojects.  It limits it's testing focus to benchmark specific jobs.
+The [benchmark-crucible-ci](.github/workflows/benchmark-crucible-ci.yaml) workflow is intended to be called from Crucible benchmark subprojects.  It limits its testing focus to benchmark specific jobs.
 
 ##### core-crucible-ci
 
@@ -138,4 +138,4 @@ The [test-core-crucible-ci](.github/workflows/test-core-crucible-ci.yaml) workfl
 
 ## Testing Crucible-CI
 
-Crucible-CI is a subproject in the Crucible family just like any other.  This means that Crucible-CI can be used to test itself when changes to it are proposed.  As mentioned above, it also means that Crucible-CI has an [embedded workflow](README.md#run-core-crucible-ci) implemented that demonstrates how it's reusable workflows can be called.
+Crucible-CI is a subproject in the Crucible family just like any other.  This means that Crucible-CI can be used to test itself when changes to it are proposed.  As mentioned above, it also means that Crucible-CI has an [embedded workflow](README.md#run-core-crucible-ci) implemented that demonstrates how its reusable workflows can be called.
