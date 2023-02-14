@@ -149,6 +149,7 @@ jobs:
     - gen-params
     - display-params
     steps:
+
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
       uses: actions/checkout@v3
@@ -170,6 +171,15 @@ jobs:
         repository: perftool-incubator/crucible-ci
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
+
+    - name: checkout ${{ inputs.ci_target }} ci_target
+      if: ${{ inputs.ci_target != 'crucible-ci' }}
+      uses: actions/checkout@v3
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: ${{ inputs.ci_target }}
+
     - name: import secret
       env:
         CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth }}
@@ -178,6 +188,9 @@ jobs:
     - name: run crucible-ci->install-crucible
       if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
       uses: ./crucible-ci/.github/actions/install-crucible
+      with:
+        ci_target: ${{ inputs.ci_target }}
+        ci_target_dir: ${{ github.workspace }}/${{ inputs.ci_target }}
     - name: display crucible config
       if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
       run: cat /etc/sysconfig/crucible
