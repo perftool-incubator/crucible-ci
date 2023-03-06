@@ -20,12 +20,15 @@ jobs:
       matrix:
         repos:
         - subproject: "rickshaw"
+          subproject_dir: "rickshaw"
           branch: "master"
         - subproject: "crucible"
+          subproject_dir: "crucible"
           branch: "master"
     uses: ./.github/workflows/core-crucible-ci.yaml
     with:
       ci_target: "${{ matrix.repos.subproject }}"
+      ci_target_dir: "${{ matrix.repos.subproject_dir }}"
       ci_target_branch: "${{ matrix.repos.branch }}"
       crucible_ci_test: "yes"
       crucible_ci_test_branch: "${{ github.ref }}"

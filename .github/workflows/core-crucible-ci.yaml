@@ -6,6 +6,10 @@ on:
       ci_target:
         required: true
         type: string
+      ci_target_dir:
+        required: false
+        type: "string"
+        default: ""
       crucible_ci_test:
         required: false
         type: string
@@ -39,6 +43,7 @@ jobs:
       github_hosted_scenarios: ${{ steps.get-scenarios-github.outputs.scenarios }}
       self_hosted_scenarios: ${{ steps.get-scenarios-self.outputs.scenarios }}
       repo_name: ${{ steps.get-repo-name.outputs.repo-name }}
+      ci_target_dir: ${{ steps.set-ci-target-dir.outputs.ci-target-dir }}
     steps:
 
     - name: checkout crucible default
@@ -136,6 +141,17 @@ jobs:
       id: get-repo-name
       uses: ./crucible-ci/.github/actions/get-repo-name
 
+    - name: set ci_target_dir
+      id: set-ci-target-dir
+      run: |
+        if [ "${{ inputs.ci_target_dir }}" == "" ]; then
+          echo "Setting ci-target-dir to the value of inputs.ci_target [${{ inputs.ci_target }} ]"
+          echo "ci-target-dir=${{ inputs.ci_target }}" >> $GITHUB_OUTPUT
+        else
+          echo "Setting ci-target-dir to the value of inputs.ci_target_dir [${{ inputs.ci_target_dir }} ]"
+          echo "ci-target-dir=${{ inputs.ci_target_dir }}" >> $GITHUB_OUTPUT
+        fi
+
   display-params:
     runs-on: ubuntu-latest
     needs: gen-params
@@ -190,7 +206,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/install-crucible
       with:
         ci_target: ${{ inputs.ci_target }}
-        ci_target_dir: ${{ github.workspace }}/${{ inputs.ci_target }}
+        ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
     - name: display crucible config
       if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
       run: cat /etc/sysconfig/crucible
@@ -263,7 +279,7 @@ jobs:
         scenarios: "${{ matrix.scenario.benchmark }}"
         userenvs: "${{ matrix.userenv }}"
         ci_target: "${{ inputs.ci_target }}"
-        ci_target_dir: ${{ github.workspace }}/${{ inputs.ci_target }}
+        ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
         ci_controller: ${{ matrix.ci_controller }}
         controller_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
     - name: skip crucible-ci->integration-tests
@@ -327,7 +343,7 @@ jobs:
         scenarios: "${{ matrix.scenario.benchmark }}"
         userenvs: "${{ matrix.userenv }}"
         ci_target: "${{ inputs.ci_target }}"
-        ci_target_dir: ${{ github.workspace }}/${{ inputs.ci_target }}
+        ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
         ci_controller: ${{ matrix.ci_controller }}
         controller_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
     - name: skip crucible-ci->integration-tests
