@@ -188,13 +188,13 @@ jobs:
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
 
-    - name: checkout ${{ inputs.ci_target }} ci_target
+    - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
       if: ${{ inputs.ci_target != 'crucible-ci' }}
       uses: actions/checkout@v3
       with:
-        repository: perftool-incubator/${{ inputs.ci_target }}
+        repository: perftool-incubator/${{ needs.gen-params.outputs.ci_target_dir }}
         ref: ${{ inputs.ci_target_branch }}
-        path: ${{ inputs.ci_target }}
+        path: ${{ needs.gen-params.outputs.ci_target_dir }}
 
     - name: import secret
       env:
@@ -243,12 +243,12 @@ jobs:
         echo "userenv=${{ matrix.userenv }}"
         echo "ci_controller=${{ matrix.ci_controller }}"
 
-    - name: checkout ${{ inputs.ci_target }} ci_target
+    - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
       uses: actions/checkout@v3
       with:
-        repository: perftool-incubator/${{ inputs.ci_target }}
+        repository: perftool-incubator/${{ needs.gen-params.outputs.ci_target_dir }}
         ref: ${{ inputs.ci_target_branch }}
-        path: ${{ inputs.ci_target }}
+        path: ${{ needs.gen-params.outputs.ci_target_dir }}
 
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
@@ -307,12 +307,12 @@ jobs:
         echo "userenv=${{ matrix.userenv }}"
         echo "ci_controller=${{ matrix.ci_controller }}"
 
-    - name: checkout ${{ inputs.ci_target }} ci_target
+    - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
       uses: actions/checkout@v3
       with:
-        repository: perftool-incubator/${{ inputs.ci_target }}
+        repository: perftool-incubator/${{ needs.gen-params.outputs.ci_target_dir }}
         ref: ${{ inputs.ci_target_branch }}
-        path: ${{ inputs.ci_target }}
+        path: ${{ needs.gen-params.outputs.ci_target_dir }}
 
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
