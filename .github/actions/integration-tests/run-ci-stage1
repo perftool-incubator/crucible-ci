@@ -434,9 +434,10 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     post_run_cmd
                 fi
 
-                # Only run all-in-one json test if the runfile exists for the endpoint/userenv
-                if [ -f "${SCRIPT_DIR}/run-file/oslat-${CI_ENDPOINT}-${userenv}.json" ]; then
-                    RUN_FILE="${SCRIPT_DIR}/run-file/oslat-${CI_ENDPOINT}-${userenv}.json"
+                # Only run all-in-one json test if the runfile exists for the endpoint
+                # e.g.: ci-oslat-run-file-k8s-alma8.json
+                RUN_FILE="${SCRIPT_DIR}/run-file/ci-oslat-run-file-${CI_ENDPOINT}-${userenv}.json"
+                if [ -f "${RUN_FILE}" ]; then
                     sed -i "s|CI_REPEAT_RUNS|${CI_REPEAT_RUNS}|g" ${RUN_FILE}
                     sed -i "s|USERENV|${userenv}|g" ${RUN_FILE}
                     sed -i "s|SCRIPT_DIR|${SCRIPT_DIR}|g" ${RUN_FILE}

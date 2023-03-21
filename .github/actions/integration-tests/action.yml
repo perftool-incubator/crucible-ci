@@ -56,6 +56,9 @@ runs:
     - run: sudo ${{ github.action_path }}/setup-ci-endpoint --run-environment github --ci-endpoint ${{ inputs.ci_endpoint }}
       shell: bash
 
+    - run: sudo cp /opt/crucible/subprojects/core/rickshaw/util/tests/JSON/ci-*.json ${{ github.action_path }}/run-file/. || true
+      shell: bash
+
     - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-build-controller ${{ inputs.ci_build_controller }} --ci-param-mode ${{ inputs.ci_param_mode }}
       shell: bash
 
