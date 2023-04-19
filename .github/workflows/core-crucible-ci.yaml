@@ -37,6 +37,7 @@ env:
 jobs:
   gen-params:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       userenvs: ${{ steps.get-userenvs.outputs.userenvs }}
       build_controller: ${{ steps.check-controller-build.outputs.build-controller }}
@@ -154,6 +155,7 @@ jobs:
 
   display-params:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: gen-params
     steps:
     - name: Echo gen-params outputs
@@ -161,6 +163,7 @@ jobs:
 
   build-controller:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     needs:
     - gen-params
     - display-params
@@ -224,6 +227,7 @@ jobs:
 
   github-runners:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     needs:
     - gen-params
     - display-params
@@ -288,6 +292,7 @@ jobs:
 
   self-hosted-runners:
     runs-on: [ self-hosted, cpu-partitioning, remotehost ]
+    timeout-minutes: 90
     needs:
     - gen-params
     - display-params
@@ -352,6 +357,7 @@ jobs:
 
   core-crucible-ci-complete:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs:
     - github-runners
     - self-hosted-runners
