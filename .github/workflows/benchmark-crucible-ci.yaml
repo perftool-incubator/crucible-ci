@@ -32,6 +32,7 @@ env:
 jobs:
   gen-params:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       userenvs: ${{ steps.get-userenvs.outputs.userenvs }}
       github_hosted_scenarios: ${{ steps.get-scenarios-github.outputs.scenarios }}
@@ -84,6 +85,7 @@ jobs:
 
   display-params:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: gen-params
     steps:
     - name: Echo gen-params outputs
@@ -91,6 +93,7 @@ jobs:
 
   github-runners:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     needs:
     - gen-params
     - display-params
@@ -149,6 +152,7 @@ jobs:
 
   self-hosted-runners:
     runs-on: [ self-hosted, cpu-partitioning, remotehost ]
+    timeout-minutes: 90
     needs:
     - gen-params
     - display-params
@@ -207,6 +211,7 @@ jobs:
 
   benchmark-crucible-ci-complete:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs:
     - github-runners
     - self-hosted-runners
