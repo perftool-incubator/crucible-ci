@@ -444,7 +444,7 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     sed -i "s|CONTROLLER_IP|${CONTROLLER_IP}|g" ${RUN_FILE}
                     sed -i "s|CI_ENDPOINT_HOST|${CI_ENDPOINT_HOST}|g" ${RUN_FILE}
                     sed -i "s|CI_ENDPOINT_USER|${CI_ENDPOINT_USER}|g" ${RUN_FILE}
-                    run_cmd "crucible run oslat --from-file ${RUN_FILE}"
+                    run_cmd "crucible run --from-file ${RUN_FILE}"
                     post_run_cmd
                 fi
                 ;;
