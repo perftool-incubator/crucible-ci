@@ -396,6 +396,23 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     run_cmd "crucible run iperf,uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/iperf-2.json,${SCRIPT_DIR}/mv-params/uperf-2.json ${ENDPOINT_ARG}"
                     post_run_cmd
                 fi
+
+                # multibench all-in-one json test
+                RUN_FILE="${SCRIPT_DIR}/run-file/ci-${scenario}-run-file-${CI_ENDPOINT}-${userenv}.json"
+                if [ -f "${RUN_FILE}" ]; then
+                    count=$(jq '.endpoints | length' $RUN_FILE)
+                    idx=0
+                    while [ $idx -lt $count ]; do
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "controller-ip" --arg controller_ip "${CONTROLLER_IP}" '."endpoints"[$idx] += { ($param): $controller_ip }'
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "host" --arg host "${CI_ENDPOINT_HOST}" '."endpoints"[$idx] += { ($param): $host }'
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "user" --arg user "${CI_ENDPOINT_USER}" '."endpoints"[$idx] += { ($param): $user }'
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "userenv" --arg userenv "${userenv}" '."endpoints"[$idx] += { ($param): $userenv }'
+                        let idx++
+                    done
+                    run_cmd "crucible run --from-file ${RUN_FILE}"
+                    post_run_cmd
+                fi
+
                 ;;
             cyclictest)
                 case "${CI_ENDPOINT}" in
@@ -436,14 +453,17 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
 
                 # Only run all-in-one json test if the runfile exists for the endpoint
                 # e.g.: ci-oslat-run-file-k8s-alma8.json
-                RUN_FILE="${SCRIPT_DIR}/run-file/ci-oslat-run-file-${CI_ENDPOINT}-${userenv}.json"
+                RUN_FILE="${SCRIPT_DIR}/run-file/ci-${scenario}-run-file-${CI_ENDPOINT}-${userenv}.json"
                 if [ -f "${RUN_FILE}" ]; then
-                    sed -i "s|CI_REPEAT_RUNS|${CI_REPEAT_RUNS}|g" ${RUN_FILE}
-                    sed -i "s|USERENV|${userenv}|g" ${RUN_FILE}
-                    sed -i "s|SCRIPT_DIR|${SCRIPT_DIR}|g" ${RUN_FILE}
-                    sed -i "s|CONTROLLER_IP|${CONTROLLER_IP}|g" ${RUN_FILE}
-                    sed -i "s|CI_ENDPOINT_HOST|${CI_ENDPOINT_HOST}|g" ${RUN_FILE}
-                    sed -i "s|CI_ENDPOINT_USER|${CI_ENDPOINT_USER}|g" ${RUN_FILE}
+                    count=$(jq '.endpoints | length' $RUN_FILE)
+                    idx=0
+                    while [ $idx -lt $count ]; do
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "controller-ip" --arg controller_ip "${CONTROLLER_IP}" '."endpoints"[$idx] += { ($param): $controller_ip }'
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "host" --arg host "${CI_ENDPOINT_HOST}" '."endpoints"[$idx] += { ($param): $host }'
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "user" --arg user "${CI_ENDPOINT_USER}" '."endpoints"[$idx] += { ($param): $user }'
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "userenv" --arg userenv "${userenv}" '."endpoints"[$idx] += { ($param): $userenv }'
+                        let idx++
+                    done
                     run_cmd "crucible run --from-file ${RUN_FILE}"
                     post_run_cmd
                 fi

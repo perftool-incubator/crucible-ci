@@ -1,6 +1,18 @@
 # -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 
+function process_json() {
+    local json=$1; shift
+
+    jq "$@" "${json}" > "${json}.tmp"
+    if [ $? == 0 ]; then
+        /bin/mv "${json}.tmp" "${json}"
+        return 0
+    else
+        return 1
+    fi
+}
+
 function start_github_group {
     local header
     header="$@"
