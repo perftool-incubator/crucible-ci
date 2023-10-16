@@ -43,15 +43,6 @@ start_github_group "${header}"
 echo -e "*** ${header} ***\n"
 stop_github_group
 
-header="Stopping Crucible Services"
-start_github_group "${header}"
-echo -e "### ${header} ###\n"
-echo
-crucible stop es
-crucible stop httpd
-crucible stop redis
-stop_github_group
-
 header="Removing podman resources (containers and images)"
 start_github_group "${header}"
 echo -e "### ${header} ###\n"
