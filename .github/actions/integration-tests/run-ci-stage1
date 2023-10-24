@@ -432,6 +432,23 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     run_cmd "crucible run cyclictest --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/cyclictest-2.json ${ENDPOINT_ARG}"
                     post_run_cmd
                 fi
+
+                # cyclictest runfile json test
+                RUN_FILE="${SCRIPT_DIR}/run-file/ci-${scenario}-run-file-${CI_ENDPOINT}-${userenv}.json"
+                if [ -f "${RUN_FILE}" ]; then
+                    count=$(jq '.endpoints | length' $RUN_FILE)
+                    idx=0
+                    while [ $idx -lt $count ]; do
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "controller-ip" --arg controller_ip "${CONTROLLER_IP}" '."endpoints"[$idx] += { ($param): $controller_ip }'
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "host" --arg host "${CI_ENDPOINT_HOST}" '."endpoints"[$idx] += { ($param): $host }'
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "user" --arg user "${CI_ENDPOINT_USER}" '."endpoints"[$idx] += { ($param): $user }'
+                        process_json ${RUN_FILE} --argjson idx $idx --arg param "userenv" --arg userenv "${userenv}" '."endpoints"[$idx] += { ($param): $userenv }'
+                        let idx++
+                    done
+                    run_cmd "crucible run --from-file ${RUN_FILE}"
+                    post_run_cmd
+                fi
+
                 ;;
             oslat)
                 case "${CI_ENDPOINT}" in
