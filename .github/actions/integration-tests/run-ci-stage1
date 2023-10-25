@@ -397,22 +397,6 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     post_run_cmd
                 fi
 
-                # multibench all-in-one json test
-                RUN_FILE="${SCRIPT_DIR}/run-file/ci-${scenario}-run-file-${CI_ENDPOINT}-${userenv}.json"
-                if [ -f "${RUN_FILE}" ]; then
-                    count=$(jq '.endpoints | length' $RUN_FILE)
-                    idx=0
-                    while [ $idx -lt $count ]; do
-                        process_json ${RUN_FILE} --argjson idx $idx --arg param "controller-ip" --arg controller_ip "${CONTROLLER_IP}" '."endpoints"[$idx] += { ($param): $controller_ip }'
-                        process_json ${RUN_FILE} --argjson idx $idx --arg param "host" --arg host "${CI_ENDPOINT_HOST}" '."endpoints"[$idx] += { ($param): $host }'
-                        process_json ${RUN_FILE} --argjson idx $idx --arg param "user" --arg user "${CI_ENDPOINT_USER}" '."endpoints"[$idx] += { ($param): $user }'
-                        process_json ${RUN_FILE} --argjson idx $idx --arg param "userenv" --arg userenv "${userenv}" '."endpoints"[$idx] += { ($param): $userenv }'
-                        let idx++
-                    done
-                    run_cmd "crucible run --from-file ${RUN_FILE}"
-                    post_run_cmd
-                fi
-
                 ;;
             cyclictest)
                 case "${CI_ENDPOINT}" in
@@ -448,23 +432,6 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                 post_run_cmd
                 if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
                     run_cmd "crucible run oslat --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/oslat-2.json ${ENDPOINT_ARG}"
-                    post_run_cmd
-                fi
-
-                # Only run all-in-one json test if the runfile exists for the endpoint
-                # e.g.: ci-oslat-run-file-k8s-alma8.json
-                RUN_FILE="${SCRIPT_DIR}/run-file/ci-${scenario}-run-file-${CI_ENDPOINT}-${userenv}.json"
-                if [ -f "${RUN_FILE}" ]; then
-                    count=$(jq '.endpoints | length' $RUN_FILE)
-                    idx=0
-                    while [ $idx -lt $count ]; do
-                        process_json ${RUN_FILE} --argjson idx $idx --arg param "controller-ip" --arg controller_ip "${CONTROLLER_IP}" '."endpoints"[$idx] += { ($param): $controller_ip }'
-                        process_json ${RUN_FILE} --argjson idx $idx --arg param "host" --arg host "${CI_ENDPOINT_HOST}" '."endpoints"[$idx] += { ($param): $host }'
-                        process_json ${RUN_FILE} --argjson idx $idx --arg param "user" --arg user "${CI_ENDPOINT_USER}" '."endpoints"[$idx] += { ($param): $user }'
-                        process_json ${RUN_FILE} --argjson idx $idx --arg param "userenv" --arg userenv "${userenv}" '."endpoints"[$idx] += { ($param): $userenv }'
-                        let idx++
-                    done
-                    run_cmd "crucible run --from-file ${RUN_FILE}"
                     post_run_cmd
                 fi
                 ;;
@@ -526,6 +493,22 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                 fi
                 ;;
         esac
+        
+        RUN_FILE="${SCRIPT_DIR}/run-file/ci-${scenario}-run-file-${CI_ENDPOINT}-${userenv}.json"
+        if [ -f "${RUN_FILE}" ]; then
+            count=$(jq '.endpoints | length' $RUN_FILE)
+            idx=0
+            while [ $idx -lt $count ]; do
+                process_json ${RUN_FILE} --argjson idx $idx --arg param "controller-ip" --arg controller_ip "${CONTROLLER_IP}" '."endpoints"[$idx] += { ($param): $controller_ip }'
+                process_json ${RUN_FILE} --argjson idx $idx --arg param "host" --arg host "${CI_ENDPOINT_HOST}" '."endpoints"[$idx] += { ($param): $host }'
+                process_json ${RUN_FILE} --argjson idx $idx --arg param "user" --arg user "${CI_ENDPOINT_USER}" '."endpoints"[$idx] += { ($param): $user }'
+                process_json ${RUN_FILE} --argjson idx $idx --arg param "userenv" --arg userenv "${userenv}" '."endpoints"[$idx] += { ($param): $userenv }'
+                let idx++
+            done
+            run_cmd "crucible run --from-file ${RUN_FILE}"
+            post_run_cmd
+        fi
+
     done
 
     run_cmd "df -h"
