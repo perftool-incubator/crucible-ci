@@ -41,21 +41,21 @@ jobs:
 
     - name: checkout crucible-ci default
       if: ${{ inputs.crucible_ci_test != 'yes' }}
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: perftool-incubator/crucible-ci
         ref: main
         path: crucible-ci
     - name: checkout crucible-ci crucible_ci_test
       if: ${{ inputs.crucible_ci_test == 'yes' }}
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: perftool-incubator/crucible-ci
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
 
     - name: checkout rickshaw
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: perftool-incubator/rickshaw
         ref: master
@@ -104,21 +104,21 @@ jobs:
 
     - name: checkout crucible-ci default
       if: ${{ inputs.crucible_ci_test != 'yes' }}
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: perftool-incubator/crucible-ci
         ref: main
         path: crucible-ci
     - name: checkout crucible-ci crucible_ci_test
       if: ${{ inputs.crucible_ci_test == 'yes' }}
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: perftool-incubator/crucible-ci
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
 
     - name: checkout tool-${{ inputs.ci_target }}
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: perftool-incubator/tool-${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
