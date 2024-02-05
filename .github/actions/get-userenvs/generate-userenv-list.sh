@@ -6,7 +6,7 @@ rickshaw_directory=${1}
 excludes="stream8-flexran"
 
 if pushd ${rickshaw_directory}; then
-    userenvs=$(find userenvs/ -maxdepth 1 -name '*.json' | sed -e 's|userenvs/||' -e 's|\.json||')
+    userenvs=$(find userenvs/ -maxdepth 1 -name '*.json' -type f | sed -e 's|userenvs/||' -e 's|\.json||')
     # Discard excluded envs
     for ex in ${excludes[@]}; do
         new=( "${userenvs[@]/$ex}" )
