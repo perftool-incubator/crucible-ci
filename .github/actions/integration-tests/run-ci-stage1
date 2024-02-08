@@ -253,8 +253,8 @@ function post_run_cmd {
 
     run_cmd "crucible tags --result-dir /var/lib/crucible/run/latest --action remove --tags testing1 --tags testing2"
 
-    # shutdown ES before each run to free up memory for image building
-    run_cmd "crucible stop es"
+    # shutdown OpenSearch before each run to free up memory for image building
+    run_cmd "crucible stop opensearch"
 }
 
 function remove_microk8s_images {
@@ -308,7 +308,7 @@ run_cmd "crucible help"
 run_cmd "crucible repo info"
 
 for action in start stop; do
-    for service in httpd es redis; do
+    for service in httpd opensearch redis; do
         run_cmd "podman ps --all --external"
 
         run_cmd "crucible ${action} ${service}"
@@ -535,9 +535,9 @@ run_cmd "crucible ls --type run-id"
 
 run_cmd "crucible ls --type tags"
 
-run_cmd "crucible es init"
+run_cmd "crucible opensearch init"
 
-run_cmd "crucible es rebuild"
+run_cmd "crucible opensearch rebuild"
 
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     if [ "${scenario}" == "multi" ]; then
