@@ -202,7 +202,7 @@ case "${CI_ENDPOINT}" in
             CI_K8S_TYPE="MICROK8S"
             echo "K8S type is MicroK8S"
         elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} kubectl cluster-info; then
-            CI_K8S_type="GENERIC"
+            CI_K8S_TYPE="GENERIC"
             echo "K8S type is generic"
         else
             echo "ERROR: Could not determine K8S type"
