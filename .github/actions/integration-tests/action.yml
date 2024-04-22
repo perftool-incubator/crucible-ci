@@ -32,7 +32,7 @@ inputs:
   ci_param_mode:
     description: "Should crucible use --mv-params or --from-file (single json)"
     required: false
-    default: "mv-params"
+    default: "all"
   ci_controller:
     description: "Whether a CI built controller should be used or not"
     required: false
