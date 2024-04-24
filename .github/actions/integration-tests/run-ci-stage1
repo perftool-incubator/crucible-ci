@@ -53,7 +53,7 @@ CI_RUN_UPDATE="yes"
 
 CI_BUILD_CONTROLLER="no"
 
-CI_PARAM_MODE="mv-params"
+CI_PARAM_MODE="all"
 
 longopts="verbose,scenarios:,userenvs:,samples:,repeat-runs:,run-environment:,ci-endpoint:,ci-endpoint-host:,ci-endpoint-user:,ci-build-controller:"
 longopts+=",ci-param-mode:,disable-update-test"
@@ -162,6 +162,15 @@ if [ -n "${CI_REPEAT_RUNS}" ]; then
     esac
 fi
 
+case "${CI_PARAM_MODE}" in
+    all|mv-params|run-file)
+        ;;
+    *)
+        echo "ERROR: Unknown value for --ci-param-mode [${CI_PARAM_MODE}].  Acceptable values are 'all' or 'mv-params' or 'run-file'."
+        exit 1
+        ;;
+esac
+
 CI_ACTIVE_USERENVS=""
 for userenv in $(echo "${CI_USERENVS}" | sed -e "s/,/ /g"); do
     case "${userenv}" in
@@ -202,7 +211,7 @@ case "${CI_ENDPOINT}" in
             CI_K8S_TYPE="MICROK8S"
             echo "K8S type is MicroK8S"
         elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} kubectl cluster-info; then
-            CI_K8S_type="GENERIC"
+            CI_K8S_TYPE="GENERIC"
             echo "K8S type is generic"
         else
             echo "ERROR: Could not determine K8S type"
@@ -364,151 +373,215 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         echo -e "### ${header} ###\n"
         stop_github_group
 
-        TAGS=",repeat:${CI_REPEAT_RUNS},samples:${CI_SAMPLES},userenv:${userenv}"
+        if [ "${CI_PARAM_MODE}" == "all" -o "${CI_PARAM_MODE}" == "mv-params" ]; then
+            header="Current parameter mode is mv-params"
+            start_github_group "${header}"
+            echo -e "### ${header} ###\n"
+            stop_github_group
 
-        COMMON_ENDPOINT_ARGS="controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER}"
-        if [ "${userenv}" != "default" ]; then
-            COMMON_ENDPOINT_ARGS+=",userenv:${userenv}"
-        fi
-        COMMON_K8S_ENDPOINT_ARGS="unique-project:1"
-        case "${CI_K8S_TYPE}" in
-            "MICROK8S"|"GENERIC")
-                COMMON_K8S_ENDPOINT_ARGS+=",kubeconfig:0"
-                ;;
-        esac
+            TAGS=",repeat:${CI_REPEAT_RUNS},samples:${CI_SAMPLES},userenv:${userenv}"
 
-        case "${scenario}" in
-            multi)
-                case "${CI_ENDPOINT}" in
-                    k8s)
-                        ENDPOINT_ARG="--bench-ids iperf:1,uperf:2 --endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
-                        ;;
-                    remotehost)
-                        ENDPOINT_ARG="--bench-ids iperf:1,uperf:2 --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1-2"
-                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
-                        ;;
-                esac
-
-                run_cmd "crucible run iperf,uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/iperf-1.json,${SCRIPT_DIR}/mv-params/uperf-1.json ${ENDPOINT_ARG}"
-                post_run_cmd
-
-                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run iperf,uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/iperf-2.json,${SCRIPT_DIR}/mv-params/uperf-2.json ${ENDPOINT_ARG}"
-                    post_run_cmd
-                fi
-
-                ;;
-            cyclictest)
-                case "${CI_ENDPOINT}" in
-                    k8s)
-                        ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1,cpu-partitioning:default:1,securityContext:client-1:${SCRIPT_DIR}/k8s-endpoint/securityContext-cyclictest.json,securityContext:client-2:${SCRIPT_DIR}/k8s-endpoint/securityContext-cyclictest.json"
-                        ;;
-                    remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1,cpu-partitioning:default:1"
-                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
+            COMMON_ENDPOINT_ARGS="controller-ip:${CONTROLLER_IP},host:${CI_ENDPOINT_HOST},user:${CI_ENDPOINT_USER}"
+            if [ "${userenv}" != "default" ]; then
+                COMMON_ENDPOINT_ARGS+=",userenv:${userenv}"
+            fi
+            COMMON_K8S_ENDPOINT_ARGS="unique-project:1"
+            case "${CI_K8S_TYPE}" in
+                "MICROK8S"|"GENERIC")
+                    COMMON_K8S_ENDPOINT_ARGS+=",kubeconfig:0"
                     ;;
-                esac
+            esac
 
-                run_cmd "crucible run cyclictest --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/cyclictest-1.json ${ENDPOINT_ARG}"
-                post_run_cmd
+            case "${scenario}" in
+                multi)
+                    case "${CI_ENDPOINT}" in
+                        k8s)
+                            ENDPOINT_ARG="--bench-ids iperf:1,uperf:2 --endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
+                            ;;
+                        remotehost)
+                            ENDPOINT_ARG="--bench-ids iperf:1,uperf:2 --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1-2"
+                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
+                            ;;
+                    esac
 
-                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run cyclictest --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/cyclictest-2.json ${ENDPOINT_ARG}"
+                    run_cmd "crucible run iperf,uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/iperf-1.json,${SCRIPT_DIR}/mv-params/uperf-1.json ${ENDPOINT_ARG}"
                     post_run_cmd
-                fi
-                ;;
-            oslat)
-                case "${CI_ENDPOINT}" in
-                    k8s)
-                        ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1,cpu-partitioning:default:1,securityContext:client-1:${SCRIPT_DIR}/k8s-endpoint/securityContext-oslat.json,securityContext:client-2:${SCRIPT_DIR}/k8s-endpoint/securityContext-oslat.json"
-                        ;;
-                    remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1,cpu-partitioning:default:1"
-                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
+
+                    if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                        run_cmd "crucible run iperf,uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/iperf-2.json,${SCRIPT_DIR}/mv-params/uperf-2.json ${ENDPOINT_ARG}"
+                        post_run_cmd
+                    fi
+
                     ;;
-                esac
+                cyclictest)
+                    case "${CI_ENDPOINT}" in
+                        k8s)
+                            ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1,cpu-partitioning:default:1,securityContext:client-1:${SCRIPT_DIR}/k8s-endpoint/securityContext-cyclictest.json,securityContext:client-2:${SCRIPT_DIR}/k8s-endpoint/securityContext-cyclictest.json"
+                            ;;
+                        remotehost)
+                            ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1,cpu-partitioning:default:1"
+                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
+                            ;;
+                    esac
 
-                run_cmd "crucible run oslat --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/oslat-1.json ${ENDPOINT_ARG}"
-                post_run_cmd
-                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run oslat --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/oslat-2.json ${ENDPOINT_ARG}"
+                    run_cmd "crucible run cyclictest --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/cyclictest-1.json ${ENDPOINT_ARG}"
                     post_run_cmd
-                fi
-                ;;
-            iperf)
-                case "${CI_ENDPOINT}" in
-                    k8s)
-                        ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
-                        ;;
-                    remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
-                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
-                        ;;
-                esac
 
-                run_cmd "crucible run iperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/iperf-1.json ${ENDPOINT_ARG}"
-                post_run_cmd
+                    if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                        run_cmd "crucible run cyclictest --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/cyclictest-2.json ${ENDPOINT_ARG}"
+                        post_run_cmd
+                    fi
+                    ;;
+                oslat)
+                    case "${CI_ENDPOINT}" in
+                        k8s)
+                            ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1,cpu-partitioning:default:1,securityContext:client-1:${SCRIPT_DIR}/k8s-endpoint/securityContext-oslat.json,securityContext:client-2:${SCRIPT_DIR}/k8s-endpoint/securityContext-oslat.json"
+                            ;;
+                        remotehost)
+                            ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1,cpu-partitioning:default:1"
+                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
+                            ;;
+                    esac
 
-                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run iperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/iperf-2.json ${ENDPOINT_ARG}"
+                    run_cmd "crucible run oslat --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/oslat-1.json ${ENDPOINT_ARG}"
                     post_run_cmd
-                fi
-                ;;
-            fio)
-                case "${CI_ENDPOINT}" in
-                    k8s)
-                        ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2"
-                        ;;
-                    remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,client:1-2"
-                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
-                        ;;
-                esac
+                    if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                        run_cmd "crucible run oslat --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/oslat-2.json ${ENDPOINT_ARG}"
+                        post_run_cmd
+                    fi
+                    ;;
+                iperf)
+                    case "${CI_ENDPOINT}" in
+                        k8s)
+                            ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
+                            ;;
+                        remotehost)
+                            ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
+                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
+                            ;;
+                    esac
 
-                run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/fio-1.json ${ENDPOINT_ARG}"
-                post_run_cmd
-
-                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/fio-2.json ${ENDPOINT_ARG}"
+                    run_cmd "crucible run iperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/iperf-1.json ${ENDPOINT_ARG}"
                     post_run_cmd
-                fi
-                ;;
-            uperf)
-                case "${CI_ENDPOINT}" in
-                    k8s)
-                        ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
-                        ;;
-                    remotehost)
-                        ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
-                        ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
-                        ;;
-                esac
 
-                run_cmd "crucible run uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/uperf-1.json ${ENDPOINT_ARG}"
-                post_run_cmd
+                    if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                        run_cmd "crucible run iperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/iperf-2.json ${ENDPOINT_ARG}"
+                        post_run_cmd
+                    fi
+                    ;;
+                fio)
+                    case "${CI_ENDPOINT}" in
+                        k8s)
+                            ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2"
+                            ;;
+                        remotehost)
+                            ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,client:1-2"
+                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
+                            ;;
+                    esac
 
-                if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
-                    run_cmd "crucible run uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/uperf-2.json ${ENDPOINT_ARG}"
+                    run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/fio-1.json ${ENDPOINT_ARG}"
                     post_run_cmd
-                fi
-                ;;
-        esac
-        
-        RUN_FILE="${SCRIPT_DIR}/run-file/ci-${scenario}-run-file-${CI_ENDPOINT}-${userenv}.json"
-        if [ -f "${RUN_FILE}" ]; then
-            count=$(jq '.endpoints | length' $RUN_FILE)
-            idx=0
-            while [ $idx -lt $count ]; do
-                process_json ${RUN_FILE} --argjson idx $idx --arg param "controller-ip" --arg controller_ip "${CONTROLLER_IP}" '."endpoints"[$idx] += { ($param): $controller_ip }'
-                process_json ${RUN_FILE} --argjson idx $idx --arg param "host" --arg host "${CI_ENDPOINT_HOST}" '."endpoints"[$idx] += { ($param): $host }'
-                process_json ${RUN_FILE} --argjson idx $idx --arg param "user" --arg user "${CI_ENDPOINT_USER}" '."endpoints"[$idx] += { ($param): $user }'
-                process_json ${RUN_FILE} --argjson idx $idx --arg param "userenv" --arg userenv "${userenv}" '."endpoints"[$idx] += { ($param): $userenv }'
-                let idx++
-            done
-            run_cmd "crucible run --from-file ${RUN_FILE}"
-            post_run_cmd
+
+                    if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                        run_cmd "crucible run fio --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/fio-2.json ${ENDPOINT_ARG}"
+                        post_run_cmd
+                    fi
+                    ;;
+                uperf)
+                    case "${CI_ENDPOINT}" in
+                        k8s)
+                            ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
+                            ;;
+                        remotehost)
+                            ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
+                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
+                            ;;
+                    esac
+
+                    run_cmd "crucible run uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/uperf-1.json ${ENDPOINT_ARG}"
+                    post_run_cmd
+
+                    if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                        run_cmd "crucible run uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/uperf-2.json ${ENDPOINT_ARG}"
+                        post_run_cmd
+                    fi
+                    ;;
+            esac
         fi
 
+        if [ "${CI_PARAM_MODE}" == "all" -o "${CI_PARAM_MODE}" == "run-file" ]; then
+            header="Current parameter mode is run-file"
+            start_github_group "${header}"
+            echo -e "### ${header} ###\n"
+            stop_github_group
+
+            CI_ENDPOINT_SUB_TYPE=""
+            case "${CI_ENDPOINT}" in
+                k8s)
+                    CI_ENDPOINT_SUB_TYPE="${CI_K8S_TYPE}"
+                    ;;
+                *)
+                    CI_ENDPOINT_SUB_TYPE="NONE"
+                    ;;
+            esac
+
+            CI_RUN_FILE="/root/ci-run-file.json"
+
+            if [ -e ${CI_RUN_FILE} ]; then
+               rm ${CI_RUN_FILE}
+            fi
+            crucible wrapper /opt/crucible/subprojects/core/rickshaw/util/ci-run-file-creator.py \
+                     --benchmark ${scenario} \
+                     --endpoint ${CI_ENDPOINT} \
+                     --endpoint-sub-type ${CI_ENDPOINT_SUB_TYPE} \
+                     --userenv ${userenv} \
+                     --controller-ip ${CONTROLLER_IP} \
+                     --host ${CI_ENDPOINT_HOST} \
+                     --user ${CI_ENDPOINT_USER} \
+                     --samples ${CI_SAMPLES} \
+                     --test-order s \
+                     --run-number 1 \
+                     --repeat-runs ${CI_REPEAT_RUNS} \
+                     --output-file ${CI_RUN_FILE}
+
+            if [ -e ${CI_RUN_FILE} ]; then
+                echo "Found run-file ${CI_RUN_FILE} -> executing it"
+                run_cmd "crucible run --from-file ${CI_RUN_FILE}"
+                post_run_cmd
+            else
+                echo "Did not find a run-file -> skipping execution"
+            fi
+
+            if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
+                echo "Attempting repeat run"
+
+                if [ -e ${CI_RUN_FILE} ]; then
+                    rm ${CI_RUN_FILE}
+                fi
+                crucible wrapper /opt/crucible/subprojects/core/rickshaw/util/ci-run-file-creator.py \
+                         --benchmark ${scenario} \
+                         --endpoint ${CI_ENDPOINT} \
+                         --endpoint-sub-type ${CI_ENDPOINT_SUB_TYPE} \
+                         --userenv ${userenv} \
+                         --controller-ip ${CONTROLLER_IP} \
+                         --host ${CI_ENDPOINT_HOST} \
+                         --user ${CI_ENDPOINT_USER} \
+                         --samples ${CI_SAMPLES} \
+                         --test-order r \
+                         --run-number 2 \
+                         --repeat-runs ${CI_REPEAT_RUNS} \
+                         --output-file ${CI_RUN_FILE}
+
+                if [ -e ${CI_RUN_FILE} ]; then
+                    echo "Found run-file ${CI_RUN_FILE} -> executing it"
+                    run_cmd "crucible run --from-file ${CI_RUN_FILE}"
+                    post_run_cmd
+                else
+                    echo "Did not find a run-file -> skipping execution"
+                fi
+            fi
+        fi
     done
 
     run_cmd "df -h"
