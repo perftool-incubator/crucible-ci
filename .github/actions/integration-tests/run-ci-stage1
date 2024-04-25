@@ -531,27 +531,27 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
             if [ -e ${CI_RUN_FILE} ]; then
                rm ${CI_RUN_FILE}
             fi
-            crucible wrapper /opt/crucible/subprojects/core/rickshaw/util/ci-run-file-creator.py \
-                     --benchmark ${scenario} \
-                     --endpoint ${CI_ENDPOINT} \
-                     --endpoint-sub-type ${CI_ENDPOINT_SUB_TYPE} \
-                     --userenv ${userenv} \
-                     --controller-ip ${CONTROLLER_IP} \
-                     --host ${CI_ENDPOINT_HOST} \
-                     --user ${CI_ENDPOINT_USER} \
-                     --samples ${CI_SAMPLES} \
-                     --test-order s \
-                     --run-number 1 \
-                     --repeat-runs ${CI_REPEAT_RUNS} \
-                     --output-file ${CI_RUN_FILE}
-
-            if [ -e ${CI_RUN_FILE} ]; then
-                echo "Found run-file ${CI_RUN_FILE} -> executing it"
-                run_cmd "crucible run --from-file ${CI_RUN_FILE}"
-                post_run_cmd
-            else
-                echo "Did not find a run-file -> skipping execution"
-            fi
+            cmd=(
+                crucible
+                wrapper
+                /opt/crucible/subprojects/core/rickshaw/util/ci-run-file-creator.py
+                --benchmark ${scenario}
+                --endpoint ${CI_ENDPOINT}
+                --endpoint-sub-type ${CI_ENDPOINT_SUB_TYPE}
+                --userenv ${userenv}
+                --controller-ip ${CONTROLLER_IP}
+                --host ${CI_ENDPOINT_HOST}
+                --user ${CI_ENDPOINT_USER}
+                --samples ${CI_SAMPLES}
+                --test-order s
+                --run-number 1
+                --repeat-runs ${CI_REPEAT_RUNS}
+                --output-file ${CI_RUN_FILE}
+            )
+            cmd="${cmd[@]}"
+            run_cmd "${cmd}"
+            run_cmd "crucible run --from-file ${CI_RUN_FILE}"
+            post_run_cmd
 
             if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
                 echo "Attempting repeat run"
@@ -559,27 +559,27 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                 if [ -e ${CI_RUN_FILE} ]; then
                     rm ${CI_RUN_FILE}
                 fi
-                crucible wrapper /opt/crucible/subprojects/core/rickshaw/util/ci-run-file-creator.py \
-                         --benchmark ${scenario} \
-                         --endpoint ${CI_ENDPOINT} \
-                         --endpoint-sub-type ${CI_ENDPOINT_SUB_TYPE} \
-                         --userenv ${userenv} \
-                         --controller-ip ${CONTROLLER_IP} \
-                         --host ${CI_ENDPOINT_HOST} \
-                         --user ${CI_ENDPOINT_USER} \
-                         --samples ${CI_SAMPLES} \
-                         --test-order r \
-                         --run-number 2 \
-                         --repeat-runs ${CI_REPEAT_RUNS} \
-                         --output-file ${CI_RUN_FILE}
-
-                if [ -e ${CI_RUN_FILE} ]; then
-                    echo "Found run-file ${CI_RUN_FILE} -> executing it"
-                    run_cmd "crucible run --from-file ${CI_RUN_FILE}"
-                    post_run_cmd
-                else
-                    echo "Did not find a run-file -> skipping execution"
-                fi
+                cmd=(
+                    crucible
+                    wrapper
+                    /opt/crucible/subprojects/core/rickshaw/util/ci-run-file-creator.py
+                    --benchmark ${scenario}
+                    --endpoint ${CI_ENDPOINT}
+                    --endpoint-sub-type ${CI_ENDPOINT_SUB_TYPE}
+                    --userenv ${userenv}
+                    --controller-ip ${CONTROLLER_IP}
+                    --host ${CI_ENDPOINT_HOST}
+                    --user ${CI_ENDPOINT_USER}
+                    --samples ${CI_SAMPLES}
+                    --test-order r
+                    --run-number 2
+                    --repeat-runs ${CI_REPEAT_RUNS}
+                    --output-file ${CI_RUN_FILE}
+                )
+                cmd="${cmd[@]}"
+                run_cmd "${cmd}"
+                run_cmd "crucible run --from-file ${CI_RUN_FILE}"
+                post_run_cmd
             fi
         fi
     done
