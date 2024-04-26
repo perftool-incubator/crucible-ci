@@ -127,7 +127,7 @@ case "${RUNNER_TYPE}" in
         if [ -n "${BENCHMARK_QUERY}" ]; then
             case "${BENCHMARK_QUERY}" in
                 "fio"|"uperf"|"iperf"|"multi")
-                    for endpoint in "k8s" "remotehost"; do
+                    for endpoint in "k8s" "remotehost" "remotehosts"; do
                         log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
                         scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
                     done
@@ -140,7 +140,7 @@ case "${RUNNER_TYPE}" in
                     ;;
             esac
         else
-            for endpoint in "k8s" "remotehost"; do
+            for endpoint in "k8s" "remotehost" "remotehosts"; do
                 case "${endpoint}" in
                     "k8s")
                         for benchmark in "fio" "uperf" "iperf" "oslat" "cyclictest" "multi"; do
@@ -148,7 +148,7 @@ case "${RUNNER_TYPE}" in
                             scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}")
                         done
                         ;;
-                    "remotehost")
+                    "remotehost"|"remotehosts")
                         for benchmark in "fio" "uperf" "iperf" "multi"; do
                             log_enabled "${endpoint}" "${benchmark}"
                             scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}")
@@ -161,6 +161,7 @@ case "${RUNNER_TYPE}" in
     "self")
         TAG_CPU_PARTITIONING=0
         TAG_REMOTEHOST=0
+        TAG_REMOTEHOSTS=0
 
         for RUNNER_TAG in $(echo "${RUNNER_TAGS}" | sed -e "s/,/ /g"); do
             case "${RUNNER_TAG}" in
@@ -172,6 +173,10 @@ case "${RUNNER_TYPE}" in
                     echo "Enabling tag 'remotehost'"
                     TAG_REMOTEHOST=1
                     ;;
+                "remotehosts")
+                    echo "Enabling tag 'remotehosts'"
+                    TAG_REMOTEHOSTS=1
+                    ;;
                 *)
                     echo "ERROR: Unknown tag encountered [${RUNNER_TAG}]"
                     exit 1
@@ -179,11 +184,11 @@ case "${RUNNER_TYPE}" in
             esac
         done
 
-        if [ ${TAG_CPU_PARTITIONING} -eq 1 -a ${TAG_REMOTEHOST} -eq 1 ]; then
+        if [ ${TAG_CPU_PARTITIONING} -eq 1 -a ${TAG_REMOTEHOST} -eq 1 -a ${TAG_REMOTEHOSTS} -eq 1 ]; then
             if [ -n "${BENCHMARK_QUERY}" ]; then
                 case "${BENCHMARK_QUERY}" in
                     "oslat"|"cyclictest")
-                        for endpoint in "remotehost"; do
+                        for endpoint in "remotehost" "remotehosts"; do
                             log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
                             scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
                         done
@@ -194,9 +199,9 @@ case "${RUNNER_TYPE}" in
                         ;;
                 esac
             else
-                for endpoint in "remotehost"; do
+                for endpoint in "remotehost" "remotehosts"; do
                     case "${endpoint}" in
-                        "remotehost")
+                        "remotehost"|"remotehosts")
                             for benchmark in "oslat" "cyclictest"; do
                                 echo "Adding scenario: endpoint=${endpoint} benchmark=${benchmark}"
                                 scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}" )

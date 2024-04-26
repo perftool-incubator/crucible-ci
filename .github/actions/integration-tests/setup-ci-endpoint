@@ -80,9 +80,9 @@ case "${CI_ENDPOINT}" in
 
         stop_github_group
         ;;
-    remotehost)
-        start_github_group "Configure remotehost endpoint"
-
+    remotehost|remotehosts)
+        start_github_group "Configure ${CI_ENDPOINT} endpoint"
+        echo "Nothing to do here"
         stop_github_group
         ;;
 esac
