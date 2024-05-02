@@ -71,7 +71,7 @@ function validate_ci_run_environment {
 
 function validate_ci_endpoint {
     case "${CI_ENDPOINT}" in
-        remotehost|k8s)
+        k8s|remotehost|remotehosts)
             echo "CI Endpoint is '${CI_ENDPOINT}'"
             echo
             ;;

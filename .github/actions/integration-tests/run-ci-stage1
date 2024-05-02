@@ -373,7 +373,17 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         echo -e "### ${header} ###\n"
         stop_github_group
 
+        CI_MV_PARAMS_SUPPORTED=1
         if [ "${CI_PARAM_MODE}" == "all" -o "${CI_PARAM_MODE}" == "mv-params" ]; then
+            case "${CI_ENDPOINT}" in
+                "remotehosts")
+                    echo "WARNING: The ${CI_ENDPOINT} endpoint does not support the 'mv-params' parameter mode"
+                    CI_MV_PARAMS_SUPPORTED=0
+                    ;;
+            esac
+        fi
+
+        if [[ "${CI_MV_PARAMS_SUPPORTED}" == "1" && ( "${CI_PARAM_MODE}" == "all" || "${CI_PARAM_MODE}" == "mv-params" ) ]]; then
             header="Current parameter mode is mv-params"
             start_github_group "${header}"
             echo -e "### ${header} ###\n"

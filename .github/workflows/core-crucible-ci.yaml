@@ -131,7 +131,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-scenarios
       with:
         runner-type: "self"
-        runner-tags: "cpu-partitioning,remotehost"
+        runner-tags: "cpu-partitioning,remotehost,remotehosts"
     - name: run check-controller-build
       id: check-controller-build
       uses: ./crucible-ci/.github/actions/check-controller-build
@@ -291,7 +291,7 @@ jobs:
       run: echo "crucible-ci->integration-tests not enabled"
 
   self-hosted-runners:
-    runs-on: [ self-hosted, cpu-partitioning, remotehost ]
+    runs-on: [ self-hosted, cpu-partitioning, remotehost, remotehosts ]
     timeout-minutes: 90
     needs:
     - gen-params
