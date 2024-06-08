@@ -26,6 +26,10 @@ on:
     secrets:
       registry_auth:
         required: false
+      ci_registry_auth:
+        required: false
+      production_registry_auth:
+        required: false
 
 concurrency:
   group: ${{ inputs.crucible_ci_test }}/${{ inputs.ci_target }}/${{ github.ref }}/core-crucible-ci
@@ -199,11 +203,17 @@ jobs:
         ref: ${{ inputs.ci_target_branch }}
         path: ${{ needs.gen-params.outputs.ci_target_dir }}
 
-    - name: import secret
+    - name: import ci secret
       env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth }}
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
       if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
       run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: import production secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+
     - name: run crucible-ci->install-crucible
       if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
       uses: ./crucible-ci/.github/actions/install-crucible
@@ -269,11 +279,17 @@ jobs:
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
 
-    - name: import secret
+    - name: import ci secret
       env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth }}
-      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
+      if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
       run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: import production secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
+      if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+
     - name: run crucible-ci->integration-tests
       if: ${{ matrix.scenario.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
@@ -334,11 +350,17 @@ jobs:
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
 
-    - name: import secret
+    - name: import ci secret
       env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth }}
-      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
       run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: import production secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+
     - name: run crucible-ci->integration-tests
       if: ${{ matrix.scenario.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
