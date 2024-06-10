@@ -21,6 +21,10 @@ on:
     secrets:
       registry_auth:
         required: false
+      ci_registry_auth:
+        required: false
+      production_registry_auth:
+        required: false
 
 concurrency:
   group: ${{ inputs.ci_target }}/${{ github.ref }}/tool-crucible-ci
@@ -123,11 +127,18 @@ jobs:
         repository: perftool-incubator/tool-${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
         path: "tool-${{ inputs.ci_target }}"
-    - name: import secret
+
+    - name: import ci secret
       env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth }}
-      if: env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != ''
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
+      if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
       run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: import production secret
+      env:
+        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
+      if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+
     - name: run crucible-ci->integration-tests
       if: ${{ matrix.scenario.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests

@@ -618,6 +618,8 @@ run_cmd "crucible ls --type run-id"
 
 run_cmd "crucible ls --type tags"
 
+run_cmd "crucible opensearch repair"
+
 run_cmd "crucible opensearch init"
 
 run_cmd "crucible opensearch rebuild"

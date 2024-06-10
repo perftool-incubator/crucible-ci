@@ -72,13 +72,30 @@ done
 validate_ci_run_environment
 validate_ci_endpoint
 
+ci_auth_file="/root/crucible-ci-engines-token.json"
+production_auth_file="/root/crucible-production-engines-token.json"
+if [ -e "${ci_auth_file}" -a -s "${ci_auth_file}" -a -e "${production_auth_file}" -a -s "${production_auth_file}" ]; then
+    echo "ERROR: It does not make sense for both the ci (${ci_auth_file}) and production (${production_auth_file}) client-server registry auth token files to exist"
+    exit 1
+fi
+
 AUTH_TOKEN_FILE_FOUND=0
-auth_file="/root/crucible-ci-engines-token.json"
-if [ -e "${auth_file}" -a -s "${auth_file}" ]; then
-    echo "Found client-server registry auth token file: ${auth_file}"
+if [ -e "${ci_auth_file}" -a -s "${ci_auth_file}" ]; then
+    echo "Found ci client-server registry auth token file: ${ci_auth_file}"
+    auth_file=${ci_auth_file}
     AUTH_TOKEN_FILE_FOUND=1
+    AUTH_TOKEN_TYPE="CI"
 else
-    echo "No client-server registry auth token file found: ${auth_file}"
+    echo "No ci client-server registry auth token file found: ${ci_auth_file}"
+
+    if [ -e "${production_auth_file}" -a -s "${production_auth_file}" ]; then
+        echo "Found production client-server registry auth token file: ${production_auth_file}"
+        auth_file=${production_auth_file}
+        AUTH_TOKEN_FILE_FOUND=1
+        AUTH_TOKEN_TYPE="PRODUCTION"
+    else
+        echo "No production client-server registry auth token file found: ${production_auth_file}"
+    fi
 fi
 
 # ensure endpoint availability
@@ -118,8 +135,16 @@ if pushd ~/ > /dev/null; then
     fi
     if [ ${AUTH_TOKEN_FILE_FOUND} == 1 ]; then
         INSTALLER_ARGS+=" --client-server-auth-file ${auth_file}"
-        CONTAINER_REGISTRY="quay.io/crucible/crucible-ci-engines"
         REGISTRY_TLS_VERIFY="true"
+
+        case "${AUTH_TOKEN_TYPE}" in
+            "CI")
+                CONTAINER_REGISTRY="quay.io/crucible/crucible-ci-engines"
+                ;;
+            "PRODUCTION")
+                CONTAINER_REGISTRY="quay.io/crucible/client-server"
+                ;;
+        esac
     fi
     CONTROLLER_REGISTRY_ARGS=""
     if [ "${CI_CONTROLLER}" == "yes" ]; then
