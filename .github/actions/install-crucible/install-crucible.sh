@@ -205,3 +205,26 @@ else
     fi
 fi
 stop_github_group
+
+start_github_group "rickshaw-settings updates"
+if [ "${AUTH_TOKEN_FILE_FOUND}" == 1 -a "${AUTH_TOKEN_TYPE}" == "PRODUCTION" ]; then
+    RICKSHAW_SETTINGS_FILE="/opt/crucible/subprojects/core/rickshaw/rickshaw-settings.json"
+    EXPIRATION_LENGTH="52w"
+    echo "Updating rickshaw-settings value quay.image-expiration to '${EXPIRATION_LENGTH}' in ${RICKSHAW_SETTINGS_FILE}"
+
+    if jq ".quay.\"image-expiration\" = \"${EXPIRATION_LENGTH}\"" ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
+        if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
+            echo "Successfully updated:"
+            jq . ${RICKSHAW_SETTINGS_FILE}
+        else
+            echo "ERROR: Failed to move"
+            exit 1
+        fi
+    else
+        echo "ERROR: Failed to update"
+        exit 1
+    fi
+else
+    echo "No updates required"
+fi
+stop_github_group
