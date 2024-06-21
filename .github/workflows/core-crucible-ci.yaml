@@ -23,6 +23,10 @@ on:
       github_workspace:
         required: true
         type: string
+      force_engine_build:
+        required: false
+        type: string
+        default: "false"
     secrets:
       registry_auth:
         required: false
@@ -302,6 +306,7 @@ jobs:
         ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
         ci_controller: ${{ matrix.ci_controller }}
         controller_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
+        force_engine_build: "${{ inputs.force_engine_build }}"
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.scenario.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
@@ -373,6 +378,7 @@ jobs:
         ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
         ci_controller: ${{ matrix.ci_controller }}
         controller_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
+        force_engine_build: "${{ inputs.force_engine_build }}"
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.scenario.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
