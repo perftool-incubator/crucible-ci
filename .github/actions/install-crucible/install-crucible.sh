@@ -14,10 +14,11 @@ CI_RUN_ENVIRONMENT="standalone"
 CI_ENDPOINT="remotehost"
 CI_CONTROLLER_TAG="none"
 CI_CONTROLLER="no"
+CI_FORCE_ENGINE_BUILD="false"
 
 REGISTRY_TLS_VERIFY="true"
 
-longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:,controller-tag:,ci-controller:"
+longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:,controller-tag:,ci-controller:,force-engine-build:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -26,6 +27,11 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --force-engine-build)
+            shift
+            CI_FORCE_ENGINE_BUILD="${1}"
+            shift
+            ;;
         --ci-controller)
             shift
             CI_CONTROLLER="${1}"
@@ -207,8 +213,11 @@ fi
 stop_github_group
 
 start_github_group "rickshaw-settings updates"
+RICKSHAW_SETTINGS_FILE="/opt/crucible/subprojects/core/rickshaw/rickshaw-settings.json"
+UPDATES_REQUIRED=0
+
 if [ "${AUTH_TOKEN_FILE_FOUND}" == 1 -a "${AUTH_TOKEN_TYPE}" == "PRODUCTION" ]; then
-    RICKSHAW_SETTINGS_FILE="/opt/crucible/subprojects/core/rickshaw/rickshaw-settings.json"
+    UPDATES_REQUIRED=1
     EXPIRATION_LENGTH="52w"
     echo "Updating rickshaw-settings value quay.image-expiration to '${EXPIRATION_LENGTH}' in ${RICKSHAW_SETTINGS_FILE}"
 
@@ -224,7 +233,29 @@ if [ "${AUTH_TOKEN_FILE_FOUND}" == 1 -a "${AUTH_TOKEN_TYPE}" == "PRODUCTION" ]; 
         echo "ERROR: Failed to update"
         exit 1
     fi
-else
-    echo "No updates required"
+fi
+
+CURRENT_BUILD_STATUS=$(jq --raw-output ".workshop.\"force-builds\"" ${RICKSHAW_SETTINGS_FILE})
+if [ "${CURRENT_BUILD_STATUS}" != "${CI_FORCE_ENGINE_BUILD}" ]; then
+    UPDATES_REQUIRED=1
+
+    echo "Updating rickshaw-settings value workshop.force-builds from '${CURRENT_BUILD_STATUS}' to '${CI_FORCE_ENGINE_BUILD}' in ${RICKSHAW_SETTINGS_FILE}"
+
+    if jq ".workshop.\"force-builds\" = \"${CI_FORCE_ENGINE_BUILD}\"" ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
+        if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
+            echo "Successfully updated:"
+            jq . ${RICKSHAW_SETTINGS_FILE}
+        else
+            echo "ERROR: Failed to move"
+            exit 1
+        fi
+    else
+        echo "ERROR: failed to update"
+        exit 1
+    fi
+fi
+
+if [ ${UPDATES_REQUIRED} -eq 0 ]; then
+    echo "No updates required to ${RICKSHAW_SETTINGS_FILE}"
 fi
 stop_github_group
