@@ -27,6 +27,10 @@ on:
         required: false
         type: string
         default: "false"
+      integration_test_job_timeout:
+        required: false
+        type: number
+        default: 90
     secrets:
       registry_auth:
         required: false
@@ -241,7 +245,7 @@ jobs:
 
   github-runners:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: ${{ inputs.integration_test_job_timeout }}
     needs:
     - gen-params
     - display-params
@@ -313,7 +317,7 @@ jobs:
 
   self-hosted-runners:
     runs-on: [ self-hosted, cpu-partitioning, remotehost, remotehosts ]
-    timeout-minutes: 90
+    timeout-minutes: ${{ inputs.integration_test_job_timeout }}
     needs:
     - gen-params
     - display-params
