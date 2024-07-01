@@ -215,10 +215,12 @@ if [ "${AUTH_TOKEN_FILE_FOUND}" == 1 -a "${AUTH_TOKEN_TYPE}" == "PRODUCTION" ]; 
     EXPIRATION_LENGTH="52w"
     echo "Updating rickshaw-settings value quay.image-expiration to '${EXPIRATION_LENGTH}' in ${RICKSHAW_SETTINGS_FILE}"
 
-    if jq ".quay.\"image-expiration\" = \"${EXPIRATION_LENGTH}\"" ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
+    if jq --indent 4 --arg expiration_length "${EXPIRATION_LENGTH}" \
+          '.quay."image-expiration" = $expiration_length' \
+          ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
         if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
             echo "Successfully updated:"
-            jq . ${RICKSHAW_SETTINGS_FILE}
+            jq --indent 4 . ${RICKSHAW_SETTINGS_FILE}
         else
             echo "ERROR: Failed to move image-expiration"
             exit 1
