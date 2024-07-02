@@ -21,12 +21,8 @@ inputs:
     description: "A controller tag to pull from the ci controller repository"
     required: false
     default: "none"
-  force_engine_build:
-    description: "Force the building of engine containers"
-    required: false
-    default: "false"
 runs:
   using: "composite"
   steps:
-    - run: sudo ${{ github.action_path }}/install-crucible.sh --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-controller ${{ inputs.ci_controller }} --controller-tag ${{ inputs.controller_tag }} --force-engine-build ${{ inputs.force_engine_build }}
+    - run: sudo ${{ github.action_path }}/install-crucible.sh --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-controller ${{ inputs.ci_controller }} --controller-tag ${{ inputs.controller_tag }}
       shell: bash
