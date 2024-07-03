@@ -23,20 +23,14 @@ on:
       github_workspace:
         required: true
         type: string
-      force_engine_build:
-        required: false
-        type: string
-        default: "false"
-      integration_test_job_timeout:
-        required: false
-        type: number
-        default: 90
     secrets:
       registry_auth:
         required: false
       ci_registry_auth:
         required: false
       production_registry_auth:
+        required: false
+      quay_oauth_token:
         required: false
 
 concurrency:
@@ -222,6 +216,12 @@ jobs:
       if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
       run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
 
+    - name: import quay oath token
+      env:
+        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.QUAY_OAUTH_TOKEN != '' }}
+      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
+
     - name: run crucible-ci->install-crucible
       if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
       uses: ./crucible-ci/.github/actions/install-crucible
@@ -245,7 +245,7 @@ jobs:
 
   github-runners:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.integration_test_job_timeout }}
+    timeout-minutes: 90
     needs:
     - gen-params
     - display-params
@@ -298,6 +298,12 @@ jobs:
       if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
       run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
 
+    - name: import quay oath token
+      env:
+        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
+      if: ${{ env.QUAY_OAUTH_TOKEN != '' }}
+      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
+
     - name: run crucible-ci->integration-tests
       if: ${{ matrix.scenario.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
@@ -310,14 +316,13 @@ jobs:
         ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
         ci_controller: ${{ matrix.ci_controller }}
         controller_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
-        force_engine_build: "${{ inputs.force_engine_build }}"
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.scenario.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
 
   self-hosted-runners:
     runs-on: [ self-hosted, cpu-partitioning, remotehost, remotehosts ]
-    timeout-minutes: ${{ inputs.integration_test_job_timeout }}
+    timeout-minutes: 90
     needs:
     - gen-params
     - display-params
@@ -370,6 +375,12 @@ jobs:
       if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
       run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
 
+    - name: import quay oath token
+      env:
+        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
+      if: ${{ env.QUAY_OAUTH_TOKEN != '' }}
+      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
+
     - name: run crucible-ci->integration-tests
       if: ${{ matrix.scenario.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
@@ -382,7 +393,6 @@ jobs:
         ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
         ci_controller: ${{ matrix.ci_controller }}
         controller_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
-        force_engine_build: "${{ inputs.force_engine_build }}"
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.scenario.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"

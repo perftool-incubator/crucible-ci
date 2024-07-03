@@ -25,6 +25,8 @@ on:
         required: false
       production_registry_auth:
         required: false
+      quay_oauth_token:
+        required: false
 
 concurrency:
   group: ${{ inputs.ci_target }}/${{ github.ref }}/benchmark-crucible-ci
@@ -147,6 +149,12 @@ jobs:
       if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
       run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
 
+    - name: import quay oath token
+      env:
+        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
+      if: ${{ env.QUAY_OAUTH_TOKEN != '' }}
+      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
+
     - name: run crucible-ci->integration-tests
       if: ${{ matrix.scenario.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
@@ -212,6 +220,12 @@ jobs:
         CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
       if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
       run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+
+    - name: import quay oath token
+      env:
+        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
+      if: ${{ env.QUAY_OAUTH_TOKEN != '' }}
+      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
 
     - name: run crucible-ci->integration-tests
       if: ${{ matrix.scenario.enabled }}

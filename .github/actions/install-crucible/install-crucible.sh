@@ -14,11 +14,10 @@ CI_RUN_ENVIRONMENT="standalone"
 CI_ENDPOINT="remotehost"
 CI_CONTROLLER_TAG="none"
 CI_CONTROLLER="no"
-CI_FORCE_ENGINE_BUILD="false"
 
 REGISTRY_TLS_VERIFY="true"
 
-longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:,controller-tag:,ci-controller:,force-engine-build:"
+longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:,controller-tag:,ci-controller:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -27,11 +26,6 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
-        --force-engine-build)
-            shift
-            CI_FORCE_ENGINE_BUILD="${1}"
-            shift
-            ;;
         --ci-controller)
             shift
             CI_CONTROLLER="${1}"
@@ -221,37 +215,55 @@ if [ "${AUTH_TOKEN_FILE_FOUND}" == 1 -a "${AUTH_TOKEN_TYPE}" == "PRODUCTION" ]; 
     EXPIRATION_LENGTH="52w"
     echo "Updating rickshaw-settings value quay.image-expiration to '${EXPIRATION_LENGTH}' in ${RICKSHAW_SETTINGS_FILE}"
 
-    if jq ".quay.\"image-expiration\" = \"${EXPIRATION_LENGTH}\"" ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
+    if jq --indent 4 --arg expiration_length "${EXPIRATION_LENGTH}" \
+          '.quay."image-expiration" = $expiration_length' \
+          ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
         if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
             echo "Successfully updated:"
-            jq . ${RICKSHAW_SETTINGS_FILE}
+            jq --indent 4 . ${RICKSHAW_SETTINGS_FILE}
         else
-            echo "ERROR: Failed to move"
+            echo "ERROR: Failed to move image-expiration"
             exit 1
         fi
     else
-        echo "ERROR: Failed to update"
+        echo "ERROR: Failed to update image-expiration"
         exit 1
     fi
 fi
 
-CURRENT_BUILD_STATUS=$(jq --raw-output ".workshop.\"force-builds\"" ${RICKSHAW_SETTINGS_FILE})
-if [ "${CURRENT_BUILD_STATUS}" != "${CI_FORCE_ENGINE_BUILD}" ]; then
-    UPDATES_REQUIRED=1
+quay_oauth_token_file="/root/quay-oauth.token"
+if [ -e "${quay_oauth_token_file}" -a -s "${quay_oauth_token_file}" ]; then
+    if [ ${AUTH_TOKEN_FILE_FOUND} -ne 1 ]; then
+        echo "ERROR: Found quay oauth token file but no registry token file"
+        exit 1
+    else
+        UPDATES_REQUIRED=1
 
-    echo "Updating rickshaw-settings value workshop.force-builds from '${CURRENT_BUILD_STATUS}' to '${CI_FORCE_ENGINE_BUILD}' in ${RICKSHAW_SETTINGS_FILE}"
+        case "${AUTH_TOKEN_TYPE}" in
+            "CI")
+                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/crucible-ci-engines"
+                ;;
+            "PRODUCTION")
+                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/client-server"
+                ;;
+        esac
 
-    if jq ".workshop.\"force-builds\" = \"${CI_FORCE_ENGINE_BUILD}\"" ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
-        if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
-            echo "Successfully updated:"
-            jq . ${RICKSHAW_SETTINGS_FILE}
+        echo "Updating rickshaw-settings values quay.refresh-expiration.token-file to '${quay_oauth_token_file}' and quay.refresh-expiration.api-url to '${QUAY_API_URL}' in ${RICKSHAW_SETTINGS_FILE}"
+
+        if jq --indent 4 --arg token_file "${quay_oauth_token_file}" --arg api_url "${QUAY_API_URL}" \
+              '.quay."refresh-expiration"."token-file" = $token_file | .quay."refresh-expiration"."api-url" = $api_url' \
+              ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
+            if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
+                echo "Succesfully updated:"
+                jq --indent 4 . ${RICKSHAW_SETTINGS_FILE}
+            else
+                echo "ERROR: Failed to move refresh-expiration"
+                exit 1
+            fi
         else
-            echo "ERROR: Failed to move"
+            echo "ERROR: Failed to update refresh-expiration"
             exit 1
         fi
-    else
-        echo "ERROR: failed to update"
-        exit 1
     fi
 fi
 
