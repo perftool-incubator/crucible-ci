@@ -3,7 +3,7 @@
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 
 rickshaw_directory=${1}
-excludes="stream8-flexran"
+excludes="stream8-flexran rhel-ai"
 
 if pushd ${rickshaw_directory}; then
     userenvs=$(find userenvs/ -maxdepth 1 -name '*.json' -type f | sed -e 's|userenvs/||' -e 's|\.json||')
