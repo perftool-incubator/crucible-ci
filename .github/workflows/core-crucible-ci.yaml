@@ -42,7 +42,7 @@ env:
 
 jobs:
   gen-params:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, workflow-overhead ]
     timeout-minutes: 10
     outputs:
       userenvs: ${{ steps.get-userenvs.outputs.userenvs }}
@@ -160,7 +160,7 @@ jobs:
         fi
 
   display-params:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, workflow-overhead ]
     timeout-minutes: 10
     needs: gen-params
     steps:
@@ -398,7 +398,7 @@ jobs:
       run: echo "crucible-ci->integration-tests not enabled"
 
   core-crucible-ci-complete:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, workflow-overhead ]
     timeout-minutes: 10
     needs:
     - github-runners

@@ -37,7 +37,7 @@ jobs:
       quay_oauth_token: ${{ secrets.CRUCIBLE_QUAYIO_OAUTH_TOKEN }}
 
   test-benchmark-crucible-ci-complete:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, workflow-overhead ]
     needs: call-benchmark-crucible-ci
     steps:
     - name: Confirm Success

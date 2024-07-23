@@ -5,6 +5,6 @@ on:
 
 jobs:
   benchmark-crucible-ci-complete:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, workflow-overhead ]
     steps:
     - run: 'echo "faux-benchmark-crucible-ci-complete"'
