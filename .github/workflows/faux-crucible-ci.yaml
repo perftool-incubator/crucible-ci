@@ -14,17 +14,17 @@ on:
 
 jobs:
   test-benchmark-crucible-ci-complete:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, workflow-overhead ]
     steps:
     - run: 'echo "No build required" '
 
   test-core-crucible-ci-complete:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, workflow-overhead ]
     steps:
     - run: 'echo "No build required" '
 
   test-tool-crucible-ci-complete:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, workflow-overhead ]
     steps:
     - run: 'echo "No build required" '
 

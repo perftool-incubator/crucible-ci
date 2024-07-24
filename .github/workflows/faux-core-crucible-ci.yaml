@@ -5,6 +5,6 @@ on:
 
 jobs:
   core-crucible-ci-complete:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, workflow-overhead ]
     steps:
     - run: 'echo "faux-core-crucible-ci-complete"'
