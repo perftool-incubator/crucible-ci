@@ -21,14 +21,20 @@ if [ ! -d "${CRUCIBLE_HOME}" ]; then
     exit 1
 fi
 
-CRUCIBLE_CLIENT_SERVER_REPO_LOCATION=""
-if echo "${CRUCIBLE_CLIENT_SERVER_REPO}" | grep -q "dir:"; then
-    CRUCIBLE_CLIENT_SERVER_REPO_LOCATION="local"
-    CRUCIBLE_CLIENT_SERVER_REPO=$(echo "${CRUCIBLE_CLIENT_SERVER_REPO}" | sed -e "s/dir://" -e 's|/client-server$||')
-elif echo "${CRUCIBLE_CLIENT_SERVER_REPO}" | grep -q "quay.io"; then
-    CRUCIBLE_CLIENT_SERVER_REPO_LOCATION="quay.io"
+# provide backwards compatibility with configration files that still
+# have CRUCIBLE_CLIENT_SERVER_* instead of CRUCIBLE_ENGINE_*
+if [ -z "${CRUCIBLE_ENGINE_REPO}" -a -n "${CRUCIBLE_CLIENT_SERVER_REPO}" ]; then
+    CRUCIBLE_ENGINE_REPO=${CRUCIBLE_CLIENT_SERVER_REPO}
+fi
+
+CRUCIBLE_ENGINE_REPO_LOCATION=""
+if echo "${CRUCIBLE_ENGINE_REPO}" | grep -q "dir:"; then
+    CRUCIBLE_ENGINE_REPO_LOCATION="local"
+    CRUCIBLE_ENGINE_REPO=$(echo "${CRUCIBLE_ENGINE_REPO}" | sed -e "s/dir://" -e 's|/engines$||')
+elif echo "${CRUCIBLE_ENGINE_REPO}" | grep -q "quay.io"; then
+    CRUCIBLE_ENGINE_REPO_LOCATION="quay.io"
 else
-    CRUCIBLE_CLIENT_SERVER_REPO_LOCATION="microk8s"
+    CRUCIBLE_ENGINE_REPO_LOCATION="microk8s"
 fi
 
 CI_RUN_ENVIRONMENT="standalone"
@@ -267,9 +273,7 @@ function post_run_cmd {
 }
 
 function remove_microk8s_images {
-    local rc=1
-
-    for image in $(do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s ctr images list "name~=client-server" | grep -v REF | awk '{ print $1 }'); do
+    for image in $(do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s ctr images list "name~=engines" | grep -v REF | awk '{ print $1 }'); do
         do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s ctr images remove --sync ${image}
         rc=$?
 
@@ -278,8 +282,6 @@ function remove_microk8s_images {
             break
         fi
     done
-
-    return ${rc}
 }
 
 if [ "${CI_BUILD_CONTROLLER}" == "yes" ]; then
@@ -599,15 +601,15 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         k8s)
             case "${CI_K8S_TYPE}" in
                 "MICROK8S")
-                    if [ "${CRUCIBLE_CLIENT_SERVER_REPO_LOCATION}" == "microk8s" ]; then
+                    if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "microk8s" ]; then
                         run_cmd "remove_microk8s_images"
                     fi
                     ;;
             esac
             ;;
         remotehost)
-            if [ "${CRUCIBLE_CLIENT_SERVER_REPO_LOCATION}" == "local" ]; then
-                run_cmd "rm -Rfv ${CRUCIBLE_CLIENT_SERVER_REPO}/*"
+            if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "local" ]; then
+                run_cmd "rm -Rfv ${CRUCIBLE_ENGINE_REPO}/*"
             fi
             ;;
     esac
@@ -658,15 +660,15 @@ case "${CI_ENDPOINT}" in
 
         case "${CI_K8S_TYPE}" in
             "MICROK8S")
-                if [ "${CRUCIBLE_CLIENT_SERVER_REPO_LOCATION}" == "microk8s" ]; then
+                if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "microk8s" ]; then
                     run_cmd "do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s ctr images list" "force"
                 fi
                 ;;
         esac
         ;;
     remotehost)
-        if [ "${CRUCIBLE_CLIENT_SERVER_REPO_LOCATION}" == "local" ]; then
-            run_cmd "ls -laR ${CRUCIBLE_CLIENT_SERVER_REPO}" "force"
+        if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "local" ]; then
+            run_cmd "ls -laR ${CRUCIBLE_ENGINE_REPO}" "force"
         fi
         ;;
 esac

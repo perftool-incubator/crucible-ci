@@ -103,7 +103,7 @@ case "${CI_ENDPOINT}" in
     k8s)
         if [ ${AUTH_TOKEN_FILE_FOUND} == 0 ]; then
             start_github_group "Configuring Crucible for local k8s registry"
-            CONTAINER_REGISTRY="localhost:32000/client-server"
+            CONTAINER_REGISTRY="localhost:32000/engines"
             REGISTRY_TLS_VERIFY="false"
             stop_github_group
         fi
@@ -111,7 +111,7 @@ case "${CI_ENDPOINT}" in
     remotehost)
         if [ ${AUTH_TOKEN_FILE_FOUND} == 0 ]; then
             start_github_group "Configuring Crucible for local remotehost registry"
-            CONTAINER_REGISTRY="dir:/home/crucible-containers/client-server"
+            CONTAINER_REGISTRY="dir:/home/crucible-containers/engines"
             stop_github_group
         fi
         ;;
