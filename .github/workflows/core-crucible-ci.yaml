@@ -207,14 +207,14 @@ jobs:
 
     - name: import ci secret
       env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
-      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
     - name: import production secret
       env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
-      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
 
     - name: import quay oath token
       env:
@@ -289,14 +289,14 @@ jobs:
 
     - name: import ci secret
       env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
-      if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
     - name: import production secret
       env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
-      if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
 
     - name: import quay oath token
       env:
@@ -366,14 +366,14 @@ jobs:
 
     - name: import ci secret
       env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
-      if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
     - name: import production secret
       env:
-        CLIENT_SERVER_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
-      if: ${{ env.CLIENT_SERVER_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$CLIENT_SERVER_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
 
     - name: import quay oath token
       env:
