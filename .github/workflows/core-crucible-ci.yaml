@@ -23,6 +23,10 @@ on:
       github_workspace:
         required: true
         type: string
+      userenv_filter:
+        required: false
+        type: string
+        default: "all"
     secrets:
       registry_auth:
         required: false
@@ -127,6 +131,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-userenvs
       with:
         rickshaw-directory: "./rickshaw"
+        userenv-filter: ${{ inputs.userenv_filter }}
     - name: run get-scenarios-github
       id: get-scenarios-github
       uses: ./crucible-ci/.github/actions/get-scenarios
