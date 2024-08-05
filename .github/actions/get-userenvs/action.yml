@@ -4,6 +4,10 @@ inputs:
   rickshaw-directory:
     description: "Where is the rickshaw repository to query for userenvs"
     required: true
+  userenv-filter:
+    description: "A filter to determine which userenvs should be included"
+    required: false
+    default: "all"
 outputs:
   userenvs:
     description: "The list of userenvs that were found"
@@ -13,8 +17,8 @@ runs:
   steps:
     - name: "Validate rickshaw-directory"
       shell: bash
-      run: ${{ github.action_path }}/validate-inputs.sh ${{ inputs.rickshaw-directory }}
+      run: ${{ github.action_path }}/validate-inputs.sh ${{ inputs.rickshaw-directory }} ${{ inputs.userenv-filter }}
     - name: "Generate userenvs list"
       id: generate-userenvs-list
       shell: bash
-      run: ${{ github.action_path }}/generate-userenv-list.sh ${{ inputs.rickshaw-directory }}
+      run: ${{ github.action_path }}/generate-userenv-list.sh ${{ inputs.rickshaw-directory }} ${{ inputs.userenv-filter }}

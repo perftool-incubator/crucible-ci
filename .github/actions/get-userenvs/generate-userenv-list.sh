@@ -3,6 +3,8 @@
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 
 rickshaw_directory=${1}
+userenv_filter=${2}
+
 excludes="stream8-flexran rhel-ai"
 
 if pushd ${rickshaw_directory}; then
@@ -12,10 +14,22 @@ if pushd ${rickshaw_directory}; then
         new=( "${userenvs[@]/$ex}" )
         userenvs=$new
     done
-    userenvs_json="[\"default\","
-    for userenv in ${userenvs}; do
-        userenvs_json+="\"${userenv}\","
-    done
+    userenvs_json="["
+
+    case "${userenv_filter}" in
+        "all"|"minimal")
+            userenvs_json+="\"default\","
+            ;;
+    esac
+
+    case "${userenv_filter}" in
+        "all"|"unique")
+            for userenv in ${userenvs}; do
+                userenvs_json+="\"${userenv}\","
+            done
+            ;;
+    esac
+
     userenvs_json=$(echo "${userenvs_json}" | sed -e "s/,$//")
     userenvs_json+="]"
     echo "userenvs_json=${userenvs_json}"
