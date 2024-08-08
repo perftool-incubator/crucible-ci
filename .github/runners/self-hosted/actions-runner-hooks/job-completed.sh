@@ -5,6 +5,7 @@ sudo podman system reset --force
 
 echo "Cleaning up registry authorization tokens..."
 sudo find /root -name 'crucible-*-engines-token.json' -print -delete
+sudo find /root -name 'quay-oauth.token' -print -delete
 echo "...cleanup complete"
 
 # cleanup the workspace
