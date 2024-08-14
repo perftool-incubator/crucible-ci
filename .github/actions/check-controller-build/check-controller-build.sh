@@ -21,15 +21,22 @@ function error() {
 # because the code being examined is not from a submitted PR but
 # the committed upstream repository -- meaning no controller build
 # required
-diff_cmd_validate="git log HEAD^1"
-diff_cmd="git diff --name-only HEAD^1 HEAD"
+available_history="git log --oneline origin/master...HEAD"
+diff_cmd="git diff --name-only origin/master...HEAD"
 
 build_controller="no"
 
 echo "Crucible workshop change analysis:"
 if pushd ${crucible_directory}; then
-    if ${diff_cmd_validate} > /dev/null 2>&1; then
+    available_commits=$(${available_history} | wc -l)
+    echo "Available commits: ${available_commits}"
+    
+    if [ ${available_commits} -gt 1 ]; then
         # history available
+
+        echo "Available commits:"
+        ${available_history}
+        echo
 
         echo "Files changed:"
         ${diff_cmd}
@@ -38,7 +45,7 @@ if pushd ${crucible_directory}; then
         fi
         echo
 
-        workshop_files_changed=$(${diff_cmd} | grep "^workshop/" | wc -l)
+        workshop_files_changed=$(${diff_cmd} | grep "^workshop/" | grep -v ".md$" | wc -l)
         echo "workshop_files_changed=${workshop_files_changed}"
         echo
 
@@ -59,8 +66,15 @@ fi
 
 echo "Workshop change analysis:"
 if pushd ${workshop_directory}; then
-    if ${diff_cmd_validate} > /dev/null 2>&1; then
+    available_commits=$(${available_history} | wc -l)
+    echo "Available commits: ${available_commits}"
+    
+    if [ ${available_commits} -gt 1 ]; then
         # history available
+
+        echo "Available commits:"
+        ${available_history}
+        echo
 
         echo "Files changed:"
         ${diff_cmd}

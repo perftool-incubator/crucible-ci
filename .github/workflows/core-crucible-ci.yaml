@@ -71,7 +71,7 @@ jobs:
         repository: perftool-incubator/${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
         path: crucible
-        fetch-depth: 2
+        fetch-depth: 0
 
     - name: checkout workshop default
       if: ${{ inputs.ci_target != 'workshop' }}
@@ -87,7 +87,7 @@ jobs:
         repository: perftool-incubator/${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
         path: workshop
-        fetch-depth: 2
+        fetch-depth: 0
 
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}

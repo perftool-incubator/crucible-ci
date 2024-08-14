@@ -32,12 +32,19 @@ else
     if ! pushd ${crucible_directory}; then
         error "Could not pushd to the crucible directory '${crucible_directory}'"
     else
-        echo "Contents of crucible workshop directory:"
-        if [ -f crucible-install.sh -a -d workshop -a -f workshop/build-controller.sh -a -f workshop/controller-workshop.json ]; then
-            ls -l workshop/
+        echo "Contents of crucible directory:"
+        ls -la
+        if [ ! -d .git ]; then
+            error "Could not find crucible .git"
+        fi
+        if [ ! -f crucible-install.sh -o ! -d workshop ]; then
+            error "Could not find required crucible directory contents"
         else
-            ls -l
-            error "Could not find the required crucible workshop directory contents"
+            echo "Contents of crucible workshop directory:"
+            ls -la workshop/
+            if [ ! -f workshop/build-controller.sh -o ! -f workshop/controller-workshop.json ]; then
+                error "Could not find required crucible workshop contents"
+            fi
         fi
 
         popd
@@ -51,8 +58,11 @@ else
     if ! pushd ${workshop_directory}; then
         error "Could not pushd to the workshop directory '${workshop_directory}'"
     else
+        if [ ! -d .git ]; then
+            error "Could not find workshop .git"
+        fi
         echo "Contents of the workshop directory:"
-        ls -l
+        ls -la
         if [ ! -f workshop.pl -o ! -f schema.json ]; then
             error "Could not find required workshop directory contents"
         fi
