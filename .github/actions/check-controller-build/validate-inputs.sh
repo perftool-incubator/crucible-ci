@@ -34,9 +34,6 @@ else
     else
         echo "Contents of crucible directory:"
         ls -la
-        if [ ! -d .git ]; then
-            error "Could not find crucible .git"
-        fi
         if [ ! -f crucible-install.sh -o ! -d workshop ]; then
             error "Could not find required crucible directory contents"
         else
@@ -58,9 +55,6 @@ else
     if ! pushd ${workshop_directory}; then
         error "Could not pushd to the workshop directory '${workshop_directory}'"
     else
-        if [ ! -d .git ]; then
-            error "Could not find workshop .git"
-        fi
         echo "Contents of the workshop directory:"
         ls -la
         if [ ! -f workshop.pl -o ! -f schema.json ]; then
