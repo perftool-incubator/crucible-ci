@@ -3,8 +3,7 @@
 	{
 	    "name": "required",
 	    "params": [
-                { "arg": "duration", "vals": [ "10", "15" ], "role": "client" },
-	        { "arg": "rtprio", "vals": [ "2" ], "role": "client" }
+                { "arg": "duration", "vals": [ "10", "15" ], "role": "client" }
 	    ]
 	}
     ],
