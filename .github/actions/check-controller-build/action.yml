@@ -1,6 +1,9 @@
 name: "crucible-ci check controller build"
 description: "Determine if the crucible changes require a controller rebuild for testing"
 inputs:
+  bypass-controller-build:
+    description: "Should this action return 'no' no matter what"
+    required: true
   crucible-directory:
     description: "Where is the crucible repository to check for controller image related changes"
     required: true
@@ -16,9 +19,8 @@ runs:
   steps:
     - name: "Validate crucible-directory"
       shell: bash
-      run: ${{ github.action_path }}/validate-inputs.sh ${{ inputs.crucible-directory }} ${{ inputs.workshop-directory }}
+      run: ${{ github.action_path }}/validate-inputs.sh  ${{ inputs.bypass-controller-build }} ${{ inputs.crucible-directory }} ${{ inputs.workshop-directory }}
     - name: "Check for controller build status"
       id: check-controller-build
       shell: bash
-      run: ${{ github.action_path }}/check-controller-build.sh ${{ inputs.crucible-directory}} ${{ inputs.workshop-directory }}
-
+      run: ${{ github.action_path }}/check-controller-build.sh  ${{ inputs.bypass-controller-build }} ${{ inputs.crucible-directory}} ${{ inputs.workshop-directory }}

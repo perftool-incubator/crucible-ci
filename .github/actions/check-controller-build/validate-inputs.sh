@@ -2,8 +2,9 @@
 # -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 
-crucible_directory=${1}
-workshop_directory=${2}
+bypass_controller_build=${1}
+crucible_directory=${2}
+workshop_directory=${3}
 
 function error() {
     echo "ERROR: ${1}"
@@ -11,19 +12,32 @@ function error() {
 }
 
 function usage() {
-    echo "Usage: ${0} <crucible> <workshop>"
+    echo "Usage: ${0} <bypass-controller-build> <crucible> <workshop>"
     echo
+    echo "<bypass-controller-build> is a yes|no value"
     echo "<crucible> is a directory where the crucible repository exists."
     echo "<workshop> is a directory where the workshop repoistory exists."
+    echo
+    echo "If <bypass-controller-build> is 'yes' then the action short circuits and returns 'no'"
     echo
     echo "Both repositories are examined to determine if their changes require"
     echo "the building of a new controller image for testing"
     exit 1
 }
 
-if [ -z "${crucible_directory}" -o -z "${workshop_directory}" ]; then
+if [ -z "${bypass_controller_build}" -o -z "${crucible_directory}" -o -z "${workshop_directory}" ]; then
     usage
 else
+    # handle <bypass-controller-build>
+    case "${bypass_controller_build}" in
+        "yes"|"no")
+            echo "bypass_controller_build has a valid value of '${bypass_controller_build}'"
+            ;;
+        *)
+            error "bypass_controller_build has an invalid value of '${bypass_controller_build}'"
+            ;;
+    esac
+    
     # handle <crucible>
     if [ ! -e "${crucible_directory}" ]; then
         error "The crucible directory '${crucible_directory}' does not exist"
