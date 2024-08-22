@@ -23,14 +23,17 @@ jobs:
           subproject_dir: "CommonDataModel"
           branch: "master"
           userenv_filter: "minimal"
+          force_controller_build: "no"
         - subproject: "rickshaw"
           subproject_dir: "rickshaw"
           branch: "master"
           userenv_filter: "all"
+          force_controller_build: "no"
         - subproject: "crucible"
           subproject_dir: "crucible"
           branch: "master"
           userenv_filter: "unique"
+          force_controller_build: "yes"
     uses: ./.github/workflows/core-crucible-ci.yaml
     with:
       ci_target: "${{ matrix.repos.subproject }}"
@@ -40,6 +43,7 @@ jobs:
       crucible_ci_test_branch: "${{ github.ref }}"
       github_workspace: "$GITHUB_WORKSPACE"
       userenv_filter: ${{ matrix.repos.userenv_filter }}
+      force_controller_build: "${{ matrix.repos.force_controller_build }}"
     secrets:
       ci_registry_auth: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
       quay_oauth_token: ${{ secrets.CRUCIBLE_QUAYIO_OAUTH_TOKEN }}
