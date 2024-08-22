@@ -31,6 +31,10 @@ on:
         required: false
         type: string
         default: "no"
+      force_controller_build:
+        required: false
+        type: string
+        default: "no"
     secrets:
       registry_auth:
         required: false
@@ -152,6 +156,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/check-controller-build
       with:
         bypass-controller-build: "${{ inputs.bypass_controller_build }}"
+        force-controller-build: "${{ inputs.force_controller_build }}"
         crucible-directory: "./crucible"
         workshop-directory: "./workshop"
     - name: run get-repo-name
