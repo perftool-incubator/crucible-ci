@@ -210,6 +210,27 @@ start_github_group "rickshaw-settings updates"
 RICKSHAW_SETTINGS_FILE="/opt/crucible/subprojects/core/rickshaw/rickshaw-settings.json"
 UPDATES_REQUIRED=0
 
+if [ "${CI_CONTROLLER}" == "yes" ]; then
+    UPDATES_REQUIRED=1
+    FORCE_BUILDS="true"
+    echo "Updating rickshaw-settings value workshop.force-builds to '${FORCE_BUILDS}' in ${RICKSHAW_SETTINGS_FILE}"
+
+    if jq --indent 4 --arg force_builds "${FORCE_BUILDS}" \
+          '.workshop."force-builds" = $force_builds' \
+          ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
+        if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
+            echo "Successfully updated:"
+            jq --indent 4 . ${RICKSHAW_SETTINGS_FILE}
+        else
+            echo "ERROR: Failed to move force-builds"
+            exit 1
+        fi
+    else
+        echo "ERROR: Failed to update force-builds"
+        exit 1
+    fi
+fi
+
 if [ "${AUTH_TOKEN_FILE_FOUND}" == 1 -a "${AUTH_TOKEN_TYPE}" == "PRODUCTION" ]; then
     UPDATES_REQUIRED=1
     EXPIRATION_LENGTH="52w"
