@@ -3,8 +3,9 @@
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 
 bypass_controller_build=${1}
-crucible_directory=${2}
-workshop_directory=${3}
+force_controller_build=${2}
+crucible_directory=${3}
+workshop_directory=${4}
 
 function error() {
     echo "ERROR: ${1}"
@@ -29,6 +30,10 @@ build_controller="no"
 
 if [ "${bypass_controller_build}" == "yes" ]; then
     echo "Bypassing controller build"
+elif [ "${force_controller_build}" == "yes" ]; then
+    build_controller="yes"
+
+    echo "Forcing controller build"
 else
     echo "Crucible workshop change analysis:"
     if pushd ${crucible_directory}; then
