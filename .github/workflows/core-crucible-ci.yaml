@@ -260,7 +260,7 @@ jobs:
 
   github-runners:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     needs:
     - gen-params
     - display-params
@@ -337,7 +337,7 @@ jobs:
 
   self-hosted-runners:
     runs-on: [ self-hosted, cpu-partitioning, remotehost, remotehosts ]
-    timeout-minutes: 90
+    timeout-minutes: 120
     needs:
     - gen-params
     - display-params
