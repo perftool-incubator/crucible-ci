@@ -276,6 +276,33 @@ function post_run_cmd {
 
     # shutdown OpenSearch before each run to free up memory for image building
     run_cmd "crucible stop opensearch"
+
+    # disable force builds, if enabled, because we really only need to do that for the first run
+    RICKSHAW_SETTINGS_FILE="/opt/crucible/subprojects/core/rickshaw/rickshaw-settings.json"
+    current_force_builds=$(jq -r '.workshop."force-builds"' ${RICKSHAW_SETTINGS_FILE})
+    start_github_group "rickshaw-settings force-builds update"
+    if [ "${current_force_builds}" == "true" ]; then
+        FORCE_BUILDS="false"
+        echo "Updating rickshaw-settings value workshop.force-builds to '${FORCE_BUILDS}' in ${RICKSHAW_SETTINGS_FILE}"
+
+        if jq --indent 4 --arg force_builds "${FORCE_BUILDS}" \
+              '.workshop."force-builds" = $force_builds' \
+              ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
+            if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
+                echo "Successfully updated:"
+                jq --indent 4 . ${RICKSHAW_SETTINGS_FILE}
+            else
+                echo "ERROR: Failed to move force-builds"
+                exit 1
+            fi
+        else
+            echo "ERROR: Failed to update force-builds"
+            exit 1
+        fi
+    else
+        echo "No update required for rickshaw-settings value workshop.force-builds in ${RICKSHAW_SETTINGS_FILE}"
+    fi
+    stop_github_group
 }
 
 function remove_microk8s_images {
