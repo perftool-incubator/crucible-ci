@@ -1,6 +1,7 @@
 #!/bin/bash
 
 sudo buildah rm --all
+sudo podman rmi --all --force
 sudo podman system reset --force
 
 echo "Cleaning up registry authorization tokens..."
