@@ -10,6 +10,7 @@ on:
       - .github/workflows/faux-benchmark-crucible-ci.yaml
       - .github/workflows/faux-core-crucible-ci.yaml
       - .github/workflows/faux-tool-crucible-ci.yaml
+      - '.github/runners/**'
       - 'docs/**'
   workflow_dispatch:
 
