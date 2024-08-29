@@ -63,6 +63,7 @@ jobs:
       self_hosted_scenarios: ${{ steps.get-scenarios-self.outputs.scenarios }}
       repo_name: ${{ steps.get-repo-name.outputs.repo-name }}
       ci_target_dir: ${{ steps.set-ci-target-dir.outputs.ci-target-dir }}
+      timeout_minutes: ${{ steps.determine-timeout-minutes.outputs.timeout-minutes }}
     steps:
 
     - name: checkout crucible default
@@ -174,6 +175,19 @@ jobs:
           echo "ci-target-dir=${{ inputs.ci_target_dir }}" >> $GITHUB_OUTPUT
         fi
 
+    - name: determine timeout-minutes
+      id: determine-timeout-minutes
+      run: |
+        if [ "${{ steps.check-controller-build.outputs.build-controller }}" == "yes" ]; then
+          build_controller_timeout_minutes=150
+          echo "Setting timeout-minutes to the build controller value of '${build_controller_timeout_minutes}'"
+          echo "timeout-minutes=${build_controller_timeout_minutes}" >> $GITHUB_OUTPUT
+        else
+          no_build_controller_timeout_minutes=90
+          echo "Setting timeout-minutes to the no build controller value of '${no_build_controller_timeout_minutes}'"
+          echo "timeout-minutes=${no_build_controller_timeout_minutes}" >> $GITHUB_OUTPUT
+        fi
+
   display-params:
     runs-on: [ self-hosted, workflow-overhead ]
     timeout-minutes: 10
@@ -260,7 +274,7 @@ jobs:
 
   github-runners:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: ${{ fromJSON(needs.gen-params.outputs.timeout_minutes) }}
     needs:
     - gen-params
     - display-params
@@ -337,7 +351,7 @@ jobs:
 
   self-hosted-runners:
     runs-on: [ self-hosted, cpu-partitioning, remotehost, remotehosts ]
-    timeout-minutes: 120
+    timeout-minutes: ${{ fromJSON(needs.gen-params.outputs.timeout_minutes) }}
     needs:
     - gen-params
     - display-params
