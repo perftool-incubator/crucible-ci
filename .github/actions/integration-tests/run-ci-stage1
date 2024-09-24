@@ -351,6 +351,8 @@ run_cmd "crucible help"
 
 run_cmd "crucible repo info"
 
+run_cmd "crucible repo config show"
+
 for action in start stop; do
     for service in httpd opensearch redis; do
         run_cmd "podman ps --all --external"
