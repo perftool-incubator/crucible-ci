@@ -75,7 +75,7 @@ jobs:
           echo 'ITEM_ID='$item_id >> $GITHUB_ENV
 
       - name: Get date
-        run: echo "DATE=$(date +"%Y-%m-%d")" >> $GITHUB_ENV
+        run: echo "DATE=$(date -u +"%Y-%m-%d")" >> $GITHUB_ENV
 
       - name: Set fields
         env:
