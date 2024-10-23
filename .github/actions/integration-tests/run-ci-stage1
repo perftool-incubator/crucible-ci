@@ -675,6 +675,14 @@ run_cmd "crucible log info" "force"
 
 run_cmd "crucible log view" "force"
 
+run_cmd "crucible log tidy" "force"
+
+run_cmd "crucible log info" "force"
+
+run_cmd "crucible log clear" "force"
+
+run_cmd "crucible log info" "force"
+
 run_cmd "podman ps --all --external" "force"
 
 if [ "${CI_RUN_UPDATE}" == "yes" ]; then
