@@ -98,6 +98,15 @@ else
     fi
 fi
 
+quay_oauth_token_file="/root/quay-oauth.token"
+QUAY_OAUTH_TOKEN_FILE_FOUND=0
+if [ -e "${quay_oauth_token_file}" -a -s "${quay_oauth_token_file}" ]; then
+    echo "Found Quay OAuth token file: ${quay_oauth_token_file}"
+    QUAY_OAUTH_TOKEN_FILE_FOUND=1    
+else
+    echo "No Quay OAuth token file found: ${quay_oauth_token_file}"
+fi
+
 # ensure endpoint availability
 case "${CI_ENDPOINT}" in
     k8s)
@@ -143,8 +152,24 @@ if pushd ~/ > /dev/null; then
                 ;;
             "PRODUCTION")
                 CONTAINER_REGISTRY="quay.io/crucible/client-server"
+                EXPIRATION_LENGTH="52w"
+                INSTALLER_ARGS+=" --quay-engine-expiration-length ${EXPIRATION_LENGTH}"
                 ;;
         esac
+    fi
+    if [ ${QUAY_OAUTH_TOKEN_FILE_FOUND} == 1 ]; then
+        INSTALLER_ARGS+=" --quay-engine-expiration-refresh-token ${quay_oauth_token_file}"
+
+        case "${AUTH_TOKEN_TYPE}" in
+            "CI")
+                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/crucible-ci-engines"
+                ;;
+            "PRODUCTION")
+                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/client-server"
+                ;;
+        esac
+
+        INSTALLER_ARGS+=" --quay-engine-expiration-refresh-api-url ${QUAY_API_URL}"
     fi
     CONTROLLER_REGISTRY_ARGS=""
     if [ "${CI_CONTROLLER}" == "yes" ]; then
@@ -255,63 +280,6 @@ if [ "${CI_CONTROLLER}" == "yes" ]; then
     else
         echo "ERROR: Failed to update force-builds"
         exit 1
-    fi
-fi
-
-if [ "${AUTH_TOKEN_FILE_FOUND}" == 1 -a "${AUTH_TOKEN_TYPE}" == "PRODUCTION" ]; then
-    UPDATES_REQUIRED=1
-    EXPIRATION_LENGTH="52w"
-    echo "Updating rickshaw-settings value quay.image-expiration to '${EXPIRATION_LENGTH}' in ${RICKSHAW_SETTINGS_FILE}"
-
-    if jq --indent 4 --arg expiration_length "${EXPIRATION_LENGTH}" \
-          '.quay."image-expiration" = $expiration_length' \
-          ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
-        if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
-            echo "Successfully updated:"
-            jq --indent 4 . ${RICKSHAW_SETTINGS_FILE}
-        else
-            echo "ERROR: Failed to move image-expiration"
-            exit 1
-        fi
-    else
-        echo "ERROR: Failed to update image-expiration"
-        exit 1
-    fi
-fi
-
-quay_oauth_token_file="/root/quay-oauth.token"
-if [ -e "${quay_oauth_token_file}" -a -s "${quay_oauth_token_file}" ]; then
-    if [ ${AUTH_TOKEN_FILE_FOUND} -ne 1 ]; then
-        echo "ERROR: Found quay oauth token file but no registry token file"
-        exit 1
-    else
-        UPDATES_REQUIRED=1
-
-        case "${AUTH_TOKEN_TYPE}" in
-            "CI")
-                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/crucible-ci-engines"
-                ;;
-            "PRODUCTION")
-                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/client-server"
-                ;;
-        esac
-
-        echo "Updating rickshaw-settings values quay.refresh-expiration.token-file to '${quay_oauth_token_file}' and quay.refresh-expiration.api-url to '${QUAY_API_URL}' in ${RICKSHAW_SETTINGS_FILE}"
-
-        if jq --indent 4 --arg token_file "${quay_oauth_token_file}" --arg api_url "${QUAY_API_URL}" \
-              '.quay."refresh-expiration"."token-file" = $token_file | .quay."refresh-expiration"."api-url" = $api_url' \
-              ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
-            if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
-                echo "Succesfully updated:"
-                jq --indent 4 . ${RICKSHAW_SETTINGS_FILE}
-            else
-                echo "ERROR: Failed to move refresh-expiration"
-                exit 1
-            fi
-        else
-            echo "ERROR: Failed to update refresh-expiration"
-            exit 1
-        fi
     fi
 fi
 
