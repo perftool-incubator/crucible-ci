@@ -75,26 +75,26 @@ validate_ci_endpoint
 ci_auth_file="/root/crucible-ci-engines-token.json"
 production_auth_file="/root/crucible-production-engines-token.json"
 if [ -e "${ci_auth_file}" -a -s "${ci_auth_file}" -a -e "${production_auth_file}" -a -s "${production_auth_file}" ]; then
-    echo "ERROR: It does not make sense for both the ci (${ci_auth_file}) and production (${production_auth_file}) client-server registry auth token files to exist"
+    echo "ERROR: It does not make sense for both the ci (${ci_auth_file}) and production (${production_auth_file}) engine registry auth token files to exist"
     exit 1
 fi
 
 AUTH_TOKEN_FILE_FOUND=0
 if [ -e "${ci_auth_file}" -a -s "${ci_auth_file}" ]; then
-    echo "Found ci client-server registry auth token file: ${ci_auth_file}"
+    echo "Found ci engine registry auth token file: ${ci_auth_file}"
     auth_file=${ci_auth_file}
     AUTH_TOKEN_FILE_FOUND=1
     AUTH_TOKEN_TYPE="CI"
 else
-    echo "No ci client-server registry auth token file found: ${ci_auth_file}"
+    echo "No ci engine registry auth token file found: ${ci_auth_file}"
 
     if [ -e "${production_auth_file}" -a -s "${production_auth_file}" ]; then
-        echo "Found production client-server registry auth token file: ${production_auth_file}"
+        echo "Found production engine registry auth token file: ${production_auth_file}"
         auth_file=${production_auth_file}
         AUTH_TOKEN_FILE_FOUND=1
         AUTH_TOKEN_TYPE="PRODUCTION"
     else
-        echo "No production client-server registry auth token file found: ${production_auth_file}"
+        echo "No production engine registry auth token file found: ${production_auth_file}"
     fi
 fi
 
@@ -134,7 +134,7 @@ if pushd ~/ > /dev/null; then
         chmod +x ${INSTALLER_PATH}
     fi
     if [ ${AUTH_TOKEN_FILE_FOUND} == 1 ]; then
-        INSTALLER_ARGS+=" --client-server-auth-file ${auth_file}"
+        INSTALLER_ARGS+=" --engine-auth-file ${auth_file}"
         REGISTRY_TLS_VERIFY="true"
 
         case "${AUTH_TOKEN_TYPE}" in
@@ -150,7 +150,7 @@ if pushd ~/ > /dev/null; then
     if [ "${CI_CONTROLLER}" == "yes" ]; then
         CONTROLLER_REGISTRY_ARGS="--controller-registry quay.io/crucible/crucible-ci-controller:${CI_CONTROLLER_TAG}"
     fi
-    INSTALLER_CMD="${INSTALLER_PATH} ${CONTROLLER_REGISTRY_ARGS} --client-server-registry ${CONTAINER_REGISTRY} --client-server-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
+    INSTALLER_CMD="${INSTALLER_PATH} ${CONTROLLER_REGISTRY_ARGS} --engine-registry ${CONTAINER_REGISTRY} --engine-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
     echo "Running: ${INSTALLER_CMD}"
     ${INSTALLER_CMD}
     RC=$?
