@@ -75,27 +75,36 @@ validate_ci_endpoint
 ci_auth_file="/root/crucible-ci-engines-token.json"
 production_auth_file="/root/crucible-production-engines-token.json"
 if [ -e "${ci_auth_file}" -a -s "${ci_auth_file}" -a -e "${production_auth_file}" -a -s "${production_auth_file}" ]; then
-    echo "ERROR: It does not make sense for both the ci (${ci_auth_file}) and production (${production_auth_file}) client-server registry auth token files to exist"
+    echo "ERROR: It does not make sense for both the ci (${ci_auth_file}) and production (${production_auth_file}) engine registry auth token files to exist"
     exit 1
 fi
 
 AUTH_TOKEN_FILE_FOUND=0
 if [ -e "${ci_auth_file}" -a -s "${ci_auth_file}" ]; then
-    echo "Found ci client-server registry auth token file: ${ci_auth_file}"
+    echo "Found ci engine registry auth token file: ${ci_auth_file}"
     auth_file=${ci_auth_file}
     AUTH_TOKEN_FILE_FOUND=1
     AUTH_TOKEN_TYPE="CI"
 else
-    echo "No ci client-server registry auth token file found: ${ci_auth_file}"
+    echo "No ci engine registry auth token file found: ${ci_auth_file}"
 
     if [ -e "${production_auth_file}" -a -s "${production_auth_file}" ]; then
-        echo "Found production client-server registry auth token file: ${production_auth_file}"
+        echo "Found production engine registry auth token file: ${production_auth_file}"
         auth_file=${production_auth_file}
         AUTH_TOKEN_FILE_FOUND=1
         AUTH_TOKEN_TYPE="PRODUCTION"
     else
-        echo "No production client-server registry auth token file found: ${production_auth_file}"
+        echo "No production engine registry auth token file found: ${production_auth_file}"
     fi
+fi
+
+quay_oauth_token_file="/root/quay-oauth.token"
+QUAY_OAUTH_TOKEN_FILE_FOUND=0
+if [ -e "${quay_oauth_token_file}" -a -s "${quay_oauth_token_file}" ]; then
+    echo "Found Quay OAuth token file: ${quay_oauth_token_file}"
+    QUAY_OAUTH_TOKEN_FILE_FOUND=1    
+else
+    echo "No Quay OAuth token file found: ${quay_oauth_token_file}"
 fi
 
 # ensure endpoint availability
@@ -134,7 +143,7 @@ if pushd ~/ > /dev/null; then
         chmod +x ${INSTALLER_PATH}
     fi
     if [ ${AUTH_TOKEN_FILE_FOUND} == 1 ]; then
-        INSTALLER_ARGS+=" --client-server-auth-file ${auth_file}"
+        INSTALLER_ARGS+=" --engine-auth-file ${auth_file}"
         REGISTRY_TLS_VERIFY="true"
 
         case "${AUTH_TOKEN_TYPE}" in
@@ -143,14 +152,30 @@ if pushd ~/ > /dev/null; then
                 ;;
             "PRODUCTION")
                 CONTAINER_REGISTRY="quay.io/crucible/client-server"
+                EXPIRATION_LENGTH="52w"
+                INSTALLER_ARGS+=" --quay-engine-expiration-length ${EXPIRATION_LENGTH}"
                 ;;
         esac
+    fi
+    if [ ${QUAY_OAUTH_TOKEN_FILE_FOUND} == 1 ]; then
+        INSTALLER_ARGS+=" --quay-engine-expiration-refresh-token ${quay_oauth_token_file}"
+
+        case "${AUTH_TOKEN_TYPE}" in
+            "CI")
+                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/crucible-ci-engines"
+                ;;
+            "PRODUCTION")
+                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/client-server"
+                ;;
+        esac
+
+        INSTALLER_ARGS+=" --quay-engine-expiration-refresh-api-url ${QUAY_API_URL}"
     fi
     CONTROLLER_REGISTRY_ARGS=""
     if [ "${CI_CONTROLLER}" == "yes" ]; then
         CONTROLLER_REGISTRY_ARGS="--controller-registry quay.io/crucible/crucible-ci-controller:${CI_CONTROLLER_TAG}"
     fi
-    INSTALLER_CMD="${INSTALLER_PATH} ${CONTROLLER_REGISTRY_ARGS} --client-server-registry ${CONTAINER_REGISTRY} --client-server-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
+    INSTALLER_CMD="${INSTALLER_PATH} ${CONTROLLER_REGISTRY_ARGS} --engine-registry ${CONTAINER_REGISTRY} --engine-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
     echo "Running: ${INSTALLER_CMD}"
     ${INSTALLER_CMD}
     RC=$?
@@ -255,63 +280,6 @@ if [ "${CI_CONTROLLER}" == "yes" ]; then
     else
         echo "ERROR: Failed to update force-builds"
         exit 1
-    fi
-fi
-
-if [ "${AUTH_TOKEN_FILE_FOUND}" == 1 -a "${AUTH_TOKEN_TYPE}" == "PRODUCTION" ]; then
-    UPDATES_REQUIRED=1
-    EXPIRATION_LENGTH="52w"
-    echo "Updating rickshaw-settings value quay.image-expiration to '${EXPIRATION_LENGTH}' in ${RICKSHAW_SETTINGS_FILE}"
-
-    if jq --indent 4 --arg expiration_length "${EXPIRATION_LENGTH}" \
-          '.quay."image-expiration" = $expiration_length' \
-          ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
-        if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
-            echo "Successfully updated:"
-            jq --indent 4 . ${RICKSHAW_SETTINGS_FILE}
-        else
-            echo "ERROR: Failed to move image-expiration"
-            exit 1
-        fi
-    else
-        echo "ERROR: Failed to update image-expiration"
-        exit 1
-    fi
-fi
-
-quay_oauth_token_file="/root/quay-oauth.token"
-if [ -e "${quay_oauth_token_file}" -a -s "${quay_oauth_token_file}" ]; then
-    if [ ${AUTH_TOKEN_FILE_FOUND} -ne 1 ]; then
-        echo "ERROR: Found quay oauth token file but no registry token file"
-        exit 1
-    else
-        UPDATES_REQUIRED=1
-
-        case "${AUTH_TOKEN_TYPE}" in
-            "CI")
-                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/crucible-ci-engines"
-                ;;
-            "PRODUCTION")
-                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/client-server"
-                ;;
-        esac
-
-        echo "Updating rickshaw-settings values quay.refresh-expiration.token-file to '${quay_oauth_token_file}' and quay.refresh-expiration.api-url to '${QUAY_API_URL}' in ${RICKSHAW_SETTINGS_FILE}"
-
-        if jq --indent 4 --arg token_file "${quay_oauth_token_file}" --arg api_url "${QUAY_API_URL}" \
-              '.quay."refresh-expiration"."token-file" = $token_file | .quay."refresh-expiration"."api-url" = $api_url' \
-              ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
-            if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
-                echo "Succesfully updated:"
-                jq --indent 4 . ${RICKSHAW_SETTINGS_FILE}
-            else
-                echo "ERROR: Failed to move refresh-expiration"
-                exit 1
-            fi
-        else
-            echo "ERROR: Failed to update refresh-expiration"
-            exit 1
-        fi
     fi
 fi
 
