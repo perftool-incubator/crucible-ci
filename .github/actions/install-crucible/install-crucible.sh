@@ -131,6 +131,10 @@ start_github_group "Create /etc/sysconfig"
 mkdir -pv /etc/sysconfig
 stop_github_group
 
+start_github_group "Making sure /lib/firmware exists"
+mkdir -pv /lib/firmware
+stop_github_group
+
 start_github_group "Install Crucible"
 if pushd ~/ > /dev/null; then
     INSTALLER_PATH="./crucible-install.sh"
