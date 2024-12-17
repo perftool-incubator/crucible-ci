@@ -8,7 +8,7 @@ SCRIPT_DIR=$(readlink -e ${SCRIPT_DIR})
 . ${SCRIPT_DIR}/base
 
 CI_RUN_ENVIRONMENT="standalone"
-CI_ENDPOINT="remotehost"
+CI_ENDPOINT="remotehosts"
 
 REGISTRY_TLS_VERIFY="true"
 

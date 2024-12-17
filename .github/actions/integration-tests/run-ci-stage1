@@ -47,7 +47,7 @@ CI_SAMPLES=""
 
 CI_REPEAT_RUNS=""
 
-CI_ENDPOINT="remotehost"
+CI_ENDPOINT="remotehosts"
 
 CI_VERBOSE=0
 
@@ -445,10 +445,6 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         k8s)
                             ENDPOINT_ARG="--bench-ids iperf:1,uperf:2 --endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
                             ;;
-                        remotehost)
-                            ENDPOINT_ARG="--bench-ids iperf:1,uperf:2 --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1-2"
-                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
-                            ;;
                     esac
 
                     run_cmd "crucible run iperf,uperf --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/iperf-1.json,${SCRIPT_DIR}/mv-params/uperf-1.json ${ENDPOINT_ARG}"
@@ -465,10 +461,6 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         k8s)
                             ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1,cpu-partitioning:default:1,securityContext:client-1:${SCRIPT_DIR}/k8s-endpoint/securityContext-cyclictest.json,securityContext:client-2:${SCRIPT_DIR}/k8s-endpoint/securityContext-cyclictest.json"
                             ;;
-                        remotehost)
-                            ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1,cpu-partitioning:default:1"
-                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
-                            ;;
                     esac
 
                     run_cmd "crucible run cyclictest --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/cyclictest-1.json ${ENDPOINT_ARG}"
@@ -484,10 +476,6 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         k8s)
                             ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1,cpu-partitioning:default:1,securityContext:client-1:${SCRIPT_DIR}/k8s-endpoint/securityContext-oslat.json,securityContext:client-2:${SCRIPT_DIR}/k8s-endpoint/securityContext-oslat.json"
                             ;;
-                        remotehost)
-                            ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,osruntime:server-1:podman,client:1-2,server:1,cpu-partitioning:default:1"
-                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
-                            ;;
                     esac
 
                     run_cmd "crucible run oslat --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/oslat-1.json ${ENDPOINT_ARG}"
@@ -501,10 +489,6 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     case "${CI_ENDPOINT}" in
                         k8s)
                             ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
-                            ;;
-                        remotehost)
-                            ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
-                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
                             ;;
                     esac
 
@@ -521,10 +505,6 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         k8s)
                             ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2"
                             ;;
-                        remotehost)
-                            ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:client-2:chroot,client:1-2"
-                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
-                            ;;
                     esac
 
                     run_cmd "crucible run fio --tags run:1${TAGS} --num-samples ${CI_SAMPLES} --test-order s --mv-params ${SCRIPT_DIR}/mv-params/fio-1.json ${ENDPOINT_ARG}"
@@ -539,10 +519,6 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     case "${CI_ENDPOINT}" in
                         k8s)
                             ENDPOINT_ARG="--endpoint k8s,${COMMON_ENDPOINT_ARGS},${COMMON_K8S_ENDPOINT_ARGS},client:1-2,server:1-2"
-                            ;;
-                        remotehost)
-                            ENDPOINT_ARG="--endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:client-1:podman,osruntime:server-1:chroot,client:1,server:1"
-                            ENDPOINT_ARG+=" --endpoint remotehost,${COMMON_ENDPOINT_ARGS},osruntime:chroot,profiler:1"
                             ;;
                     esac
 
@@ -642,7 +618,7 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     ;;
             esac
             ;;
-        remotehost)
+        remotehosts)
             if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "local" ]; then
                 run_cmd "rm -Rfv ${CRUCIBLE_ENGINE_REPO}/*"
             fi
@@ -709,7 +685,7 @@ case "${CI_ENDPOINT}" in
                 ;;
         esac
         ;;
-    remotehost)
+    remotehosts)
         if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "local" ]; then
             run_cmd "ls -laR ${CRUCIBLE_ENGINE_REPO}" "force"
         fi
