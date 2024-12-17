@@ -6,10 +6,10 @@ runner_type=${1}
 
 case "${runner_type}" in
     "github"|"all")
-	endpoints_list="remotehost k8s"
+	endpoints_list="remotehosts k8s"
 	;;
     "self")
-	endpoints_list="remotehost"
+	endpoints_list="remotehosts"
 	;;
     *)
 	echo "ERROR: invalid runner type"

@@ -12,7 +12,7 @@ inputs:
   ci_endpoint:
     description: "Which rickshaw endpoint to exercise"
     required: false
-    default: "remotehost"
+    default: "remotehosts"
   ci_controller:
     description: "Whether a CI built controller should be used or not"
     required: false
