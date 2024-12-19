@@ -11,7 +11,7 @@ CRUCIBLE_INSTALL_SRC="https://raw.githubusercontent.com/perftool-incubator/cruci
 CI_TARGET="none"
 CI_TARGET_DIR="none"
 CI_RUN_ENVIRONMENT="standalone"
-CI_ENDPOINT="remotehost"
+CI_ENDPOINT="remotehosts"
 CI_CONTROLLER_TAG="none"
 CI_CONTROLLER="no"
 
@@ -117,9 +117,9 @@ case "${CI_ENDPOINT}" in
             stop_github_group
         fi
         ;;
-    remotehost)
+    remotehosts)
         if [ ${AUTH_TOKEN_FILE_FOUND} == 0 ]; then
-            start_github_group "Configuring Crucible for local remotehost registry"
+            start_github_group "Configuring Crucible for local remotehosts registry"
             CONTAINER_REGISTRY="dir:/home/crucible-containers/engines"
             stop_github_group
         fi

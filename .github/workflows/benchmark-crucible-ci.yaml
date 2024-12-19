@@ -83,7 +83,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-scenarios
       with:
         runner-type: "self"
-        runner-tags: "cpu-partitioning,remotehost,remotehosts"
+        runner-tags: "cpu-partitioning,remotehosts"
         benchmark: "${{ inputs.ci_target }}"
     - name: run get-repo-name
       id: get-repo-name
@@ -170,7 +170,7 @@ jobs:
       run: echo "crucible-ci->integration-tests not enabled"
 
   self-hosted-runners:
-    runs-on: [ self-hosted, cpu-partitioning, remotehost, remotehosts ]
+    runs-on: [ self-hosted, cpu-partitioning, remotehosts ]
     timeout-minutes: 90
     needs:
     - gen-params

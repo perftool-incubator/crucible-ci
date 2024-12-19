@@ -24,7 +24,7 @@ inputs:
   ci_endpoint:
     description: "Which rickshaw endpoint to exercise"
     required: false
-    default: "remotehost"
+    default: "remotehosts"
   ci_build_controller:
     description: "Should the crucible controller be rebuilt and tested"
     required: false
