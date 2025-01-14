@@ -5,9 +5,15 @@
 rickshaw_directory=${1}
 userenv_filter=${2}
 
-excludes="stream8-flexran rhel-ai"
-
 if pushd ${rickshaw_directory}; then
+    excludes=""
+    excludes_file="userenvs/ci-excludes.txt"
+    if [ -e ${excludes_file} ]; then
+        while read userenv; do
+            excludes+="${userenv} "
+        done < ${excludes_file}
+    fi
+
     userenvs=$(find userenvs/ -maxdepth 1 -name '*.json' -type f | sed -e 's|userenvs/||' -e 's|\.json||')
     # Discard excluded envs
     for ex in ${excludes[@]}; do
