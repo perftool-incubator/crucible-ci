@@ -151,7 +151,7 @@ jobs:
       if: ${{ matrix.scenario.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
       with:
-        artifact_tag: "${{ inputs.ci_target }}__github-runners__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}"
+        artifact_tag: "${{ inputs.ci_target }}__github-runners-x86_64__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}"
         ci_endpoint: "${{ matrix.scenario.endpoint }}"
         scenarios: "${{ matrix.scenario.benchmark }}"
         userenvs: "${{ matrix.userenv }}"
@@ -223,7 +223,7 @@ jobs:
       if: ${{ matrix.scenario.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
       with:
-        artifact_tag: "${{ inputs.ci_target }}__github-runners__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}"
+        artifact_tag: "${{ inputs.ci_target }}__github-runners-arm64__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}"
         ci_endpoint: "${{ matrix.scenario.endpoint }}"
         scenarios: "${{ matrix.scenario.benchmark }}"
         userenvs: "${{ matrix.userenv }}"
