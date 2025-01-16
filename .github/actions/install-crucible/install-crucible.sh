@@ -135,6 +135,12 @@ start_github_group "Making sure /lib/firmware exists"
 mkdir -pv /lib/firmware
 stop_github_group
 
+start_github_group "Make sure podman is installed"
+yum install -y podman
+dnf install -y podman
+apt install - podman
+stop_github_group
+
 start_github_group "Install Crucible"
 if pushd ~/ > /dev/null; then
     INSTALLER_PATH="./crucible-install.sh"
