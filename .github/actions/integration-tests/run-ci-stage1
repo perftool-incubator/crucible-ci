@@ -530,6 +530,12 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         post_run_cmd
                     fi
                     ;;
+                *)
+                    header="Legacy CLI mode testing not supported for scenario ${scenario}"
+                    start_github_group "${header}"
+                    echo -e "### ${header} ###\m"
+                    stop_github_group
+                    ;;
             esac
         fi
 
