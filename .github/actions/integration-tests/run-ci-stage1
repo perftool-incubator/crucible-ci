@@ -148,7 +148,7 @@ validate_ci_build_controller
 
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     case "${scenario}" in
-        fio|uperf|iperf|oslat|cyclictest|multi)
+        fio|uperf|iperf|oslat|cyclictest|multi|sleep)
             ;;
         *)
             echo "ERROR: Unknown CI scenario [${scenario}]"

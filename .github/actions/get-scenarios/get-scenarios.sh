@@ -62,7 +62,7 @@ esac
 
 if [ -n "${BENCHMARK_QUERY}" ]; then
     case "${BENCHMARK_QUERY}" in
-        "fio"|"uperf"|"iperf"|"oslat"|"cyclictest"|"multi")
+        "fio"|"uperf"|"iperf"|"oslat"|"cyclictest"|"multi"|"sleep")
             echo "Benchmark is '${BENCHMARK_QUERY}'"
             ;;
         *)
@@ -126,7 +126,7 @@ case "${RUNNER_TYPE}" in
     "github")
         if [ -n "${BENCHMARK_QUERY}" ]; then
             case "${BENCHMARK_QUERY}" in
-                "fio"|"uperf"|"iperf"|"multi")
+                "fio"|"uperf"|"iperf"|"multi"|"sleep")
                     for endpoint in "k8s" "remotehosts"; do
                         log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
                         scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
@@ -143,13 +143,13 @@ case "${RUNNER_TYPE}" in
             for endpoint in "k8s" "remotehosts"; do
                 case "${endpoint}" in
                     "k8s")
-                        for benchmark in "fio" "uperf" "iperf" "oslat" "cyclictest" "multi"; do
+                        for benchmark in "fio" "uperf" "iperf" "oslat" "cyclictest" "multi" "sleep"; do
                             log_enabled "${endpoint}" "${benchmark}"
                             scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}")
                         done
                         ;;
                     "remotehosts")
-                        for benchmark in "fio" "uperf" "iperf" "multi"; do
+                        for benchmark in "fio" "uperf" "iperf" "multi" "sleep"; do
                             log_enabled "${endpoint}" "${benchmark}"
                             scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}")
                         done
@@ -188,7 +188,7 @@ case "${RUNNER_TYPE}" in
                             scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
                         done
                         ;;
-                    "fio"|"uperf"|"iperf"|"multi")
+                    "fio"|"uperf"|"iperf"|"multi"|"sleep")
                         log_disabled "null" "${BENCHMARK_QUERY}"
                         scenarios_json+=$(get_disabled_scenario "null" "${BENCHMARK_QUERY}")
                         ;;
