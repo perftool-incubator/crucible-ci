@@ -148,7 +148,7 @@ validate_ci_build_controller
 
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     case "${scenario}" in
-        fio|uperf|iperf|oslat|cyclictest|multi)
+        fio|uperf|iperf|oslat|cyclictest|multi|sleep)
             ;;
         *)
             echo "ERROR: Unknown CI scenario [${scenario}]"
@@ -529,6 +529,12 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                         run_cmd "crucible run uperf --tags run:2${TAGS} --num-samples ${CI_SAMPLES} --test-order r --mv-params ${SCRIPT_DIR}/mv-params/uperf-2.json ${ENDPOINT_ARG}"
                         post_run_cmd
                     fi
+                    ;;
+                *)
+                    header="Legacy CLI mode testing not supported for scenario ${scenario}"
+                    start_github_group "${header}"
+                    echo -e "### ${header} ###\m"
+                    stop_github_group
                     ;;
             esac
         fi
