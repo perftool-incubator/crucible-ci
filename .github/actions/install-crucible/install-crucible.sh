@@ -14,10 +14,11 @@ CI_RUN_ENVIRONMENT="standalone"
 CI_ENDPOINT="remotehosts"
 CI_CONTROLLER_TAG="none"
 CI_CONTROLLER="no"
+RELEASE_TAG="upstream"
 
 REGISTRY_TLS_VERIFY="true"
 
-longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:,controller-tag:,ci-controller:"
+longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:,controller-tag:,ci-controller:,release-tag:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -26,6 +27,11 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --release-tag)
+            shift
+            RELEASE_TAG="${1}"
+            shift
+            ;;
         --ci-controller)
             shift
             CI_CONTROLLER="${1}"
@@ -141,7 +147,15 @@ if pushd ~/ > /dev/null; then
     INSTALLER_ARGS=""
     if [ -n "${CI_TARGET}" -a -n "${CI_TARGET_DIR}" -a "${CI_TARGET}" == "crucible" ]; then
         INSTALLER_PATH="${CI_TARGET_DIR}/crucible-install.sh"
-        INSTALLER_ARGS+=" --git-repo ${CI_TARGET_DIR}/.git"
+
+        if [ "${RELEASE_TAG}" == "upstream" ]; then
+            INSTALLER_ARGS+=" --git-repo ${CI_TARGET_DIR}/.git"
+        else
+            # --git-repo and --release cannot be used together, so we
+            # --have to "hack" DEFAULT_GIT_REPO to point to the
+            # --appropriate location
+            sed -i -e "s|\(DEFAULT_GIT_REPO\)=.*|\1=\"${CI_TARGET_DIR}/.git\"|" ${INSTALLER_PATH}
+        fi
     else
         wget -O ${INSTALLER_PATH} ${CRUCIBLE_INSTALL_SRC}
         chmod +x ${INSTALLER_PATH}
@@ -179,7 +193,11 @@ if pushd ~/ > /dev/null; then
     if [ "${CI_CONTROLLER}" == "yes" ]; then
         CONTROLLER_REGISTRY_ARGS="--controller-registry quay.io/crucible/crucible-ci-controller:${CI_CONTROLLER_TAG}"
     fi
-    INSTALLER_CMD="${INSTALLER_PATH} ${CONTROLLER_REGISTRY_ARGS} --engine-registry ${CONTAINER_REGISTRY} --engine-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
+    RELEASE_ARGS=""
+    if [ "${RELEASE_TAG}" != "upstream" ]; then
+        RELEASE_ARGS="--release ${RELEASE_TAG}"
+    fi
+    INSTALLER_CMD="${INSTALLER_PATH} ${CONTROLLER_REGISTRY_ARGS} ${RELEASE_ARGS} --engine-registry ${CONTAINER_REGISTRY} --engine-tls-verify ${REGISTRY_TLS_VERIFY} --name nobody --email nobody@nobody.nobody.com --verbose ${INSTALLER_ARGS}"
     echo "Running: ${INSTALLER_CMD}"
     ${INSTALLER_CMD}
     RC=$?
@@ -195,7 +213,7 @@ fi
 stop_github_group
 
 start_github_group "CI Target Processing"
-if [ "${CI_TARGET}" != "none" -a "${CI_TARGET_DIR}" != "none" ]; then
+if [ "${CI_TARGET}" != "none" -a "${CI_TARGET_DIR}" != "none" -a "${RELEASE_TAG}" == "upstream" ]; then
     if [ "${CI_TARGET}" != "crucible" ]; then
         echo "Handling --ci-target=${CI_TARGET} --ci-target-dir=${CI_TARGET_DIR}"
 
@@ -250,14 +268,25 @@ if [ "${CI_TARGET}" != "none" -a "${CI_TARGET_DIR}" != "none" ]; then
         fi
     fi
 else
-    if [ "${CI_TARGET}" != "none" ]; then
-        echo "ERROR: You must set --ci-target-dir when setting --ci-target"
-        exit 1
-    fi
+    if [ "${RELEASE_TAG}" != "upstream" ]; then
+        if [ "${CI_TARGET}" == "crucible" ]; then
+            echo "INFO: When a release tag is specified and crucible is the CI target, only the installer script is used from the PR/upstream code"
+        else
+            if [ "${CI_TARGET}" != "none" ]; then
+                echo "ERROR: It does not make sense to set a release tag and CI target (unless set to Crucible to test installer changes) since the CI target would override the release tag"
+                exit 1
+            fi
+        fi
+    else
+        if [ "${CI_TARGET}" != "none" ]; then
+            echo "ERROR: You must set --ci-target-dir when setting --ci-target"
+            exit 1
+        fi
 
-    if [ "${CI_TARGET_DIR}" != "none" ]; then
-        echo "ERROR: You must set --ci-target when setting --ci-target-dir"
-        exit 1
+        if [ "${CI_TARGET_DIR}" != "none" ]; then
+            echo "ERROR: You must set --ci-target when setting --ci-target-dir"
+            exit 1
+        fi
     fi
 fi
 stop_github_group

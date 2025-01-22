@@ -21,8 +21,12 @@ inputs:
     description: "A controller tag to pull from the ci controller repository"
     required: false
     default: "none"
+  release_tag:
+    description: "A Crucible release tag/version to tell the installer to use"
+    required: false
+    default: "upstream"
 runs:
   using: "composite"
   steps:
-    - run: sudo ${{ github.action_path }}/install-crucible.sh --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-controller ${{ inputs.ci_controller }} --controller-tag ${{ inputs.controller_tag }}
+    - run: sudo ${{ github.action_path }}/install-crucible.sh --run-environment github --ci-target ${{ inputs.ci_target }} --ci-target-dir ${{ inputs.ci_target_dir }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-controller ${{ inputs.ci_controller }} --controller-tag ${{ inputs.controller_tag }} --release-tag ${{ inputs.release_tag }}
       shell: bash
