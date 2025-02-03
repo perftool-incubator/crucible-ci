@@ -3,10 +3,11 @@
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 
 RUNNER_TYPE=""
+RICKSHAW_DIR=""
 RUNNER_TAGS=""
 BENCHMARK_QUERY=""
 
-longopts="runner-type:,runner-tags:,benchmark:"
+longopts="runner-type:,rickshaw-dir:,runner-tags:,benchmark:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -18,6 +19,11 @@ while true; do
         --runner-type)
             shift
             RUNNER_TYPE="${1}"
+            shift
+            ;;
+        --rickshaw-dir)
+            shift
+            RICKSHAW_DIR="${1}"
             shift
             ;;
         --runner-tags)
@@ -59,6 +65,21 @@ case "${RUNNER_TYPE}" in
         exit 1
         ;;
 esac
+
+if pushd "${RICKSHAW_DIR}"; then
+    if [ -e "rickshaw-run" -a -d "util/crucible-ci/" ]; then
+        RICKSHAW_DIR=$(readlink -e "./util/crucible-ci/")
+        echo "Rickshaw directory is '${RICKSHAW_DIR}'"
+    else
+        echo "ERROR: You must provide a valid rickshaw directory [${RICKSHAW_DIR}]"
+        exit 1
+    fi
+
+    popd
+else
+    echo "ERROR: Could not pushd to rickshaw directory [${RICKSHAW_DIR}]"
+    exit 1
+fi
 
 if [ -n "${BENCHMARK_QUERY}" ]; then
     case "${BENCHMARK_QUERY}" in
@@ -112,12 +133,17 @@ function log_enabled() {
 }
 
 function log_disabled() {
-    local benchmark endpoint
+    local benchmark endpoint reason
 
     endpoint=${1}; shift
     benchmark=${1}; shift
+    reason=${1}; shift
 
-    echo "Adding disabled scenario: endpoint=${endpoint} benchmark=${benchmark}"
+    if [ -n "${reason}" ]; then
+        reason=" reason=${reason}"
+    fi
+
+    echo "Adding disabled scenario: endpoint=${endpoint} benchmark=${benchmark}${reason}"
 }
 
 scenarios_json="["
@@ -128,14 +154,24 @@ case "${RUNNER_TYPE}" in
             case "${BENCHMARK_QUERY}" in
                 "fio"|"uperf"|"iperf"|"multi"|"sleep")
                     for endpoint in "k8s" "remotehosts"; do
-                        log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
-                        scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
+                        if [ -e "${RICKSHAW_DIR}/${BENCHMARK_QUERY}.${endpoint}.json" ]; then
+                            log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
+                            scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
+                        else
+                            log_disabled "${endpoint}" "${BENCHMARK_QUERY}" "unavailable"
+                            scenarios_json+=$(get_disabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
+                        fi
                     done
                     ;;
                 "oslat"|"cyclictest")
                     for endpoint in "k8s"; do
-                        log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
-                        scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
+                        if [ -e "${RICKSHAW_DIR}/${BENCHMARK_QUERY}.${endpoint}.json" ]; then
+                            log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
+                            scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
+                        else
+                            log_disabled "${endpoint}" "${BENCHMARK_QUERY}" "unavailable"
+                            scenarios_json+=$(get_disabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
+                        fi
                     done
                     ;;
             esac
@@ -144,14 +180,24 @@ case "${RUNNER_TYPE}" in
                 case "${endpoint}" in
                     "k8s")
                         for benchmark in "fio" "uperf" "iperf" "oslat" "cyclictest" "multi" "sleep"; do
-                            log_enabled "${endpoint}" "${benchmark}"
-                            scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}")
+                            if [ -e "${RICKSHAW_DIR}/${benchmark}.${endpoint}.json" ]; then
+                                log_enabled "${endpoint}" "${benchmark}"
+                                scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}")
+                            else
+                                log_disabled "${endpoint}" "${benchmark}" "unavailable"
+                                scenarios_json+=$(get_disabled_scenario "${endpoint}" "${benchmark}")
+                            fi
                         done
                         ;;
                     "remotehosts")
                         for benchmark in "fio" "uperf" "iperf" "multi" "sleep"; do
-                            log_enabled "${endpoint}" "${benchmark}"
-                            scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}")
+                            if [ -e "${RICKSHAW_DIR}/${benchmark}.${endpoint}.json" ]; then
+                                log_enabled "${endpoint}" "${benchmark}"
+                                scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}")
+                            else
+                                log_disabled "${endpoint}" "${benchmark}" "unavailable"
+                                scenarios_json+=$(get_disabled_scenario "${endpoint}" "${benchmark}")
+                            fi
                         done
                         ;;
                 esac
@@ -184,8 +230,13 @@ case "${RUNNER_TYPE}" in
                 case "${BENCHMARK_QUERY}" in
                     "oslat"|"cyclictest")
                         for endpoint in "remotehosts"; do
-                            log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
-                            scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
+                            if [ -e "${RICKSHAW_DIR}/${BENCHMARK_QUERY}.${endpoint}.json" ]; then
+                                log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
+                                scenarios_json+=$(get_enabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
+                            else
+                                log_disabled "${endpoint}" "${BENCHMARK_QUERY}" "unavailable"
+                                scenarios_json+=$(get_disabled_scenario "${endpoint}" "${BENCHMARK_QUERY}")
+                            fi
                         done
                         ;;
                     "fio"|"uperf"|"iperf"|"multi"|"sleep")
@@ -198,8 +249,13 @@ case "${RUNNER_TYPE}" in
                     case "${endpoint}" in
                         "remotehosts")
                             for benchmark in "oslat" "cyclictest"; do
-                                echo "Adding scenario: endpoint=${endpoint} benchmark=${benchmark}"
-                                scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}" )
+                                if [ -e "${RICKSHAW_DIR}/${benchmark}.${endpoint}.json" ]; then
+                                    log_enabled "${endpoint}" "${benchmark}"
+                                    scenarios_json+=$(get_enabled_scenario "${endpoint}" "${benchmark}")
+                                else
+                                    log_disabled "${endpoint}" "${benchmark}" "unavailable"
+                                    scenarios_json+=$(get_disabled_scenario "${endpoint}" "${benchmark}")
+                                fi
                             done
                             ;;
                     esac
