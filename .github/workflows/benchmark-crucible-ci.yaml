@@ -78,6 +78,7 @@ jobs:
       with:
         runner-type: "github"
         benchmark: "${{ inputs.ci_target }}"
+        rickshaw-directory: "./rickshaw"
     - name: run get-scenarios-self
       id: get-scenarios-self
       uses: ./crucible-ci/.github/actions/get-scenarios
@@ -85,6 +86,7 @@ jobs:
         runner-type: "self"
         runner-tags: "cpu-partitioning,remotehosts"
         benchmark: "${{ inputs.ci_target }}"
+        rickshaw-directory: "./rickshaw"
     - name: run get-repo-name
       id: get-repo-name
       uses: ./crucible-ci/.github/actions/get-repo-name

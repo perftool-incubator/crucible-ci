@@ -168,11 +168,13 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-scenarios
       with:
         runner-type: "github"
+        rickshaw-directory: "./rickshaw"
     - name: run get-scenarios-self
       id: get-scenarios-self
       uses: ./crucible-ci/.github/actions/get-scenarios
       with:
         runner-type: "self"
+        rickshaw-directory: "./rickshaw"
         runner-tags: "cpu-partitioning,remotehosts"
 
     - name: determine timeout-minutes
