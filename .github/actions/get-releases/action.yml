@@ -1,0 +1,23 @@
+name: "crucible-ci get releases"
+description: "Gets a list of Crucible releases that should be tested"
+inputs:
+  crucible-directory:
+    description: "Where is the crucible repository to get the installer script from"
+    required: true
+  build-controller:
+    description: "Is a CI built controller being used?"
+    required: true
+outputs:
+  releases:
+    description: "The list of releases that were found"
+    value: ${{ steps.generate-releases-list.outputs.releases }}
+runs:
+  using: "composite"
+  steps:
+    - name: "Validate inputs"
+      shell: bash
+      run: ${{ github.action_path }}/validate-inputs.sh ${{ inputs.crucible-directory }} ${{ inputs.build-controller }}
+    - name: "Generate releases list"
+      id: generate-releases-list
+      shell: bash
+      run: ${{ github.action_path }}/generate-release-list.sh ${{ inputs.crucible-directory }} ${{ inputs.build-controller }}

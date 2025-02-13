@@ -4,6 +4,9 @@ inputs:
   runner-type:
     description: "What type of runner is this for (github or self)?"
     required: true
+  rickshaw-directory:
+    description: "Where to find the rickshaw file contents?"
+    required: true
   runner-tags:
     description: "Comma separated list of tags the runner has"
     required: false
@@ -22,4 +25,4 @@ runs:
     - name: "get scenarios"
       id: get-scenarios
       shell: bash
-      run: ${{ github.action_path }}/get-scenarios.sh --runner-type "${{ inputs.runner-type }}" --runner-tags "${{ inputs.runner-tags }}" --benchmark "${{ inputs.benchmark }}"
+      run: ${{ github.action_path }}/get-scenarios.sh --runner-type "${{ inputs.runner-type }}" --rickshaw-dir "${{ inputs.rickshaw-directory }}" --runner-tags "${{ inputs.runner-tags }}" --benchmark "${{ inputs.benchmark }}"

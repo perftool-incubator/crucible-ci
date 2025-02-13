@@ -1,0 +1,265 @@
+name: core-release-crucible-ci
+
+on:
+  workflow_call:
+    inputs:
+      ci_target:
+        required: true
+        type: string
+      ci_target_dir:
+        required: false
+        type: "string"
+        default: ""
+      crucible_ci_test:
+        required: false
+        type: string
+        default: "no"
+      ci_target_branch:
+        required: true
+        type: string
+      crucible_ci_test_branch:
+        required: false
+        type: string
+      github_workspace:
+        required: true
+        type: string
+      userenv_filter:
+        required: false
+        type: string
+        default: "all"
+      bypass_controller_build:
+        required: false
+        type: string
+        default: "no"
+      force_controller_build:
+        required: false
+        type: string
+        default: "no"
+    secrets:
+      registry_auth:
+        required: false
+      ci_registry_auth:
+        required: false
+      production_registry_auth:
+        required: false
+      quay_oauth_token:
+        required: false
+
+concurrency:
+  group: ${{ inputs.crucible_ci_test }}/${{ inputs.ci_target }}/${{ github.ref }}/core-release-crucible-ci
+  cancel-in-progress: true
+
+env:
+  GITHUB_WORKSPACE: ${{ inputs.github_workspace }}
+
+jobs:
+  gen-params:
+    runs-on: [ self-hosted, workflow-overhead ]
+    timeout-minutes: 10
+    outputs:
+      build_controller: ${{ steps.check-controller-build.outputs.build-controller }}
+      releases: ${{ steps.get-releases.outputs.releases }}
+      repo_name: ${{ steps.get-repo-name.outputs.repo-name }}
+      ci_target_dir: ${{ steps.set-ci-target-dir.outputs.ci-target-dir }}
+    steps:
+
+    - name: checkout crucible default
+      if: ${{ inputs.ci_target != 'crucible' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/crucible
+        ref: master
+        path: crucible
+    - name: checkout crucible ci_target
+      if: ${{ inputs.ci_target == 'crucible' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: crucible
+        fetch-depth: 2
+
+    - name: checkout workshop default
+      if: ${{ inputs.ci_target != 'workshop' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/workshop
+        ref: master
+        path: workshop
+    - name: checkout workshop ci_target
+      if: ${{ inputs.ci_target == 'workshop' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: workshop
+        fetch-depth: 2
+
+    - name: checkout crucible-ci default
+      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: main
+        path: crucible-ci
+    - name: checkout crucible-ci ci_target
+      if: ${{ inputs.ci_target == 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: crucible-ci
+    - name: checkout crucible-ci crucible_ci_test
+      if: ${{ inputs.crucible_ci_test == 'yes' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: ${{ inputs.crucible_ci_test_branch }}
+        path: crucible-ci
+
+    - name: run check-controller-build
+      id: check-controller-build
+      uses: ./crucible-ci/.github/actions/check-controller-build
+      with:
+        bypass-controller-build: "${{ inputs.bypass_controller_build }}"
+        force-controller-build: "${{ inputs.force_controller_build }}"
+        crucible-directory: "./crucible"
+        workshop-directory: "./workshop"
+    - name: run get-releases
+      id: get-releases
+      uses: ./crucible-ci/.github/actions/get-releases
+      with:
+        crucible-directory: "./crucible"
+        build-controller: "${{ steps.check-controller-build.outputs.build-controller }}"
+    - name: run get-repo-name
+      id: get-repo-name
+      uses: ./crucible-ci/.github/actions/get-repo-name
+
+    - name: set ci_target_dir
+      id: set-ci-target-dir
+      run: |
+        if [ "${{ inputs.ci_target_dir }}" == "" ]; then
+          echo "Setting ci-target-dir to the value of inputs.ci_target [${{ inputs.ci_target }} ]"
+          echo "ci-target-dir=${{ inputs.ci_target }}" >> $GITHUB_OUTPUT
+        else
+          echo "Setting ci-target-dir to the value of inputs.ci_target_dir [${{ inputs.ci_target_dir }} ]"
+          echo "ci-target-dir=${{ inputs.ci_target_dir }}" >> $GITHUB_OUTPUT
+        fi
+
+  display-params:
+    runs-on: [ self-hosted, workflow-overhead ]
+    timeout-minutes: 10
+    needs: gen-params
+    steps:
+    - name: Echo gen-params outputs
+      run: echo "${{ toJSON(needs.gen-params.outputs) }}"
+
+  build-controller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs:
+    - gen-params
+    - display-params
+    steps:
+
+    - name: checkout crucible-ci default
+      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: main
+        path: crucible-ci
+    - name: checkout crucible-ci ci_target
+      if: ${{ inputs.ci_target == 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: crucible-ci
+    - name: checkout crucible-ci crucible_ci_test
+      if: ${{ inputs.crucible_ci_test == 'yes' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: ${{ inputs.crucible_ci_test_branch }}
+        path: crucible-ci
+
+    - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
+      if: ${{ inputs.ci_target != 'crucible-ci' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/${{ needs.gen-params.outputs.ci_target_dir }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: ${{ needs.gen-params.outputs.ci_target_dir }}
+
+    - name: import ci secret
+      env:
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: import production secret
+      env:
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+
+    - name: import quay oath token
+      env:
+        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.QUAY_OAUTH_TOKEN != '' }}
+      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
+
+    - name: run crucible-ci->install-crucible
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
+      uses: ./crucible-ci/.github/actions/install-crucible
+      with:
+        ci_target: ${{ inputs.ci_target }}
+        ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
+    - name: display crucible config
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
+      run: cat /etc/sysconfig/crucible
+    - name: verify crucible functionality
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
+      run: sudo crucible repo info
+    - name: run crucible-ci->build-controller
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
+      uses: ./crucible-ci/.github/actions/build-controller
+      with:
+        push_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
+    - name: no build required
+      if: ${{ needs.gen-params.outputs.build_controller == 'no' }}
+      run: echo "no controller build required"
+
+  call-core-crucible-ci:
+    needs:
+    - gen-params
+    - build-controller
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ${{ fromJSON(needs.gen-params.outputs.releases) }}
+    uses: ./.github/workflows/core-crucible-ci.yaml
+    with:
+      ci_target: "${{ inputs.ci_target }}"
+      ci_target_dir: "${{ needs.gen-params.outputs.ci_target_dir }}"
+      crucible_ci_test: "${{ inputs.crucible_ci_test }}"
+      ci_target_branch: "${{ inputs.ci_target_branch }}"
+      crucible_ci_test_branch: "${{ inputs.crucible_ci_test_branch }}"
+      github_workspace: "${{ inputs.github_workspace }}"
+      userenv_filter: "${{ inputs.userenv_filter }}"
+      release: "${{ matrix.release }}"
+      ci_built_controller: "${{ needs.gen-params.outputs.build_controller }}"
+      ci_built_controller_tag: "${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}"
+    secrets:
+      registry_auth: "${{ secrets.registry_auth }}"
+      ci_registry_auth: "${{ secrets.ci_registry_auth }}"
+      production_registry_auth: "${{ secrets.production_registry_auth }}"
+      quay_oauth_token: "${{ secrets.quay_oauth_token }}"
+
+  core-release-crucible-ci-complete:
+    runs-on: [ self-hosted, workflow-overhead ]
+    needs:
+    - call-core-crucible-ci
+    steps:
+    - name: Confirm Success
+      run: echo "core-release-crucible-ci-complete"

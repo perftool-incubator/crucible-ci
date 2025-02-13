@@ -77,6 +77,7 @@ jobs:
       with:
         runner-type: "github"
         benchmark: "fio"
+        rickshaw-directory: "./rickshaw"
     - name: run get-repo-name
       id: get-repo-name
       uses: ./crucible-ci/.github/actions/get-repo-name

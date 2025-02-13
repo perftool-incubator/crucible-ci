@@ -8,7 +8,7 @@ on:
         type: string
       ci_target_dir:
         required: false
-        type: "string"
+        type: string
         default: ""
       crucible_ci_test:
         required: false
@@ -27,14 +27,18 @@ on:
         required: false
         type: string
         default: "all"
-      bypass_controller_build:
+      release:
+        required: false
+        type: string
+        default: "upstream"
+      ci_built_controller:
         required: false
         type: string
         default: "no"
-      force_controller_build:
+      ci_built_controller_tag:
         required: false
         type: string
-        default: "no"
+        default: "--"
     secrets:
       registry_auth:
         required: false
@@ -46,7 +50,7 @@ on:
         required: false
 
 concurrency:
-  group: ${{ inputs.crucible_ci_test }}/${{ inputs.ci_target }}/${{ github.ref }}/core-crucible-ci
+  group: ${{ inputs.crucible_ci_test }}/${{ inputs.ci_target }}/${{ github.ref }}/core-crucible-ci/${{ inputs.release }}
   cancel-in-progress: true
 
 env:
@@ -58,45 +62,56 @@ jobs:
     timeout-minutes: 10
     outputs:
       userenvs: ${{ steps.get-userenvs.outputs.userenvs }}
-      build_controller: ${{ steps.check-controller-build.outputs.build-controller }}
       github_hosted_scenarios: ${{ steps.get-scenarios-github.outputs.scenarios }}
       self_hosted_scenarios: ${{ steps.get-scenarios-self.outputs.scenarios }}
-      repo_name: ${{ steps.get-repo-name.outputs.repo-name }}
-      ci_target_dir: ${{ steps.set-ci-target-dir.outputs.ci-target-dir }}
       timeout_minutes: ${{ steps.determine-timeout-minutes.outputs.timeout-minutes }}
     steps:
 
     - name: checkout crucible default
-      if: ${{ inputs.ci_target != 'crucible' }}
+      if: ${{ inputs.ci_target != 'crucible' && inputs.release == 'upstream' }}
       uses: actions/checkout@v4
       with:
         repository: perftool-incubator/crucible
         ref: master
         path: crucible
     - name: checkout crucible ci_target
-      if: ${{ inputs.ci_target == 'crucible' }}
+      if: ${{ inputs.ci_target == 'crucible' && inputs.release == 'upstream' }}
       uses: actions/checkout@v4
       with:
         repository: perftool-incubator/${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
         path: crucible
         fetch-depth: 2
+    - name: checkout crucible release
+      if: ${{ inputs.release != 'upstream' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/crucible
+        ref: ${{ inputs.release }}
+        path: crucible
 
     - name: checkout workshop default
-      if: ${{ inputs.ci_target != 'workshop' }}
+      if: ${{ inputs.ci_target != 'workshop' && inputs.release == 'upstream' }}
       uses: actions/checkout@v4
       with:
         repository: perftool-incubator/workshop
         ref: master
         path: workshop
     - name: checkout workshop ci_target
-      if: ${{ inputs.ci_target == 'workshop' }}
+      if: ${{ inputs.ci_target == 'workshop' && inputs.release == 'upstream' }}
       uses: actions/checkout@v4
       with:
         repository: perftool-incubator/${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
         path: workshop
         fetch-depth: 2
+    - name: checkout workshop release
+      if: ${{ inputs.release != 'upstream' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/workshop
+        ref: ${{ inputs.release }}
+        path: workshop
 
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
@@ -121,18 +136,25 @@ jobs:
         path: crucible-ci
 
     - name: checkout rickshaw default
-      if: ${{ inputs.ci_target != 'rickshaw' }}
+      if: ${{ inputs.ci_target != 'rickshaw' && inputs.release == 'upstream' }}
       uses: actions/checkout@v4
       with:
         repository: perftool-incubator/rickshaw
         ref: master
         path: rickshaw
     - name: checkout rickshaw ci_target
-      if: ${{ inputs.ci_target == 'rickshaw' }}
+      if: ${{ inputs.ci_target == 'rickshaw' && inputs.release == 'upstream' }}
       uses: actions/checkout@v4
       with:
         repository: perftool-incubator/${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
+        path: rickshaw
+    - name: checkout rickshaw release
+      if: ${{ inputs.release != 'upstream' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/rickshaw
+        ref: ${{ inputs.release }}
         path: rickshaw
 
     - name: run get-userenvs
@@ -146,39 +168,19 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-scenarios
       with:
         runner-type: "github"
+        rickshaw-directory: "./rickshaw"
     - name: run get-scenarios-self
       id: get-scenarios-self
       uses: ./crucible-ci/.github/actions/get-scenarios
       with:
         runner-type: "self"
+        rickshaw-directory: "./rickshaw"
         runner-tags: "cpu-partitioning,remotehosts"
-    - name: run check-controller-build
-      id: check-controller-build
-      uses: ./crucible-ci/.github/actions/check-controller-build
-      with:
-        bypass-controller-build: "${{ inputs.bypass_controller_build }}"
-        force-controller-build: "${{ inputs.force_controller_build }}"
-        crucible-directory: "./crucible"
-        workshop-directory: "./workshop"
-    - name: run get-repo-name
-      id: get-repo-name
-      uses: ./crucible-ci/.github/actions/get-repo-name
-
-    - name: set ci_target_dir
-      id: set-ci-target-dir
-      run: |
-        if [ "${{ inputs.ci_target_dir }}" == "" ]; then
-          echo "Setting ci-target-dir to the value of inputs.ci_target [${{ inputs.ci_target }} ]"
-          echo "ci-target-dir=${{ inputs.ci_target }}" >> $GITHUB_OUTPUT
-        else
-          echo "Setting ci-target-dir to the value of inputs.ci_target_dir [${{ inputs.ci_target_dir }} ]"
-          echo "ci-target-dir=${{ inputs.ci_target_dir }}" >> $GITHUB_OUTPUT
-        fi
 
     - name: determine timeout-minutes
       id: determine-timeout-minutes
       run: |
-        if [ "${{ steps.check-controller-build.outputs.build-controller }}" == "yes" ]; then
+        if [ "${{ inputs.ci_built_controller }}" == "yes" ]; then
           build_controller_timeout_minutes=150
           echo "Setting timeout-minutes to the build controller value of '${build_controller_timeout_minutes}'"
           echo "timeout-minutes=${build_controller_timeout_minutes}" >> $GITHUB_OUTPUT
@@ -196,110 +198,31 @@ jobs:
     - name: Echo gen-params outputs
       run: echo "${{ toJSON(needs.gen-params.outputs) }}"
 
-  build-controller:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    needs:
-    - gen-params
-    - display-params
-    steps:
-
-    - name: checkout crucible-ci default
-      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/crucible-ci
-        ref: main
-        path: crucible-ci
-    - name: checkout crucible-ci ci_target
-      if: ${{ inputs.ci_target == 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/${{ inputs.ci_target }}
-        ref: ${{ inputs.ci_target_branch }}
-        path: crucible-ci
-    - name: checkout crucible-ci crucible_ci_test
-      if: ${{ inputs.crucible_ci_test == 'yes' }}
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/crucible-ci
-        ref: ${{ inputs.crucible_ci_test_branch }}
-        path: crucible-ci
-
-    - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
-      if: ${{ inputs.ci_target != 'crucible-ci' }}
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/${{ needs.gen-params.outputs.ci_target_dir }}
-        ref: ${{ inputs.ci_target_branch }}
-        path: ${{ needs.gen-params.outputs.ci_target_dir }}
-
-    - name: import ci secret
-      env:
-        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
-      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
-    - name: import production secret
-      env:
-        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
-      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
-
-    - name: import quay oath token
-      env:
-        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
-      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.QUAY_OAUTH_TOKEN != '' }}
-      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
-
-    - name: run crucible-ci->install-crucible
-      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
-      uses: ./crucible-ci/.github/actions/install-crucible
-      with:
-        ci_target: ${{ inputs.ci_target }}
-        ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
-    - name: display crucible config
-      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
-      run: cat /etc/sysconfig/crucible
-    - name: verify crucible functionality
-      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
-      run: sudo crucible repo info
-    - name: run crucible-ci->build-controller
-      if: ${{ needs.gen-params.outputs.build_controller == 'yes' }}
-      uses: ./crucible-ci/.github/actions/build-controller
-      with:
-        push_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
-    - name: no build required
-      if: ${{ needs.gen-params.outputs.build_controller == 'no' }}
-      run: echo "no controller build required"
-
   github-runners:
     runs-on: ubuntu-latest
     timeout-minutes: ${{ fromJSON(needs.gen-params.outputs.timeout_minutes) }}
     needs:
     - gen-params
     - display-params
-    - build-controller
     strategy:
       fail-fast: false
       matrix:
         scenario: ${{ fromJSON(needs.gen-params.outputs.github_hosted_scenarios) }}
         userenv: ${{ fromJSON(needs.gen-params.outputs.userenvs) }}
-        ci_controller: [ "${{ needs.gen-params.outputs.build_controller }}" ]
     steps:
-    - name: Matrix Parameters => (${{ matrix.scenario.enabled }}, ${{ matrix.scenario.endpoint }}, ${{ matrix.scenario.benchmark }}, ${{ matrix.userenv }}, ${{ matrix.ci_controller }})
+    - name: Matrix Parameters => (${{ matrix.scenario.enabled }}, ${{ matrix.scenario.endpoint }}, ${{ matrix.scenario.benchmark }}, ${{ matrix.userenv }})
       run: |
         echo "enabled=${{ matrix.scenario.enabled }}"
         echo "endpoint=${{ matrix.scenario.endpoint }}"
         echo "benchmark=${{ matrix.scenario.benchmark }}"
         echo "userenv=${{ matrix.userenv }}"
-        echo "ci_controller=${{ matrix.ci_controller }}"
 
-    - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
+    - name: checkout ${{ inputs.ci_target_dir }} ci_target
       uses: actions/checkout@v4
       with:
-        repository: perftool-incubator/${{ needs.gen-params.outputs.ci_target_dir }}
+        repository: perftool-incubator/${{ inputs.ci_target_dir }}
         ref: ${{ inputs.ci_target_branch }}
-        path: ${{ needs.gen-params.outputs.ci_target_dir }}
+        path: ${{ inputs.ci_target_dir }}
 
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
@@ -337,14 +260,15 @@ jobs:
       if: ${{ matrix.scenario.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
       with:
-        artifact_tag: "${{ inputs.ci_target }}__github-runners__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}"
+        artifact_tag: "${{ inputs.ci_target }}__github-runners__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}-${{ inputs.release }}"
         ci_endpoint: "${{ matrix.scenario.endpoint }}"
         scenarios: "${{ matrix.scenario.benchmark }}"
         userenvs: "${{ matrix.userenv }}"
         ci_target: "${{ inputs.ci_target }}"
-        ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
-        ci_controller: ${{ matrix.ci_controller }}
-        controller_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
+        ci_target_dir: ${{ github.workspace }}/${{ inputs.ci_target_dir }}
+        ci_controller: ${{ inputs.ci_built_controller }}
+        controller_tag: ${{ inputs.ci_built_controller_tag }}
+        crucible_release: "${{ inputs.release }}"
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.scenario.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
@@ -355,28 +279,25 @@ jobs:
     needs:
     - gen-params
     - display-params
-    - build-controller
     strategy:
       fail-fast: false
       matrix:
         scenario: ${{ fromJSON(needs.gen-params.outputs.self_hosted_scenarios) }}
         userenv: ${{ fromJSON(needs.gen-params.outputs.userenvs) }}
-        ci_controller: [ "${{ needs.gen-params.outputs.build_controller }}" ]
     steps:
-    - name: Matrix Parameters => (${{ matrix.scenario.enabled }}, ${{ matrix.scenario.endpoint }}, ${{ matrix.scenario.benchmark }}, ${{ matrix.userenv }}, ${{ matrix.ci_controller }})
+    - name: Matrix Parameters => (${{ matrix.scenario.enabled }}, ${{ matrix.scenario.endpoint }}, ${{ matrix.scenario.benchmark }}, ${{ matrix.userenv }})
       run: |
         echo "enabled=${{ matrix.scenario.enabled }}"
         echo "endpoint=${{ matrix.scenario.endpoint }}"
         echo "benchmark=${{ matrix.scenario.benchmark }}"
         echo "userenv=${{ matrix.userenv }}"
-        echo "ci_controller=${{ matrix.ci_controller }}"
 
-    - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
+    - name: checkout ${{ inputs.ci_target_dir }} ci_target
       uses: actions/checkout@v4
       with:
-        repository: perftool-incubator/${{ needs.gen-params.outputs.ci_target_dir }}
+        repository: perftool-incubator/${{ inputs.ci_target_dir }}
         ref: ${{ inputs.ci_target_branch }}
-        path: ${{ needs.gen-params.outputs.ci_target_dir }}
+        path: ${{ inputs.ci_target_dir }}
 
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
@@ -414,14 +335,15 @@ jobs:
       if: ${{ matrix.scenario.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
       with:
-        artifact_tag: "${{ inputs.ci_target }}__self-hosted-runners__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}"
+        artifact_tag: "${{ inputs.ci_target }}__self-hosted-runners__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}-${{ inputs.release }}"
         ci_endpoint: "${{ matrix.scenario.endpoint }}"
         scenarios: "${{ matrix.scenario.benchmark }}"
         userenvs: "${{ matrix.userenv }}"
         ci_target: "${{ inputs.ci_target }}"
-        ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
-        ci_controller: ${{ matrix.ci_controller }}
-        controller_tag: ${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}
+        ci_target_dir: ${{ github.workspace }}/${{ inputs.ci_target_dir }}
+        ci_controller: ${{ inputs.ci_built_controller }}
+        controller_tag: ${{ inputs.ci_built_controller_tag }}
+        crucible_release: "${{ inputs.release }}"
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.scenario.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
