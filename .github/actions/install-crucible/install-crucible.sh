@@ -150,11 +150,6 @@ if pushd ~/ > /dev/null; then
 
         if [ "${RELEASE_TAG}" == "upstream" ]; then
             INSTALLER_ARGS+=" --git-repo ${CI_TARGET_DIR}/.git"
-        else
-            # --git-repo and --release cannot be used together, so we
-            # --have to "hack" DEFAULT_GIT_REPO to point to the
-            # --appropriate location
-            sed -i -e "s|\(DEFAULT_GIT_REPO\)=.*|\1=\"${CI_TARGET_DIR}/.git\"|" ${INSTALLER_PATH}
         fi
     else
         wget -O ${INSTALLER_PATH} ${CRUCIBLE_INSTALL_SRC}
