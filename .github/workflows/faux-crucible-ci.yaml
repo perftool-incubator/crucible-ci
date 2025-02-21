@@ -9,6 +9,7 @@ on:
       - .github/workflows/faux-crucible-ci.yaml
       - .github/workflows/faux-benchmark-crucible-ci.yaml
       - .github/workflows/faux-core-crucible-ci.yaml
+      - .github/workflows/faux-core-release-crucible-ci.yaml
       - .github/workflows/faux-tool-crucible-ci.yaml
       - '.github/runners/**'
       - 'docs/**'
@@ -20,6 +21,11 @@ jobs:
     - run: 'echo "No build required" '
 
   test-core-crucible-ci-complete:
+    runs-on: [ self-hosted, workflow-overhead ]
+    steps:
+    - run: 'echo "No build required" '
+
+  test-core-release-crucible-ci-complete:
     runs-on: [ self-hosted, workflow-overhead ]
     steps:
     - run: 'echo "No build required" '

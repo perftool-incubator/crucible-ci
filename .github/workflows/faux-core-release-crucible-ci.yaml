@@ -1,0 +1,10 @@
+name: core-release-crucible-ci
+
+on:
+  workflow_call:
+
+jobs:
+  core-release-crucible-ci-complete:
+    runs-on: [ self-hosted, workflow-overhead ]
+    steps:
+    - run: 'echo "faux-core-release-crucible-ci-complete"'
