@@ -64,6 +64,7 @@ jobs:
       userenvs: ${{ steps.get-userenvs.outputs.userenvs }}
       github_hosted_scenarios: ${{ steps.get-scenarios-github.outputs.scenarios }}
       self_hosted_scenarios: ${{ steps.get-scenarios-self.outputs.scenarios }}
+      ci_target_dir: ${{ steps.set-ci-target-dir.outputs.ci-target-dir }}
       timeout_minutes: ${{ steps.determine-timeout-minutes.outputs.timeout-minutes }}
     steps:
 
@@ -177,6 +178,17 @@ jobs:
         rickshaw-directory: "./rickshaw"
         runner-tags: "cpu-partitioning,remotehosts"
 
+    - name: set ci_target_dir
+      id: set-ci-target-dir
+      run: |
+        if [ "${{ inputs.ci_target_dir }}" == "" ]; then
+          echo "Setting ci-target-dir to the value of inputs.ci_target [${{ inputs.ci_target }} ]"
+          echo "ci-target-dir=${{ inputs.ci_target }}" >> $GITHUB_OUTPUT
+        else
+          echo "Setting ci-target-dir to the value of inputs.ci_target_dir [${{ inputs.ci_target_dir }} ]"
+          echo "ci-target-dir=${{ inputs.ci_target_dir }}" >> $GITHUB_OUTPUT
+        fi
+
     - name: determine timeout-minutes
       id: determine-timeout-minutes
       run: |
@@ -217,12 +229,12 @@ jobs:
         echo "benchmark=${{ matrix.scenario.benchmark }}"
         echo "userenv=${{ matrix.userenv }}"
 
-    - name: checkout ${{ inputs.ci_target_dir }} ci_target
+    - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
       uses: actions/checkout@v4
       with:
-        repository: perftool-incubator/${{ inputs.ci_target_dir }}
+        repository: perftool-incubator/${{ needs.gen-params.outputs.ci_target_dir }}
         ref: ${{ inputs.ci_target_branch }}
-        path: ${{ inputs.ci_target_dir }}
+        path: ${{ needs.gen-params.outputs.ci_target_dir }}
 
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
@@ -265,7 +277,7 @@ jobs:
         scenarios: "${{ matrix.scenario.benchmark }}"
         userenvs: "${{ matrix.userenv }}"
         ci_target: "${{ inputs.ci_target }}"
-        ci_target_dir: ${{ github.workspace }}/${{ inputs.ci_target_dir }}
+        ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
         ci_controller: ${{ inputs.ci_built_controller }}
         controller_tag: ${{ inputs.ci_built_controller_tag }}
         crucible_release: "${{ inputs.release }}"
@@ -292,12 +304,12 @@ jobs:
         echo "benchmark=${{ matrix.scenario.benchmark }}"
         echo "userenv=${{ matrix.userenv }}"
 
-    - name: checkout ${{ inputs.ci_target_dir }} ci_target
+    - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
       uses: actions/checkout@v4
       with:
-        repository: perftool-incubator/${{ inputs.ci_target_dir }}
+        repository: perftool-incubator/${{ needs.gen-params.outputs.ci_target_dir }}
         ref: ${{ inputs.ci_target_branch }}
-        path: ${{ inputs.ci_target_dir }}
+        path: ${{ needs.gen-params.outputs.ci_target_dir }}
 
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
@@ -340,7 +352,7 @@ jobs:
         scenarios: "${{ matrix.scenario.benchmark }}"
         userenvs: "${{ matrix.userenv }}"
         ci_target: "${{ inputs.ci_target }}"
-        ci_target_dir: ${{ github.workspace }}/${{ inputs.ci_target_dir }}
+        ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
         ci_controller: ${{ inputs.ci_built_controller }}
         controller_tag: ${{ inputs.ci_built_controller_tag }}
         crucible_release: "${{ inputs.release }}"
