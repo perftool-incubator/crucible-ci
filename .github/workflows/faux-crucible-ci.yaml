@@ -6,6 +6,7 @@ on:
     paths:
       - LICENSE
       - '**.md'
+      - '.github/rulesets/**'
       - .github/workflows/faux-crucible-ci.yaml
       - .github/workflows/faux-benchmark-crucible-ci.yaml
       - .github/workflows/faux-core-crucible-ci.yaml
