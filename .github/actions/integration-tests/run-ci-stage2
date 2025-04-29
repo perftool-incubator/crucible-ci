@@ -38,6 +38,21 @@ done
 # validate inputs
 validate_ci_run_environment
 
+header="Checking for toolbox logged die"
+start_github_group "${header}"
+echo -e "*** ${header} ***\n"
+
+toolbox_logged_die_filename="/tmp/toolbox_logged_die.txt"
+
+if [ -e "${toolbox_logged_die_filename}" ]; then
+    echo "WARNING: Found ${toolbox_logged_die_filename}:"
+    cat ${toolbox_logged_die_filename}
+
+    rm -v ${toolbox_logged_die_filename}
+fi
+
+stop_github_group
+
 header="Determine stage 1 exit status"
 start_github_group "${header}"
 echo -e "*** ${header} ***\n"
