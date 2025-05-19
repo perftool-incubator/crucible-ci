@@ -83,7 +83,7 @@ fi
 
 if [ -n "${BENCHMARK_QUERY}" ]; then
     case "${BENCHMARK_QUERY}" in
-        "fio"|"uperf"|"iperf"|"oslat"|"cyclictest"|"multi"|"sleep")
+        "fio"|"uperf"|"iperf"|"oslat"|"cyclictest"|"multi"|"sleep"|"hwnoise")
             echo "Benchmark is '${BENCHMARK_QUERY}'"
             ;;
         *)
@@ -163,7 +163,7 @@ case "${RUNNER_TYPE}" in
                         fi
                     done
                     ;;
-                "oslat"|"cyclictest")
+                "oslat"|"cyclictest"|"hwnoise")
                     for endpoint in "k8s"; do
                         if [ -e "${RICKSHAW_DIR}/${BENCHMARK_QUERY}.${endpoint}.json" ]; then
                             log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
@@ -228,7 +228,7 @@ case "${RUNNER_TYPE}" in
         if [ ${TAG_CPU_PARTITIONING} -eq 1 -a ${TAG_REMOTEHOSTS} -eq 1 ]; then
             if [ -n "${BENCHMARK_QUERY}" ]; then
                 case "${BENCHMARK_QUERY}" in
-                    "oslat"|"cyclictest")
+                    "oslat"|"cyclictest"|"hwnoise")
                         for endpoint in "remotehosts"; do
                             if [ -e "${RICKSHAW_DIR}/${BENCHMARK_QUERY}.${endpoint}.json" ]; then
                                 log_enabled "${endpoint}" "${BENCHMARK_QUERY}"
