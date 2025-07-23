@@ -105,7 +105,6 @@ jobs:
         repository: perftool-incubator/${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
         path: workshop
-        fetch-depth: 2
     - name: checkout workshop release
       if: ${{ inputs.release != 'upstream' }}
       uses: actions/checkout@v4
