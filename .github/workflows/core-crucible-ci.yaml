@@ -150,6 +150,7 @@ jobs:
         repository: perftool-incubator/${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
         path: rickshaw
+        fetch-depth: 2
     - name: checkout rickshaw release
       if: ${{ inputs.release != 'upstream' }}
       uses: actions/checkout@v4
