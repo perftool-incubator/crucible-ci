@@ -57,7 +57,28 @@ if pushd ${rickshaw_directory}; then
     else
         # only generate the list of modified / created userenvs since
         # no other rickshaw changes are present
-        userenvs=$(${diff_cmd} | grep "^userenvs/")
+
+        # get the list of all testable userenvs
+        available_list=$(find userenvs/ -maxdepth 1 -name '*.json' -type f)
+
+        # get the list of modified files
+        modified_list=$(${diff_cmd})
+
+        # check if any of the modified files are part of the available
+        # list and if they are then it is a testable userenv
+        userenvs=""
+        for file in ${modified_list}; do
+            if echo "${available_list}" | grep -q "${file}"; then
+                echo "Found '${file}' in the available list"
+
+                # NOTE: this needs to build a string that is
+                # equivalent to the output of find from above -- so 1
+                # file per line -- and the $'\n' seems to be the way
+                # to create new lines within the string
+                userenvs+="${file}"
+                userenvs+=$'\n'
+            fi
+        done
     fi
     userenvs=$(echo "${userenvs}" | sed -e 's|userenvs/||' -e 's|\.json||')
 
