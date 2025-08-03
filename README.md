@@ -26,6 +26,7 @@ Each action in Crucible-CI is unique and can be consumed in one or more [GitHub 
   - [build-controller](README.md#build-controller)
   - [check-controller-build](README.md#check-controller-build)
   - [clean-environment](README.md#clean-environment)
+  - [get-releases](README.md#get-releases)
   - [get-repo-name](README.md#get-repo-name)
   - [get-scenarios](README.md#get-scenarios)
   - [get-userenvs](README.md#get-userenvs)
@@ -50,6 +51,10 @@ The [check-controller-build](.github/actions/check-controller-build) action is u
 ##### clean-environment
 
 The [clean-environment](.github/actions/clean-environment) action is used to cleanup the runner environment after a run.  This really isn't necessary for GitHub hosted runners (since they are ephemeral) but self-hosted runners are not and must have their environments cleaned to avoid influencing future jobs.
+
+#### get-releases
+
+The [get-releases](.github/actions/get-releases) action is used to determine which releases need to be tested.  The action will always return the "upstream" release as needing testing, but it will do some additional inspection of the state of the repo and provided inputs to determine if additional releases need to be tested as well.  Currently that additional inspection amounts to this: if a new controller is being built for testing or the installer itself has changed then the supported releases will be tested as well since they can potentially be affected by those changes.
 
 ##### get-repo-name
 
