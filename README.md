@@ -26,7 +26,6 @@ Each action in Crucible-CI is unique and can be consumed in one or more [GitHub 
   - [build-controller](README.md#build-controller)
   - [check-controller-build](README.md#check-controller-build)
   - [clean-environment](README.md#clean-environment)
-  - [get-endpoints](README.md#get-endpoints)
   - [get-repo-name](README.md#get-repo-name)
   - [get-scenarios](README.md#get-scenarios)
   - [get-userenvs](README.md#get-userenvs)
@@ -51,12 +50,6 @@ The [check-controller-build](.github/actions/check-controller-build) action is u
 ##### clean-environment
 
 The [clean-environment](.github/actions/clean-environment) action is used to cleanup the runner environment after a run.  This really isn't necessary for GitHub hosted runners (since they are ephemeral) but self-hosted runners are not and must have their environments cleaned to avoid influencing future jobs.
-
-##### get-endpoints
-
-NOTE: This action is **DEPRECATED** in favor of [get-scenarios](README.md#get-scenarios)
-
-The [get-endpoints](.github/actions/get-endpoints) action is used to determine which endpoints can be run in the specified runner type.  Some runner environments (such as self hosted) are specifically targeting at testing specific endpoints and this action provides that information.
 
 ##### get-repo-name
 
