@@ -26,7 +26,6 @@ Each action in Crucible-CI is unique and can be consumed in one or more [GitHub 
   - [build-controller](README.md#build-controller)
   - [check-controller-build](README.md#check-controller-build)
   - [clean-environment](README.md#clean-environment)
-  - [get-benchmarks](README.md#get-benchmarks)
   - [get-endpoints](README.md#get-endpoints)
   - [get-repo-name](README.md#get-repo-name)
   - [get-scenarios](README.md#get-scenarios)
@@ -52,12 +51,6 @@ The [check-controller-build](.github/actions/check-controller-build) action is u
 ##### clean-environment
 
 The [clean-environment](.github/actions/clean-environment) action is used to cleanup the runner environment after a run.  This really isn't necessary for GitHub hosted runners (since they are ephemeral) but self-hosted runners are not and must have their environments cleaned to avoid influencing future jobs.
-
-##### get-benchmarks
-
-NOTE: This action is **DEPRECATED** in favor of [get-scenarios](README.md#get-scenarios)
-
-The [get-benchmarks](.github/actions/get-benchmarks) action is used to determine which benchmarks can be run in the specified runner type.  This is necessary because some benchmarks have requirements that cannot be met by a certain type of runner.  For example, GitHub hosted runners do not provide a CPU isolation environment which some benchmarks require.  Additionally, not all Crucible supported benchmarks are currently supported by Crucible-CI (usually due to special hardware requirements that cannot be met in a runner environment due to cost/complexity).
 
 ##### get-endpoints
 
