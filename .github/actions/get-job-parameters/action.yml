@@ -1,0 +1,35 @@
+name: "crucible-ci get job parameters"
+description: "Gets a list of jobs with the associated parameters"
+inputs:
+  toolbox-directory:
+    description: "Where is the toolbox repository to reference"
+    required: true
+  rickshaw-directory:
+    description: "Where is the rickshaw repository to query"
+    required: true
+  userenv-filter:
+    description: "A filter to determine which userenvs should be included"
+    required: false
+    default: "all"
+  runner-type:
+    description: "What type of CI runner are the jobs for (github or self-hosted)?"
+    required: true
+  runner-tags:
+    description: "Comma separated list of tags the runner has"
+    required: false
+    default: ""
+  benchmark:
+    description: "Which benchmark to restrict the scenarios to"
+    required: false
+    default: "all"
+outputs:
+  jobs:
+    description: "The list of userenvs that were found"
+    value: ${{ steps.generate-jobs.outputs.jobs }}
+runs:
+  using: "composite"
+  steps:
+    - name: "Generate jobs list"
+      id: generate-jobs
+      shell: bash
+      run: TOOLBOX_HOME=${{ inputs.toolbox-directory }} ${{ inputs.rickshaw-directory }}/util/generate-ci-jobs.py --runner-type "${{ inputs.runner-type }}" --runner-tags "${{ inputs.runner-tags }}" --userenv-filter "${{ inputs.userenv-filter }}" --runtime-env "github" --benchmark "${{ inputs.benchmark }}"

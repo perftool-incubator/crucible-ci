@@ -26,6 +26,7 @@ Each action in Crucible-CI is unique and can be consumed in one or more [GitHub 
   - [build-controller](README.md#build-controller)
   - [check-controller-build](README.md#check-controller-build)
   - [clean-environment](README.md#clean-environment)
+  - [get-job-parameters](README.md#get-job-parameters)
   - [get-releases](README.md#get-releases)
   - [get-repo-name](README.md#get-repo-name)
   - [get-scenarios](README.md#get-scenarios)
@@ -51,6 +52,10 @@ The [check-controller-build](.github/actions/check-controller-build) action is u
 ##### clean-environment
 
 The [clean-environment](.github/actions/clean-environment) action is used to cleanup the runner environment after a run.  This really isn't necessary for GitHub hosted runners (since they are ephemeral) but self-hosted runners are not and must have their environments cleaned to avoid influencing future jobs.
+
+##### get-job-parameters
+
+The [get-job-parameters](.github/actions/get-job-parameters) action is used to generate a list of job parameters.  Each item in the list contains multiple parameters that are used to control what, how, and where the job is run.  This action is a future replacement for the [get-scenarios](README.md#get-scenarios) and [get-userenvs](README.md#get-userenvs) and combines their functionality.  This action is currently in active development.
 
 #### get-releases
 
