@@ -61,9 +61,8 @@ jobs:
     runs-on: [ self-hosted, workflow-overhead ]
     timeout-minutes: 10
     outputs:
-      userenvs: ${{ steps.get-userenvs.outputs.userenvs }}
-      github_hosted_scenarios: ${{ steps.get-scenarios-github.outputs.scenarios }}
-      self_hosted_scenarios: ${{ steps.get-scenarios-self.outputs.scenarios }}
+      github_hosted_jobs: ${{ steps.get-job-parameters-github.outputs.jobs }}
+      self_hosted_jobs: ${{ steps.get-job-parameters-self-hosted.outputs.jobs }}
       ci_target_dir: ${{ steps.set-ci-target-dir.outputs.ci-target-dir }}
       timeout_minutes: ${{ steps.determine-timeout-minutes.outputs.timeout-minutes }}
     steps:
@@ -158,25 +157,45 @@ jobs:
         ref: ${{ inputs.release }}
         path: rickshaw
 
-    - name: run get-userenvs
-      id: get-userenvs
-      uses: ./crucible-ci/.github/actions/get-userenvs
+    - name: checkout toolbox default
+      if: ${{ inputs.ci_target != 'toolbox' && inputs.release == 'upstream' }}
+      uses: actions/checkout@v4
       with:
-        rickshaw-directory: "./rickshaw"
-        userenv-filter: ${{ inputs.userenv_filter }}
-    - name: run get-scenarios-github
-      id: get-scenarios-github
-      uses: ./crucible-ci/.github/actions/get-scenarios
+        repository: perftool-incubator/toolbox
+        ref: main
+        path: toolbox
+    - name: checkout toolbox ci_target
+      if: ${{ inputs.ci_target == 'toolbox' && inputs.release == 'upstream' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: toolbox
+    - name: checkout toolbox release
+      if: ${{ inputs.release != 'upstream' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/toolbox
+        ref: ${{ inputs.release }}
+        path: toolbox
+
+    - name: run get-job-parameters github
+      id: get-job-parameters-github
+      uses: ./crucible-ci/.github/actions/get-job-parameters
       with:
         runner-type: "github"
+        userenv-filter: ${{ inputs.userenv_filter }}
         rickshaw-directory: "./rickshaw"
-    - name: run get-scenarios-self
-      id: get-scenarios-self
-      uses: ./crucible-ci/.github/actions/get-scenarios
+        toolbox-directory: "./toolbox"
+    - name: run get-job-parameters self-hosted
+      id: get-job-parameters-self-hosted
+      uses: ./crucible-ci/.github/actions/get-job-parameters
       with:
-        runner-type: "self"
-        rickshaw-directory: "./rickshaw"
+        runner-type: "self-hosted"
         runner-tags: "cpu-partitioning,remotehosts"
+        userenv-filter: ${{ inputs.userenv_filter }}
+        rickshaw-directory: "./rickshaw"
+        toolbox-directory: "./toolbox"
 
     - name: set ci_target_dir
       id: set-ci-target-dir
@@ -207,8 +226,14 @@ jobs:
     timeout-minutes: 10
     needs: gen-params
     steps:
-    - name: Echo gen-params outputs
-      run: echo "${{ toJSON(needs.gen-params.outputs) }}"
+    - name: Display github_hosted_jobs
+      run: echo '${{ needs.gen-params.outputs.github_hosted_jobs }}' | jq .
+    - name: Display self_hosted_jobs
+      run: echo '${{ needs.gen-params.outputs.self_hosted_jobs }}' | jq .
+    - name: Display ci_target_dir
+      run: echo '${{ needs.gen-params.outputs.ci_target_dir }}'
+    - name: Display timeout_minutes
+      run: echo '${{ needs.gen-params.outputs.timeout_minutes }}'
 
   github-runners:
     runs-on: ubuntu-latest
@@ -219,15 +244,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: ${{ fromJSON(needs.gen-params.outputs.github_hosted_scenarios) }}
-        userenv: ${{ fromJSON(needs.gen-params.outputs.userenvs) }}
+        job: ${{ fromJSON(needs.gen-params.outputs.github_hosted_jobs) }}
     steps:
-    - name: Matrix Parameters => (${{ matrix.scenario.enabled }}, ${{ matrix.scenario.endpoint }}, ${{ matrix.scenario.benchmark }}, ${{ matrix.userenv }})
+    - name: Matrix Parameters => (${{ matrix.job.enabled }}, ${{ matrix.job.endpoint }}, ${{ matrix.job.benchmark }}, ${{ matrix.job.userenv }})
       run: |
-        echo "enabled=${{ matrix.scenario.enabled }}"
-        echo "endpoint=${{ matrix.scenario.endpoint }}"
-        echo "benchmark=${{ matrix.scenario.benchmark }}"
-        echo "userenv=${{ matrix.userenv }}"
+        echo "enabled=${{ matrix.job.enabled }}"
+        echo "endpoint=${{ matrix.job.endpoint }}"
+        echo "benchmark=${{ matrix.job.benchmark }}"
+        echo "userenv=${{ matrix.job.userenv }}"
 
     - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
       uses: actions/checkout@v4
@@ -269,20 +293,20 @@ jobs:
       run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
 
     - name: run crucible-ci->integration-tests
-      if: ${{ matrix.scenario.enabled }}
+      if: ${{ matrix.job.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
       with:
-        artifact_tag: "${{ inputs.ci_target }}__github-runners__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}-${{ inputs.release }}"
-        ci_endpoint: "${{ matrix.scenario.endpoint }}"
-        scenarios: "${{ matrix.scenario.benchmark }}"
-        userenvs: "${{ matrix.userenv }}"
+        artifact_tag: "${{ inputs.ci_target }}__github-runners__${{ matrix.job.endpoint }}-${{ matrix.job.benchmark }}-${{ matrix.job.userenv }}-${{ inputs.release }}"
+        ci_endpoint: "${{ matrix.job.endpoint }}"
+        scenarios: "${{ matrix.job.benchmark }}"
+        userenvs: "${{ matrix.job.userenv }}"
         ci_target: "${{ inputs.ci_target }}"
         ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
         ci_controller: ${{ inputs.ci_built_controller }}
         controller_tag: ${{ inputs.ci_built_controller_tag }}
         crucible_release: "${{ inputs.release }}"
     - name: skip crucible-ci->integration-tests
-      if: ${{ ! matrix.scenario.enabled }}
+      if: ${{ ! matrix.job.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
 
   self-hosted-runners:
@@ -294,15 +318,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: ${{ fromJSON(needs.gen-params.outputs.self_hosted_scenarios) }}
-        userenv: ${{ fromJSON(needs.gen-params.outputs.userenvs) }}
+        job: ${{ fromJSON(needs.gen-params.outputs.self_hosted_jobs) }}
     steps:
-    - name: Matrix Parameters => (${{ matrix.scenario.enabled }}, ${{ matrix.scenario.endpoint }}, ${{ matrix.scenario.benchmark }}, ${{ matrix.userenv }})
+    - name: Matrix Parameters => (${{ matrix.job.enabled }}, ${{ matrix.job.endpoint }}, ${{ matrix.job.benchmark }}, ${{ matrix.job.userenv }})
       run: |
-        echo "enabled=${{ matrix.scenario.enabled }}"
-        echo "endpoint=${{ matrix.scenario.endpoint }}"
-        echo "benchmark=${{ matrix.scenario.benchmark }}"
-        echo "userenv=${{ matrix.userenv }}"
+        echo "enabled=${{ matrix.job.enabled }}"
+        echo "endpoint=${{ matrix.job.endpoint }}"
+        echo "benchmark=${{ matrix.job.benchmark }}"
+        echo "userenv=${{ matrix.job.userenv }}"
 
     - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
       uses: actions/checkout@v4
@@ -344,20 +367,20 @@ jobs:
       run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
 
     - name: run crucible-ci->integration-tests
-      if: ${{ matrix.scenario.enabled }}
+      if: ${{ matrix.job.enabled }}
       uses: ./crucible-ci/.github/actions/integration-tests
       with:
-        artifact_tag: "${{ inputs.ci_target }}__self-hosted-runners__${{ matrix.scenario.endpoint }}-${{ matrix.scenario.benchmark }}-${{ matrix.userenv }}-${{ inputs.release }}"
-        ci_endpoint: "${{ matrix.scenario.endpoint }}"
-        scenarios: "${{ matrix.scenario.benchmark }}"
-        userenvs: "${{ matrix.userenv }}"
+        artifact_tag: "${{ inputs.ci_target }}__self-hosted-runners__${{ matrix.job.endpoint }}-${{ matrix.job.benchmark }}-${{ matrix.job.userenv }}-${{ inputs.release }}"
+        ci_endpoint: "${{ matrix.job.endpoint }}"
+        scenarios: "${{ matrix.job.benchmark }}"
+        userenvs: "${{ matrix.job.userenv }}"
         ci_target: "${{ inputs.ci_target }}"
         ci_target_dir: ${{ github.workspace }}/${{ needs.gen-params.outputs.ci_target_dir }}
         ci_controller: ${{ inputs.ci_built_controller }}
         controller_tag: ${{ inputs.ci_built_controller_tag }}
         crucible_release: "${{ inputs.release }}"
     - name: skip crucible-ci->integration-tests
-      if: ${{ ! matrix.scenario.enabled }}
+      if: ${{ ! matrix.job.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
 
   core-crucible-ci-complete:
