@@ -26,8 +26,8 @@ Each action in Crucible-CI is unique and can be consumed in one or more [GitHub 
   - [build-controller](README.md#build-controller)
   - [check-controller-build](README.md#check-controller-build)
   - [clean-environment](README.md#clean-environment)
-  - [get-benchmarks](README.md#get-benchmarks)
-  - [get-endpoints](README.md#get-endpoints)
+  - [get-job-parameters](README.md#get-job-parameters)
+  - [get-releases](README.md#get-releases)
   - [get-repo-name](README.md#get-repo-name)
   - [get-scenarios](README.md#get-scenarios)
   - [get-userenvs](README.md#get-userenvs)
@@ -53,17 +53,13 @@ The [check-controller-build](.github/actions/check-controller-build) action is u
 
 The [clean-environment](.github/actions/clean-environment) action is used to cleanup the runner environment after a run.  This really isn't necessary for GitHub hosted runners (since they are ephemeral) but self-hosted runners are not and must have their environments cleaned to avoid influencing future jobs.
 
-##### get-benchmarks
+##### get-job-parameters
 
-NOTE: This action is **DEPRECATED** in favor of [get-scenarios](README.md#get-scenarios)
+The [get-job-parameters](.github/actions/get-job-parameters) action is used to generate a list of job parameters.  Each item in the list contains multiple parameters that are used to control what, how, and where the job is run.  This action is a future replacement for the [get-scenarios](README.md#get-scenarios) and [get-userenvs](README.md#get-userenvs) and combines their functionality.  This action is currently in active development.
 
-The [get-benchmarks](.github/actions/get-benchmarks) action is used to determine which benchmarks can be run in the specified runner type.  This is necessary because some benchmarks have requirements that cannot be met by a certain type of runner.  For example, GitHub hosted runners do not provide a CPU isolation environment which some benchmarks require.  Additionally, not all Crucible supported benchmarks are currently supported by Crucible-CI (usually due to special hardware requirements that cannot be met in a runner environment due to cost/complexity).
+#### get-releases
 
-##### get-endpoints
-
-NOTE: This action is **DEPRECATED** in favor of [get-scenarios](README.md#get-scenarios)
-
-The [get-endpoints](.github/actions/get-endpoints) action is used to determine which endpoints can be run in the specified runner type.  Some runner environments (such as self hosted) are specifically targeting at testing specific endpoints and this action provides that information.
+The [get-releases](.github/actions/get-releases) action is used to determine which releases need to be tested.  The action will always return the "upstream" release as needing testing, but it will do some additional inspection of the state of the repo and provided inputs to determine if additional releases need to be tested as well.  Currently that additional inspection amounts to this: if a new controller is being built for testing or the installer itself has changed then the supported releases will be tested as well since they can potentially be affected by those changes.
 
 ##### get-repo-name
 
