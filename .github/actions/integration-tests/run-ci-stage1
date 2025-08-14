@@ -353,6 +353,8 @@ run_cmd "crucible repo info"
 
 run_cmd "crucible repo config show"
 
+run_cmd "crucible repo config add name=external-userenvs type=userenvs repository=https://github.com/perftool-incubator/crucible-ci-userenvs primary-branch=main checkout-mode=follow checkout-target=main"
+
 for action in start stop; do
     for service in httpd opensearch redis; do
         run_cmd "podman ps --all --external"
@@ -652,6 +654,12 @@ for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
 
     run_cmd "crucible unarchive /var/lib/crucible/archive/${scenario}*"
 done
+
+run_cmd "crucible repo config update name=external-userenvs checkout-mode=locked" "force"
+
+run_cmd "crucible repo config update name=external-userenvs checkout-target=ci-test" "force"
+
+run_cmd "crucible repo config remove name=external-userenvs" "force"
 
 run_cmd "crucible log info" "force"
 
