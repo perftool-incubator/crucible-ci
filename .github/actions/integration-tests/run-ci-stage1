@@ -61,8 +61,10 @@ CI_BUILD_CONTROLLER="no"
 
 CI_PARAM_MODE="all"
 
+CI_RELEASE="upstream"
+
 longopts="verbose,scenarios:,userenvs:,samples:,repeat-runs:,run-environment:,ci-endpoint:,ci-endpoint-host:,ci-endpoint-user:,ci-build-controller:"
-longopts+=",ci-param-mode:,disable-update-test"
+longopts+=",ci-param-mode:,disable-update-test,ci-release:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -71,6 +73,11 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --ci-release)
+            shift
+            CI_RELEASE="${1}"
+            shift
+            ;;
         --ci-param-mode)
             shift
             CI_PARAM_MODE="${1}"
@@ -353,7 +360,14 @@ run_cmd "crucible repo info"
 
 run_cmd "crucible repo config show"
 
-run_cmd "crucible repo config add name=external-userenvs type=userenvs repository=https://github.com/perftool-incubator/crucible-ci-userenvs primary-branch=main checkout-mode=follow checkout-target=main"
+case "${CI_RELEASE}" in
+    "2024.4")
+        echo "Skipping 'crucible repo config add' since it is not supported on the ${CI_RELEASE} of Crucible"
+        ;;
+    *)
+        run_cmd "crucible repo config add name=external-userenvs type=userenvs repository=https://github.com/perftool-incubator/crucible-ci-userenvs primary-branch=main checkout-mode=follow checkout-target=main"
+        ;;
+esac
 
 for action in start stop; do
     for service in httpd opensearch redis; do
@@ -655,11 +669,25 @@ for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     run_cmd "crucible unarchive /var/lib/crucible/archive/${scenario}*"
 done
 
-run_cmd "crucible repo config update name=external-userenvs checkout-mode=locked" "force"
+case "${CI_RELEASE}" in
+    "2024.4"|"2025.1"|"2025.2"|"2025.3")
+        echo "Skipping 'crucible repo config update' since it is not supported on the ${CI_RELEASE} of Crucible"
+        ;;
+    *)
+        run_cmd "crucible repo config update name=external-userenvs checkout-mode=locked" "force"
 
-run_cmd "crucible repo config update name=external-userenvs checkout-target=ci-test" "force"
+        run_cmd "crucible repo config update name=external-userenvs checkout-target=ci-test" "force"
+        ;;
+esac
 
-run_cmd "crucible repo config remove name=external-userenvs" "force"
+case "${CI_RELEASE}" in
+    "2024.4"|"2025.1")
+        echo "Skipping 'crucible repo config remove' since it is not supported on the ${CI_RELEASE} of Crucible"
+        ;;
+    *)
+        run_cmd "crucible repo config remove name=external-userenvs" "force"
+        ;;
+esac
 
 run_cmd "crucible log info" "force"
 
