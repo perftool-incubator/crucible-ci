@@ -187,9 +187,6 @@ esac
 CI_ACTIVE_USERENVS=""
 for userenv in $(echo "${CI_USERENVS}" | sed -e "s/,/ /g"); do
     case "${userenv}" in
-        default)
-            CI_ACTIVE_USERENVS+="${userenv} "
-            ;;
         all)
             CI_ACTIVE_USERENVS=""
             for userenv in $(pushd /opt/crucible/subprojects/core/rickshaw/userenvs > /dev/null; ls -1 *.json; popd > /dev/null); do
@@ -198,13 +195,8 @@ for userenv in $(echo "${CI_USERENVS}" | sed -e "s/,/ /g"); do
             done
             break
             ;;
-        *)
-            if [ -e /opt/crucible/subprojects/core/rickshaw/userenvs/${userenv}.json ]; then
-                CI_ACTIVE_USERENVS+="${userenv} "
-            else
-                echo "ERROR: Unknown userenv specified [${userenv}]"
-                exit 1
-            fi
+        default|*)
+            CI_ACTIVE_USERENVS+="${userenv} "
             ;;
     esac
 done
