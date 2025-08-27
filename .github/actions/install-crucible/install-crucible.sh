@@ -115,7 +115,7 @@ fi
 
 # ensure endpoint availability
 case "${CI_ENDPOINT}" in
-    k8s)
+    k8s|kube)
         if [ ${AUTH_TOKEN_FILE_FOUND} == 0 ]; then
             start_github_group "Configuring Crucible for local k8s registry"
             CONTAINER_REGISTRY="localhost:32000/engines"

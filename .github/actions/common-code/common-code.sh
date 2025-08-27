@@ -71,12 +71,12 @@ function validate_ci_run_environment {
 
 function validate_ci_endpoint {
     case "${CI_ENDPOINT}" in
-        k8s|remotehosts)
+        k8s|kube|remotehosts)
             echo "CI Endpoint is '${CI_ENDPOINT}'"
             echo
             ;;
         *)
-            echo "ERROR: Unknown value for --ci-endpoint [${CI_ENDPOINT}].  Acceptable values are 'remotehosts' and 'k8s'."
+            echo "ERROR: Unknown value for --ci-endpoint [${CI_ENDPOINT}].  Acceptable values are 'remotehosts' and 'k8s' or 'kube'."
             exit 1
             ;;
     esac
