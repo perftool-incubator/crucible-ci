@@ -240,14 +240,10 @@ if [ "${CI_TARGET}" != "none" -a "${CI_TARGET_DIR}" != "none" -a "${RELEASE_TAG}
                     echo "ERROR: ${1}"
                     exit 1
                 }
-                current_repo_location=$(jq_query ${REPO_FILE} --arg repository "${CI_TARGET}" '.official[] | select(.name == $repository) | .repository')
-                actual_repo_location=$(git remote get-url origin)
-                if [ "${current_repo_location}" != "${actual_repo_location}" ]; then
-                    echo "Setting repository for ${CI_TARGET} to '${actual_repo_location}' in ${REPO_FILE}"
-                    jq_update ${REPO_FILE} ${CI_TARGET}:repository --arg repository_name "${CI_TARGET}" --arg repository "${actual_repo_location}" '(.official[] | select(.name == $repository_name) | .repository) |= $repository)'
-                else
-                    echo "The current repository location matches: ${current_repo_location}"
-                fi
+
+                echo "Setting repository for ${CI_TARGET} to 'CRUCIBLE-CI' in ${REPO_FILE}"
+                jq_update ${REPO_FILE} ${CI_TARGET}:repository --arg repository_name "${CI_TARGET}" --arg repository "CRUCIBLE-CI" '(.official[] | select(.name == $repository_name) | .repository) |= $repository)'
+
                 echo "Setting primary-branch and checkout.target for ${CI_TARGET} to 'HEAD' in ${REPO_FILE}"
                 jq_update ${REPO_FILE} ${CI_TARGET}:primary-branch --arg repository "${CI_TARGET}" --arg primary_branch "HEAD" '(.official[] | select(.name == $repository) | ."primary-branch") |= $primary_branch'
                 jq_update ${REPO_FILE} ${CI_TARGET}:checkout.target --arg repository "${CI_TARGET}" --arg checkout_target "HEAD" '(.official[] | select(.name == $repository) | .checkout.target) |= $checkout_target'
