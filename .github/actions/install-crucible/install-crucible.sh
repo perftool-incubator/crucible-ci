@@ -242,7 +242,7 @@ if [ "${CI_TARGET}" != "none" -a "${CI_TARGET_DIR}" != "none" -a "${RELEASE_TAG}
                 }
 
                 echo "Setting repository for ${CI_TARGET} to 'CRUCIBLE-CI' in ${REPO_FILE}"
-                jq_update ${REPO_FILE} ${CI_TARGET}:repository --arg repository_name "${CI_TARGET}" --arg repository "CRUCIBLE-CI" '(.official[] | select(.name == $repository_name) | .repository) |= $repository)'
+                jq_update ${REPO_FILE} ${CI_TARGET}:repository --arg repository_name "${CI_TARGET}" --arg repository "CRUCIBLE-CI" '(.official[] | select(.name == $repository_name) | .repository) |= $repository'
 
                 echo "Setting primary-branch and checkout.target for ${CI_TARGET} to 'HEAD' in ${REPO_FILE}"
                 jq_update ${REPO_FILE} ${CI_TARGET}:primary-branch --arg repository "${CI_TARGET}" --arg primary_branch "HEAD" '(.official[] | select(.name == $repository) | ."primary-branch") |= $primary_branch'
