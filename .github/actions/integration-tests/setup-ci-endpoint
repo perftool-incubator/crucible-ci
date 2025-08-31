@@ -62,7 +62,7 @@ stop_github_group
 
 # ensure endpoint availability
 case "${CI_ENDPOINT}" in
-    k8s)
+    k8s|kube)
         start_github_group "Configure k8s endpoint"
 
         # fixup some microk8s dependencies before installing it
