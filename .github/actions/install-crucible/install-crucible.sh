@@ -78,30 +78,43 @@ done
 validate_ci_run_environment
 validate_ci_endpoint
 
+weekly_ci_auth_file="/root/crucible-weekly-ci-engines-token.json"
 ci_auth_file="/root/crucible-ci-engines-token.json"
 production_auth_file="/root/crucible-production-engines-token.json"
-if [ -e "${ci_auth_file}" -a -s "${ci_auth_file}" -a -e "${production_auth_file}" -a -s "${production_auth_file}" ]; then
-    echo "ERROR: It does not make sense for both the ci (${ci_auth_file}) and production (${production_auth_file}) engine registry auth token files to exist"
-    exit 1
-fi
-
 AUTH_TOKEN_FILE_FOUND=0
+AUTH_FILE=""
+engine_auth_tokens_found=0
+if [ -e "${weekly_ci_auth_file}" -a -s "${weekly_ci_auth_file}" ]; then
+    echo "Found weekly ci engine registry auth token file: ${weekly_ci_auth_file}" 
+    (( engine_auth_tokens_found += 1 ))
+
+    AUTH_FILE=${weekly_ci_auth_file}
+    AUTH_TOKEN_FILE_FOUND=1
+    AUTH_TOKEN_TYPE="WEEKLY-CI"
+fi
 if [ -e "${ci_auth_file}" -a -s "${ci_auth_file}" ]; then
     echo "Found ci engine registry auth token file: ${ci_auth_file}"
-    auth_file=${ci_auth_file}
+    (( engine_auth_tokens_found += 1 ))
+
+    AUTH_FILE=${ci_auth_file}
     AUTH_TOKEN_FILE_FOUND=1
     AUTH_TOKEN_TYPE="CI"
-else
-    echo "No ci engine registry auth token file found: ${ci_auth_file}"
+fi
+if [ -e "${production_auth_file}" -a -s "${production_auth_file}" ]; then
+    echo "Found production engine registry auth token file: ${production_auth_file}"
+    (( engine_auth_tokens_found += 1 ))
 
-    if [ -e "${production_auth_file}" -a -s "${production_auth_file}" ]; then
-        echo "Found production engine registry auth token file: ${production_auth_file}"
-        auth_file=${production_auth_file}
-        AUTH_TOKEN_FILE_FOUND=1
-        AUTH_TOKEN_TYPE="PRODUCTION"
-    else
-        echo "No production engine registry auth token file found: ${production_auth_file}"
-    fi
+    AUTH_FILE=${production_auth_file}
+    AUTH_TOKEN_FILE_FOUND=1
+    AUTH_TOKEN_TYPE="PRODUCTION"
+fi
+if [ ${engine_auth_tokens_found} -gt 1 ]; then
+    echo "ERROR: It does not make sense for more than one engine registry auth token files to exist (found ${engine_auth_tokens_found})"
+    exit 1
+elif [ ${AUTH_TOKEN_FILE_FOUND} -eq 1 ]; then
+    echo "Engine Registry Auth Token Summary:"
+    echo "  File: ${AUTH_FILE}"
+    echo "  Type: ${AUTH_TOKEN_TYPE}"
 fi
 
 quay_oauth_token_file="/root/quay-oauth.token"
@@ -156,10 +169,15 @@ if pushd ~/ > /dev/null; then
         chmod +x ${INSTALLER_PATH}
     fi
     if [ ${AUTH_TOKEN_FILE_FOUND} == 1 ]; then
-        INSTALLER_ARGS+=" --engine-auth-file ${auth_file}"
+        INSTALLER_ARGS+=" --engine-auth-file ${AUTH_FILE}"
         REGISTRY_TLS_VERIFY="true"
 
         case "${AUTH_TOKEN_TYPE}" in
+            "WEEKLY-CI")
+                CONTAINER_REGISTRY="quay.io/crucible/crucible-weekly-ci-engines"
+                EXPIRATION_LENGTH="2d"
+                INSTALLER_ARGS+=" --quay-engine-expiration-length ${EXPIRATION_LENGTH}"
+                ;;
             "CI")
                 CONTAINER_REGISTRY="quay.io/crucible/crucible-ci-engines"
                 ;;
@@ -174,6 +192,9 @@ if pushd ~/ > /dev/null; then
         INSTALLER_ARGS+=" --quay-engine-expiration-refresh-token ${quay_oauth_token_file}"
 
         case "${AUTH_TOKEN_TYPE}" in
+            "WEEKLY-CI")
+                QUAY_API_URL="https://quay.io/api/v1/repository/crucible/crucible-weekly-ci-engines"
+                ;;
             "CI")
                 QUAY_API_URL="https://quay.io/api/v1/repository/crucible/crucible-ci-engines"
                 ;;
