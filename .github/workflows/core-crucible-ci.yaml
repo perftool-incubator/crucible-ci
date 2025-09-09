@@ -42,6 +42,8 @@ on:
     secrets:
       registry_auth:
         required: false
+      weekly_ci_registry_auth:
+        required: false
       ci_registry_auth:
         required: false
       production_registry_auth:
@@ -275,6 +277,11 @@ jobs:
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
 
+    - name: import weekly ci secret
+      env:
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.weekly_ci_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-weekly-ci-engines-token.json"
     - name: import ci secret
       env:
         ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
@@ -349,6 +356,11 @@ jobs:
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
 
+    - name: import weekly ci secret
+      env:
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.weekly_ci_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-weekly-ci-engines-token.json"
     - name: import ci secret
       env:
         ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}

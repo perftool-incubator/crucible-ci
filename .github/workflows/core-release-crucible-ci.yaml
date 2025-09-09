@@ -38,6 +38,8 @@ on:
     secrets:
       registry_auth:
         required: false
+      weekly_ci_registry_auth:
+        required: false
       ci_registry_auth:
         required: false
       production_registry_auth:
@@ -192,6 +194,11 @@ jobs:
         ref: ${{ inputs.ci_target_branch }}
         path: ${{ needs.gen-params.outputs.ci_target_dir }}
 
+    - name: import weekly ci secret
+      env:
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.weekly_ci_registry_auth }}
+      if: ${{ needs.gen-params.outputs.build_controller == 'yes' && env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-weekly-ci-engines-token.json"
     - name: import ci secret
       env:
         ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
@@ -252,6 +259,7 @@ jobs:
       ci_built_controller_tag: "${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}"
     secrets:
       registry_auth: "${{ secrets.registry_auth }}"
+      weekly_ci_registry_auth: "${{ secrets.weekly_ci_registry_auth }}"
       ci_registry_auth: "${{ secrets.ci_registry_auth }}"
       production_registry_auth: "${{ secrets.production_registry_auth }}"
       quay_oauth_token: "${{ secrets.quay_oauth_token }}"
