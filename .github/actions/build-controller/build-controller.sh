@@ -68,13 +68,37 @@ if [ ${RC_STATUS} == 0 -a -n "${podman_images}" ]; then
         run_cmd "podman image inspect ${controller_image}"
 
         if [ ${RC_STATUS} == 0 ]; then
-            auth_file="/root/crucible-ci-engines-token.json"
-            if [ -e "${auth_file}" ]; then
-                run_cmd "podman image push --authfile ${auth_file} ${controller_image} quay.io/crucible/crucible-ci-controller:${CI_PUSH_TAG}"
-            else
-                echo "ERROR: Could not find authorization file ${auth_file}"
-                RC_STATUS=1
+            weekly_ci_auth_file="/root/crucible-weekly-ci-engines-token.json"
+            ci_auth_file="/root/crucible-ci-engines-token.json"
+            AUTH_TOKEN_FILE_FOUND=0
+            AUTH_FILE=""
+            engine_auth_tokens_found=0
+            if [ -e "${weekly_ci_auth_file}" -a -s "${weekly_ci_auth_file}" ]; then
+                echo "Found weekly ci engine registry auth token file: ${weekly_ci_auth_file}" 
+                (( engine_auth_tokens_found += 1 ))
+
+                AUTH_FILE=${weekly_ci_auth_file}
+                AUTH_TOKEN_FILE_FOUND=1
+                AUTH_TOKEN_TYPE="WEEKLY-CI"
             fi
+            if [ -e "${ci_auth_file}" -a -s "${ci_auth_file}" ]; then
+                echo "Found ci engine registry auth token file: ${ci_auth_file}"
+                (( engine_auth_tokens_found += 1 ))
+
+                AUTH_FILE=${ci_auth_file}
+                AUTH_TOKEN_FILE_FOUND=1
+                AUTH_TOKEN_TYPE="CI"
+            fi
+            if [ ${engine_auth_tokens_found} -ne 1 ]; then
+                echo "ERROR: It does not make sense for anything other than one engine registry auth token file to exist (found ${engine_auth_tokens_found})"
+                exit 1
+            elif [ ${AUTH_TOKEN_FILE_FOUND} -eq 1 ]; then
+                echo "Engine Registry Auth Token Summary:"
+                echo "  File: ${AUTH_FILE}"
+                echo "  Type: ${AUTH_TOKEN_TYPE}"
+            fi
+
+            run_cmd "podman image push --authfile ${AUTH_FILE} ${controller_image} quay.io/crucible/crucible-ci-controller:${CI_PUSH_TAG}"
         fi
     else
         echo "ERROR: Failed to isolate new Crucible controller image"
