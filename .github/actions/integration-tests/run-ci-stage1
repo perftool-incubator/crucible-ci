@@ -422,8 +422,19 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
         if [ "${CI_PARAM_MODE}" == "all" -o "${CI_PARAM_MODE}" == "mv-params" ]; then
             case "${CI_ENDPOINT}" in
                 "kube"|"remotehosts")
-                    echo "WARNING: The ${CI_ENDPOINT} endpoint does not support the 'mv-params' parameter mode"
+                    echo "NOTICE: The ${CI_ENDPOINT} endpoint does not support the 'mv-params' parameter mode"
                     CI_MV_PARAMS_SUPPORTED=0
+                    ;;
+                *)
+                    case "${CI_RELEASE}" in
+                        "2024.4"|"2025.1"|"2025.2"|"2025.3")
+                            echo "NOTICE: 'mv-params' parameter mode is supported on this legacy release [${CI_RELEASE}]"
+                            ;;
+                        *)
+                            echo "NOTICE: 'mv-params' parameter mode is not supported on this release [${CI_RELEASE}]"
+                            CI_MV_PARAMS_SUPPORTED=0
+                            ;;
+                    esac
                     ;;
             esac
         fi
