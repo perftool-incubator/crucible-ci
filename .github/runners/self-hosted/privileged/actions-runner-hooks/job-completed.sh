@@ -9,6 +9,10 @@ sudo find /root -name 'crucible-*-engines-token.json' -print -delete
 sudo find /root -name 'quay-oauth.token' -print -delete
 echo "...cleanup complete"
 
+echo "Cleaning up SSH key..."
+sudo rm -fv /root/.ssh/id_ed25519 /root/.ssh/id_ed25519.pub
+echo "...cleanup complete"
+
 toolbox_logged_die_filename="/tmp/toolbox_logged_die.txt"
 if [ -e "${toolbox_logged_die_filename}" ]; then
     echo "Found ${toolbox_logged_die_filename}"
