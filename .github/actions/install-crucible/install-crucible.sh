@@ -312,7 +312,16 @@ if [ "${CI_CONTROLLER}" == "yes" ]; then
     FORCE_BUILDS="true"
     echo "Updating rickshaw-settings value workshop.force-builds to '${FORCE_BUILDS}' in ${RICKSHAW_SETTINGS_FILE}"
 
-    if jq --indent 4 --argjson force_builds "${FORCE_BUILDS}" \
+    # handle backwards copmatibility to when force_builds was a string
+    # instead of a boolean
+    jq_argument_type=argjson
+    case "${CI_RELEASE}" in
+        "2025.1"|"2025.2"|"2025.3"|"2025.4")
+            jq_argument_type=arg
+            ;;
+    esac
+
+    if jq --indent 4 --${jq_argument_type} force_builds "${FORCE_BUILDS}" \
           '.workshop."force-builds" = $force_builds' \
           ${RICKSHAW_SETTINGS_FILE} > ${RICKSHAW_SETTINGS_FILE}.tmp; then
         if mv ${RICKSHAW_SETTINGS_FILE}.tmp ${RICKSHAW_SETTINGS_FILE}; then
