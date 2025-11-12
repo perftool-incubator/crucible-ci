@@ -315,7 +315,7 @@ if [ "${CI_CONTROLLER}" == "yes" ]; then
     # handle backwards copmatibility to when force_builds was a string
     # instead of a boolean
     jq_argument_type=argjson
-    case "${CI_RELEASE}" in
+    case "${RELEASE_TAG}" in
         "2025.1"|"2025.2"|"2025.3"|"2025.4")
             jq_argument_type=arg
             ;;
