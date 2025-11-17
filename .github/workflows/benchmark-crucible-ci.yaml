@@ -18,6 +18,10 @@ on:
       github_workspace:
         required: true
         type: string
+      userenv_filter:
+        required: false
+        type: string
+        default: "all"
     secrets:
       registry_auth:
         required: false
@@ -77,6 +81,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-job-parameters
       with:
         runner-type: "github"
+        userenv-filter: ${{ inputs.userenv_filter }}
         benchmark: "${{ inputs.ci_target }}"
         rickshaw-directory: "./rickshaw"
         toolbox-directory: "./toolbox"
@@ -85,6 +90,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-job-parameters
       with:
         runner-type: "self-hosted"
+        userenv-filter: ${{ inputs.userenv_filter }}
         runner-tags: "cpu-partitioning,remotehosts"
         benchmark: "${{ inputs.ci_target }}"
         rickshaw-directory: "./rickshaw"
