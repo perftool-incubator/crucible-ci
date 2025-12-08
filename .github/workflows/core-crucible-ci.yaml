@@ -39,6 +39,10 @@ on:
         required: false
         type: string
         default: "--"
+      disable_force_builds:
+        required: false
+        type: string
+        default: "no"
     secrets:
       registry_auth:
         required: false
@@ -312,6 +316,7 @@ jobs:
         ci_controller: ${{ inputs.ci_built_controller }}
         controller_tag: ${{ inputs.ci_built_controller_tag }}
         crucible_release: "${{ inputs.release }}"
+        disable_force_builds: "${{ inputs.disable_force_builds }}"
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.job.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
@@ -391,6 +396,7 @@ jobs:
         ci_controller: ${{ inputs.ci_built_controller }}
         controller_tag: ${{ inputs.ci_built_controller_tag }}
         crucible_release: "${{ inputs.release }}"
+        disable_force_builds: "${{ inputs.disable_force_builds }}"
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.job.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"

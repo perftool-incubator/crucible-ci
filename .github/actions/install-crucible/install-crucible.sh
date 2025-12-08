@@ -15,10 +15,11 @@ CI_ENDPOINT="remotehosts"
 CI_CONTROLLER_TAG="none"
 CI_CONTROLLER="no"
 RELEASE_TAG="upstream"
+DISABLE_FORCE_BUILDS="no"
 
 REGISTRY_TLS_VERIFY="true"
 
-longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:,controller-tag:,ci-controller:,release-tag:"
+longopts="run-environment:,ci-target:,ci-target-dir:,ci-endpoint:,controller-tag:,ci-controller:,release-tag:,disable-force-builds:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -27,6 +28,11 @@ fi
 eval set -- "${opts}"
 while true; do
     case "${1}" in
+        --disable-force-builds)
+            shift
+            DISABLE_FORCE_BUILDS="${1}"
+            shift
+            ;;
         --release-tag)
             shift
             RELEASE_TAG="${1}"
@@ -307,7 +313,7 @@ start_github_group "rickshaw-settings updates"
 RICKSHAW_SETTINGS_FILE="/opt/crucible/subprojects/core/rickshaw/rickshaw-settings.json"
 UPDATES_REQUIRED=0
 
-if [ "${CI_CONTROLLER}" == "yes" ]; then
+if [ "${CI_CONTROLLER}" == "yes" -a "${DISABLE_FORCE_BUILDS}" == "no" ]; then
     UPDATES_REQUIRED=1
     FORCE_BUILDS="true"
     echo "Updating rickshaw-settings value workshop.force-builds to '${FORCE_BUILDS}' in ${RICKSHAW_SETTINGS_FILE}"

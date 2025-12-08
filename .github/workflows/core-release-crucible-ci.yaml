@@ -35,6 +35,10 @@ on:
         required: false
         type: string
         default: "no"
+      disable_force_builds:
+        required: false
+        type: string
+        default: "no"
     secrets:
       registry_auth:
         required: false
@@ -257,6 +261,7 @@ jobs:
       release: "${{ matrix.release }}"
       ci_built_controller: "${{ needs.gen-params.outputs.build_controller }}"
       ci_built_controller_tag: "${{ needs.gen-params.outputs.repo_name }}_${{ inputs.ci_target }}_${{ github.run_number }}"
+      disable_force_builds: "${{ inputs.disable_force_builds }}"
     secrets:
       registry_auth: "${{ secrets.registry_auth }}"
       weekly_ci_registry_auth: "${{ secrets.weekly_ci_registry_auth }}"
