@@ -259,6 +259,11 @@ jobs:
         echo "benchmark=${{ matrix.job.benchmark }}"
         echo "userenv=${{ matrix.job.userenv }}"
 
+    - name: free disk space
+      uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+      with:
+        swap-storage: false
+
     - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
       uses: actions/checkout@v4
       with:
