@@ -79,3 +79,7 @@ echo
 start_github_group "ip addr show"
 echo -e "ip addr show\n$(ip addr show)"
 stop_github_group
+echo
+start_github_group "df -h"
+echo -e "df -h\n$(df -h)"
+stop_github_group

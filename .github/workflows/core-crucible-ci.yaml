@@ -39,6 +39,10 @@ on:
         required: false
         type: string
         default: "--"
+      disable_force_builds:
+        required: false
+        type: string
+        default: "no"
     secrets:
       registry_auth:
         required: false
@@ -255,6 +259,11 @@ jobs:
         echo "benchmark=${{ matrix.job.benchmark }}"
         echo "userenv=${{ matrix.job.userenv }}"
 
+    - name: free disk space
+      uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+      with:
+        swap-storage: false
+
     - name: checkout ${{ needs.gen-params.outputs.ci_target_dir }} ci_target
       uses: actions/checkout@v4
       with:
@@ -312,6 +321,7 @@ jobs:
         ci_controller: ${{ inputs.ci_built_controller }}
         controller_tag: ${{ inputs.ci_built_controller_tag }}
         crucible_release: "${{ inputs.release }}"
+        disable_force_builds: "${{ inputs.disable_force_builds }}"
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.job.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
@@ -391,6 +401,7 @@ jobs:
         ci_controller: ${{ inputs.ci_built_controller }}
         controller_tag: ${{ inputs.ci_built_controller_tag }}
         crucible_release: "${{ inputs.release }}"
+        disable_force_builds: "${{ inputs.disable_force_builds }}"
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.job.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
