@@ -112,7 +112,7 @@ jobs:
       run: echo '${{ needs.gen-params.outputs.repo_name }}'
 
   github-runners:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, foobar1 ]
     timeout-minutes: 90
     needs:
     - gen-params
@@ -188,7 +188,7 @@ jobs:
       run: echo "crucible-ci->integration-tests not enabled"
 
   self-hosted-runners:
-    runs-on: [ self-hosted, cpu-partitioning, remotehosts ]
+    runs-on: [ self-hosted, foobar2 ]
     timeout-minutes: 90
     needs:
     - gen-params
