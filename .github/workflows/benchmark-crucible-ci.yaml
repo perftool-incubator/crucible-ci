@@ -137,7 +137,7 @@ jobs:
       with:
         repository: perftool-incubator/bench-${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
-        path: "bench-${{ inputs.ci_target }}"
+        path: "/tmp/bench-${{ inputs.ci_target }}"
 
     - name: import ci secret
       env:
@@ -165,7 +165,7 @@ jobs:
         scenarios: "${{ matrix.job.benchmark }}"
         userenvs: "${{ matrix.job.userenv }}"
         ci_target: "${{ inputs.ci_target }}"
-        ci_target_dir: ${{ github.workspace }}/bench-${{ inputs.ci_target }}
+        ci_target_dir: /tmp/bench-${{ inputs.ci_target }}
     - name: skip crucible-ci->integration-tests
       if: ${{ ! matrix.job.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
