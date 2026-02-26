@@ -80,4 +80,4 @@ runs:
 
     - run: sudo ${{ github.action_path }}/run-ci-stage2 --run-environment github
       shell: bash
-      if: success()
+      if: always()
