@@ -76,6 +76,8 @@ runs:
 
     - run: sudo ${{ github.action_path }}/../clean-environment/clean-environment.sh --run-environment github
       shell: bash
+      if: success()
 
     - run: sudo ${{ github.action_path }}/run-ci-stage2 --run-environment github
       shell: bash
+      if: always()

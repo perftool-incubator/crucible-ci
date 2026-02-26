@@ -22,12 +22,6 @@ jobs:
       fail-fast: false
       matrix:
         repos:
-        - benchmark: "fio"
-          branch: "master"
-          filter: "all"
-        - benchmark: "uperf"
-          branch: "master"
-          filter: "unique"
         - benchmark: "oslat"
           branch: "master"
           filter: "minimal"
