@@ -22,6 +22,10 @@ on:
         required: false
         type: string
         default: "all"
+      runner_pool:
+        required: false
+        type: string
+        default: "kmr-cloud-1"
     secrets:
       registry_auth:
         required: false
@@ -82,6 +86,7 @@ jobs:
         runner-type: "self-hosted"
         userenv-filter: ${{ inputs.userenv_filter }}
         runner-tags: "cpu-partitioning,remotehosts"
+        runner-pool: ${{ inputs.runner_pool }}
         benchmark: "${{ inputs.ci_target }}"
         rickshaw-directory: "./rickshaw"
         toolbox-directory: "./toolbox"
@@ -100,7 +105,7 @@ jobs:
       run: echo '${{ needs.gen-params.outputs.repo_name }}'
 
   self-hosted-runners:
-    runs-on: [ self-hosted, foobar2 ]
+    runs-on: ${{ fromJSON(toJSON(matrix.job.runner_labels)) }}
     timeout-minutes: 90
     needs:
     - gen-params
