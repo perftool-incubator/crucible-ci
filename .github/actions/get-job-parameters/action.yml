@@ -18,6 +18,10 @@ inputs:
     description: "Comma separated list of tags the runner has"
     required: false
     default: ""
+  runner-pool:
+    description: "Which pool of self-hosted runners to use (e.g., 'kmr-cloud-1', 'aws-cloud-1')"
+    required: false
+    default: ""
   benchmark:
     description: "Which benchmark to restrict the scenarios to"
     required: false
@@ -32,4 +36,4 @@ runs:
     - name: "Generate jobs list"
       id: generate-jobs
       shell: bash
-      run: TOOLBOX_HOME=${{ inputs.toolbox-directory }} ${{ inputs.rickshaw-directory }}/util/generate-ci-jobs.py --runner-type "${{ inputs.runner-type }}" --runner-tags "${{ inputs.runner-tags }}" --userenv-filter "${{ inputs.userenv-filter }}" --runtime-env "github" --benchmark "${{ inputs.benchmark }}"
+      run: TOOLBOX_HOME=${{ inputs.toolbox-directory }} ${{ inputs.rickshaw-directory }}/util/generate-ci-jobs.py --runner-type "${{ inputs.runner-type }}" --runner-tags "${{ inputs.runner-tags }}" --runner-pool "${{ inputs.runner-pool }}" --userenv-filter "${{ inputs.userenv-filter }}" --runtime-env "github" --benchmark "${{ inputs.benchmark }}"
