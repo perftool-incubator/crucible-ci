@@ -29,11 +29,28 @@ inputs:
 outputs:
   jobs:
     description: "The list of userenvs that were found"
-    value: ${{ steps.generate-jobs.outputs.jobs }}
+    value: ${{ steps.generate-jobs.outputs.jobs || steps.generate-jobs-legacy.outputs.jobs }}
 runs:
   using: "composite"
   steps:
-    - name: "Generate jobs list"
+    - name: "Check if rickshaw supports --runner-pool"
+      id: check-runner-pool
+      shell: bash
+      run: |
+        if ${{ inputs.rickshaw-directory }}/util/generate-ci-jobs.py --help 2>&1 | grep -q -- '--runner-pool'; then
+          echo "supports_runner_pool=true" >> $GITHUB_OUTPUT
+        else
+          echo "supports_runner_pool=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: "Generate jobs list (with runner-pool support)"
       id: generate-jobs
+      if: steps.check-runner-pool.outputs.supports_runner_pool == 'true'
       shell: bash
       run: TOOLBOX_HOME=${{ inputs.toolbox-directory }} ${{ inputs.rickshaw-directory }}/util/generate-ci-jobs.py --runner-type "${{ inputs.runner-type }}" --runner-tags "${{ inputs.runner-tags }}" --runner-pool "${{ inputs.runner-pool }}" --userenv-filter "${{ inputs.userenv-filter }}" --runtime-env "github" --benchmark "${{ inputs.benchmark }}"
+
+    - name: "Generate jobs list (without runner-pool support)"
+      id: generate-jobs-legacy
+      if: steps.check-runner-pool.outputs.supports_runner_pool == 'false'
+      shell: bash
+      run: TOOLBOX_HOME=${{ inputs.toolbox-directory }} ${{ inputs.rickshaw-directory }}/util/generate-ci-jobs.py --runner-type "${{ inputs.runner-type }}" --runner-tags "${{ inputs.runner-tags }}" --userenv-filter "${{ inputs.userenv-filter }}" --runtime-env "github" --benchmark "${{ inputs.benchmark }}"
