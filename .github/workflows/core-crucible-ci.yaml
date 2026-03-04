@@ -327,7 +327,7 @@ jobs:
       run: echo "crucible-ci->integration-tests not enabled"
 
   self-hosted-runners:
-    runs-on: [ self-hosted, cpu-partitioning, remotehosts ]
+    runs-on: [ self-hosted, kmr-cloud-1, cpu-partitioning, remotehosts ]
     timeout-minutes: ${{ fromJSON(needs.gen-params.outputs.timeout_minutes) }}
     needs:
     - gen-params
