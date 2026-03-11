@@ -123,23 +123,14 @@ jobs:
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
 
-    - name: run check-controller-build
-      id: check-controller-build
-      uses: ./crucible-ci/.github/actions/check-controller-build
+    - name: checkout ci_target
+      if: ${{ inputs.ci_target != 'crucible' && inputs.ci_target != 'workshop' && inputs.ci_target != 'crucible-ci' }}
+      uses: actions/checkout@v4
       with:
-        bypass-controller-build: "${{ inputs.bypass_controller_build }}"
-        force-controller-build: "${{ inputs.force_controller_build }}"
-        crucible-directory: "./crucible"
-        workshop-directory: "./workshop"
-    - name: run get-releases
-      id: get-releases
-      uses: ./crucible-ci/.github/actions/get-releases
-      with:
-        crucible-directory: "./crucible"
-        build-controller: "${{ steps.check-controller-build.outputs.build-controller }}"
-    - name: run get-repo-name
-      id: get-repo-name
-      uses: ./crucible-ci/.github/actions/get-repo-name
+        repository: perftool-incubator/${{ inputs.ci_target }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: ${{ inputs.ci_target }}
+        fetch-depth: 2
 
     - name: set ci_target_dir
       id: set-ci-target-dir
@@ -151,6 +142,25 @@ jobs:
           echo "Setting ci-target-dir to the value of inputs.ci_target_dir [${{ inputs.ci_target_dir }} ]"
           echo "ci-target-dir=${{ inputs.ci_target_dir }}" >> $GITHUB_OUTPUT
         fi
+
+    - name: run check-controller-build
+      id: check-controller-build
+      uses: ./crucible-ci/.github/actions/check-controller-build
+      with:
+        bypass-controller-build: "${{ inputs.bypass_controller_build }}"
+        force-controller-build: "${{ inputs.force_controller_build }}"
+        crucible-directory: "./crucible"
+        workshop-directory: "./workshop"
+        ci-target-directory: ${{ steps.set-ci-target-dir.outputs.ci-target-dir }}
+    - name: run get-releases
+      id: get-releases
+      uses: ./crucible-ci/.github/actions/get-releases
+      with:
+        crucible-directory: "./crucible"
+        build-controller: "${{ steps.check-controller-build.outputs.build-controller }}"
+    - name: run get-repo-name
+      id: get-repo-name
+      uses: ./crucible-ci/.github/actions/get-repo-name
 
   display-params:
     runs-on: [ self-hosted, workflow-overhead ]
