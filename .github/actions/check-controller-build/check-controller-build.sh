@@ -6,6 +6,7 @@ bypass_controller_build=${1}
 force_controller_build=${2}
 crucible_directory=${3}
 workshop_directory=${4}
+ci_target_directory=${5}
 
 function error() {
     echo "ERROR: ${1}"
@@ -95,6 +96,38 @@ else
         popd
     else
         error "Failed to pushd to workshop directory '${workshop_directory}'"
+    fi
+
+    if [ "${ci_target_directory}" == "${crucible_directory}" -o "./${ci_target_directory}" == "${crucible_directory}" ]; then
+        echo "CI target is Crucible -> no analysis required"
+    elif [ "${ci_target_directory}" == "${workshop_directory}" -o "./${ci_target_directory}" == "${workshop_directory}" ]; then
+        echo "CI target is Workshop -> no analysis required"
+    else
+        echo "CI target directory is '${ci_target_directory}'"
+        echo "Conducting CI target change analysis:"
+        if pushd ${ci_target_directory}; then
+            if ${diff_cmd_validate} > /dev/null 2>&1; then
+                echo "Files changed:"
+                ${diff_cmd}
+                if [ $? != 0 ]; then
+                    error "could not obtain git-diff output"
+                fi
+                echo
+
+                ci_target_files_changed=$(${diff_cmd} | grep "^workshop.json" | wc -l)
+                echo "ci_target_files_changed=${ci_target_files_changed}"
+                echo
+
+                if [ ${ci_target_files_changed} -gt 0 ]; then
+                    echo "INFO: controller build is required"
+                    build_controller="yes"
+                fi
+            else
+                error "Required history not available for CI target directory '${ci_target_directory}'"
+            fi
+        else
+            error "Failed to pushd to CI target directory '${ci_target_directory}"
+        fi
     fi
 fi
 

@@ -26,10 +26,6 @@ jobs:
           subproject_dir: "CommonDataModel"
           branch: "master"
           userenv_filter: "minimal"
-        - subproject: "rickshaw"
-          subproject_dir: "rickshaw"
-          branch: "master"
-          userenv_filter: "all"
     uses: ./.github/workflows/core-crucible-ci.yaml
     with:
       ci_target: "${{ matrix.repos.subproject }}"
@@ -53,6 +49,11 @@ jobs:
           branch: "master"
           userenv_filter: "unique"
           force_controller_build: "yes"
+        - subproject: "rickshaw"
+          subproject_dir: "rickshaw"
+          branch: "master"
+          userenv_filter: "all"
+          force_controller_build: "no"
     uses: ./.github/workflows/core-release-crucible-ci.yaml
     with:
       ci_target: "${{ matrix.repos.subproject }}"

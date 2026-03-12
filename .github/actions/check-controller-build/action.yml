@@ -13,6 +13,9 @@ inputs:
   workshop-directory:
     description: "Where is the workshop repository to check for workshop updates"
     required: true
+  ci-target-directory:
+    descriptiopn: "Where is the current CI target repository to check for controller image related changes"
+    required: true
 outputs:
   build-controller:
     description: "Should the controller image be rebuilt or not"
@@ -22,8 +25,8 @@ runs:
   steps:
     - name: "Validate crucible-directory"
       shell: bash
-      run: ${{ github.action_path }}/validate-inputs.sh  ${{ inputs.bypass-controller-build }} ${{ inputs.force-controller-build }} ${{ inputs.crucible-directory }} ${{ inputs.workshop-directory }}
+      run: ${{ github.action_path }}/validate-inputs.sh  ${{ inputs.bypass-controller-build }} ${{ inputs.force-controller-build }} ${{ inputs.crucible-directory }} ${{ inputs.workshop-directory }} ${{ inputs.ci-target-directory }}
     - name: "Check for controller build status"
       id: check-controller-build
       shell: bash
-      run: ${{ github.action_path }}/check-controller-build.sh  ${{ inputs.bypass-controller-build }}  ${{ inputs.force-controller-build }} ${{ inputs.crucible-directory}} ${{ inputs.workshop-directory }}
+      run: ${{ github.action_path }}/check-controller-build.sh  ${{ inputs.bypass-controller-build }}  ${{ inputs.force-controller-build }} ${{ inputs.crucible-directory}} ${{ inputs.workshop-directory }} ${{ inputs.ci-target-directory }}

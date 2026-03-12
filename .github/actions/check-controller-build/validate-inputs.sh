@@ -6,6 +6,7 @@ bypass_controller_build=${1}
 force_controller_build=${2}
 crucible_directory=${3}
 workshop_directory=${4}
+ci_target_directory=${5}
 
 function error() {
     echo "ERROR: ${1}"
@@ -13,12 +14,13 @@ function error() {
 }
 
 function usage() {
-    echo "Usage: ${0} <bypass-controller-build> <force-controller-build> <crucible> <workshop>"
+    echo "Usage: ${0} <bypass-controller-build> <force-controller-build> <crucible> <workshop> <ci-target>"
     echo
     echo "<bypass-controller-build> is a yes|no value"
     echo "<force-controller-build> is a yes|no value"
     echo "<crucible> is a directory where the crucible repository exists."
     echo "<workshop> is a directory where the workshop repoistory exists."
+    echo "<ci-target> is a directory where the current CI target repository exists."
     echo
     echo "If <bypass-controller-build> is 'yes' then the action short circuits and returns 'no'"
     echo
@@ -27,12 +29,12 @@ function usage() {
     echo "If <bypass-controller-build> and <force-controller-build> are both set to 'yes' then"
     echo "an error is emitted since the two parameters are mutually exclusive"
     echo
-    echo "Both repositories are examined to determine if their changes require"
+    echo "All repositories are examined to determine if their changes require"
     echo "the building of a new controller image for testing"
     exit 1
 }
 
-if [ -z "${bypass_controller_build}" -o -z "${force_controller_build}" -o -z "${crucible_directory}" -o -z "${workshop_directory}" ]; then
+if [ -z "${bypass_controller_build}" -o -z "${force_controller_build}" -o -z "${crucible_directory}" -o -z "${workshop_directory}" -o -z "${ci_target_directory}" ]; then
     usage
 else
     # handle <bypass-controller-build>
@@ -94,6 +96,31 @@ else
         fi
 
         popd
+    fi
+
+    # handle <ci-target>
+    if [ ! -e "${ci_target_directory}" ]; then
+        error "The CI target directory '${ci_target_directory}' does not exist"
+    fi
+
+    if [ "${ci_target_directory}" == "${crucible_directory}" -o "./${ci_target_directory}" == "${crucible_directory}" ]; then
+        echo "CI target is Crucible"
+    elif [ "${ci_target_directory}" == "${workshop_directory}" -o "./${ci_target_directory}" == "${workshop_directory}" ]; then
+        echo "CI target is Workshop"
+    else
+        echo "CI target directory is '${ci_target_directory}'"
+
+        if ! pushd ${ci_target_directory}; then
+            error "Could not push to the CI target directory '${ci_target_directory}'"
+        else
+            echo "Contents of the CI target directory:"
+            ls -l
+            if [ ! -f workshop.json ]; then
+                error "Could not find required workshop.json"
+            fi
+
+            popd
+        fi
     fi
 
     exit 0
