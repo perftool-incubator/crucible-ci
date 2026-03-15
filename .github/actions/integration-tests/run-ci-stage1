@@ -232,7 +232,8 @@ function post_run_cmd {
     local run_id="${captured_output}"
 
     run_and_capture_cmd "crucible extract primary-periods /var/lib/crucible/run/latest"
-    local primary_periods="${captured_output}"
+    local primary_periods
+    primary_periods=$(echo -e "${captured_output}" | grep -E '^[0-9A-Fa-f]{8}-')
 
     if [ ${RC_STATUS} == 0 -a -n "${primary_periods}" ]; then
         tmp_file=$(mktemp)
