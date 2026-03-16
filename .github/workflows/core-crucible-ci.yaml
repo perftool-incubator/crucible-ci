@@ -193,7 +193,8 @@ jobs:
       id: get-job-parameters-github
       uses: ./crucible-ci/.github/actions/get-job-parameters
       with:
-        runner-type: "github"
+        runner-type: "self-hosted"
+        runner-pool: ${{ inputs.runner_pool }}
         userenv-filter: ${{ inputs.userenv_filter }}
         rickshaw-directory: "./rickshaw"
         toolbox-directory: "./toolbox"
@@ -247,7 +248,7 @@ jobs:
       run: echo '${{ needs.gen-params.outputs.timeout_minutes }}'
 
   github-runners:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(toJSON(matrix.job.runner_labels)) }}
     timeout-minutes: ${{ fromJSON(needs.gen-params.outputs.timeout_minutes) }}
     needs:
     - gen-params
