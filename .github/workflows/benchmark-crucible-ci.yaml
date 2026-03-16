@@ -25,7 +25,7 @@ on:
       runner_pool:
         required: false
         type: string
-        default: "kmr-cloud-1"
+        default: "aws-cloud-1"
     secrets:
       registry_auth:
         required: false
