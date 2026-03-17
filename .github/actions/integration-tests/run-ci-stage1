@@ -33,8 +33,10 @@ if echo "${CRUCIBLE_ENGINE_REPO}" | grep -q "dir:"; then
     CRUCIBLE_ENGINE_REPO=$(echo "${CRUCIBLE_ENGINE_REPO}" | sed -e "s/dir://" -e 's|/engines$||')
 elif echo "${CRUCIBLE_ENGINE_REPO}" | grep -q "quay.io"; then
     CRUCIBLE_ENGINE_REPO_LOCATION="quay.io"
+elif echo "${CRUCIBLE_ENGINE_REPO}" | grep -q "localhost:"; then
+    CRUCIBLE_ENGINE_REPO_LOCATION="k8s-registry"
 else
-    CRUCIBLE_ENGINE_REPO_LOCATION="microk8s"
+    CRUCIBLE_ENGINE_REPO_LOCATION="unknown"
 fi
 
 CI_RUN_ENVIRONMENT="standalone"
@@ -215,6 +217,21 @@ case "${CI_ENDPOINT}" in
         elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s kubectl cluster-info; then
             CI_K8S_TYPE="MICROK8S"
             echo "K8S type is MicroK8S"
+        elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "command -v k3s >/dev/null 2>&1"; then
+            # K3s is installed, ensure it's running
+            echo "K3s binary found, ensuring k3s service is running..."
+            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "sudo systemctl enable k3s" || true
+            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "sudo systemctl start k3s" || true
+            # Wait for k3s to be ready
+            echo "Waiting for k3s to be ready..."
+            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "timeout 60 sh -c 'until sudo k3s kubectl cluster-info >/dev/null 2>&1; do sleep 2; done'" || true
+            if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} k3s kubectl cluster-info; then
+                CI_K8S_TYPE="K3S"
+                echo "K8S type is K3s"
+            else
+                echo "ERROR: K3s installed but could not start properly"
+                exit 1
+            fi
         elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} kubectl cluster-info; then
             CI_K8S_TYPE="GENERIC"
             echo "K8S type is generic"
@@ -314,16 +331,31 @@ function post_run_cmd {
     stop_github_group
 }
 
-function remove_microk8s_images {
-    for image in $(do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s ctr images list "name~=engines" | grep -v REF | awk '{ print $1 }'); do
-        do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s ctr images remove --sync ${image}
-        rc=$?
+function remove_k8s_images {
+    case "${CI_K8S_TYPE}" in
+        "MICROK8S")
+            for image in $(do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s ctr images list "name~=engines" | grep -v REF | awk '{ print $1 }'); do
+                do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s ctr images remove --sync ${image}
+                rc=$?
 
-        if [ ${rc} != 0 ]; then
-            echo "ERROR: Could not remove ${image} from microk8s registry"
-            break
-        fi
-    done
+                if [ ${rc} != 0 ]; then
+                    echo "ERROR: Could not remove ${image} from microk8s registry"
+                    break
+                fi
+            done
+            ;;
+        "K3S")
+            for image in $(do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} k3s crictl images | grep engines | awk '{ print $1":"$2 }'); do
+                do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} k3s crictl rmi ${image}
+                rc=$?
+
+                if [ ${rc} != 0 ]; then
+                    echo "ERROR: Could not remove ${image} from k3s"
+                    break
+                fi
+            done
+            ;;
+    esac
 }
 
 if [ "${CI_BUILD_CONTROLLER}" == "yes" ]; then
@@ -646,9 +678,9 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
     case "${CI_ENDPOINT}" in
         k8s|kube)
             case "${CI_K8S_TYPE}" in
-                "MICROK8S")
-                    if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "microk8s" ]; then
-                        run_cmd "remove_microk8s_images"
+                "MICROK8S"|"K3S")
+                    if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "k8s-registry" ]; then
+                        run_cmd "remove_k8s_images"
                     fi
                     ;;
             esac
@@ -734,8 +766,13 @@ case "${CI_ENDPOINT}" in
 
         case "${CI_K8S_TYPE}" in
             "MICROK8S")
-                if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "microk8s" ]; then
+                if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "k8s-registry" ]; then
                     run_cmd "do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s ctr images list" "force"
+                fi
+                ;;
+            "K3S")
+                if [ "${CRUCIBLE_ENGINE_REPO_LOCATION}" == "k8s-registry" ]; then
+                    run_cmd "do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} k3s crictl images" "force"
                 fi
                 ;;
         esac
