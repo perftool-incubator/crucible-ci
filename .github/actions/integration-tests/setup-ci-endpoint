@@ -69,18 +69,19 @@ case "${CI_ENDPOINT}" in
         if command -v k3s >/dev/null 2>&1; then
             echo "Detected K3s, using it for k8s endpoint"
 
-            # Ensure K3s is running
-            sudo systemctl enable k3s || true
-            sudo systemctl start k3s || true
+            # Ensure K3s is running (script is already running as root via sudo)
+            systemctl enable k3s || true
+            systemctl start k3s || true
 
             # Wait for K3s to be ready
-            timeout 60 sh -c 'until sudo k3s kubectl cluster-info >/dev/null 2>&1; do sleep 2; done' || {
+            timeout 60 sh -c 'until k3s kubectl cluster-info >/dev/null 2>&1; do sleep 2; done' || {
                 echo "ERROR: Failed to start K3s"
+                systemctl status k3s --no-pager || true
                 exit 1
             }
 
-            # Create kubectl wrapper for K3s
-            printf "#%s/bin/bash\n\nsudo k3s kubectl \$@\n" "!" > /usr/local/bin/kubectl
+            # Create kubectl wrapper for K3s (no sudo needed, runner will use sudo when calling kubectl)
+            printf "#%s/bin/bash\n\nk3s kubectl \$@\n" "!" > /usr/local/bin/kubectl
             chmod +x /usr/local/bin/kubectl
 
             echo "K3s is ready"
