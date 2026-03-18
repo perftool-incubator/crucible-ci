@@ -239,8 +239,11 @@ case "${CI_ENDPOINT}" in
 
             # Wait for k3s to be ready
             echo "Waiting for k3s to be ready..."
+            echo "DEBUG: Current SHLVL before loop: $SHLVL"
+            echo "DEBUG: Current user: $(whoami)"
+            echo "DEBUG: PATH: $PATH"
             for i in $(seq 1 30); do
-                echo "  Attempt $i/30..."
+                echo "  Attempt $i/30 (SHLVL=$SHLVL)..."
                 if run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "k3s kubectl cluster-info" 2>&1; then
                     echo "K3s is ready!"
                     break
