@@ -253,8 +253,8 @@ case "${CI_ENDPOINT}" in
 
             # Final check
             if run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "k3s kubectl cluster-info"; then
-                CI_K8S_TYPE="K3S"
-                echo "K8S type is K3s"
+                CI_K8S_TYPE="GENERIC"
+                echo "K8S type is K3s (endpoint-sub-type: GENERIC)"
             else
                 echo "ERROR: K3s installed but could not start properly"
                 echo "K3s service status:"
