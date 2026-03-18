@@ -241,7 +241,7 @@ case "${CI_ENDPOINT}" in
             echo "Waiting for k3s to be ready..."
             for i in $(seq 1 30); do
                 echo "  Attempt $i/30..."
-                if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "k3s kubectl cluster-info" 2>&1; then
+                if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "SHLVL=0 k3s kubectl cluster-info" 2>&1; then
                     echo "K3s is ready!"
                     break
                 fi
@@ -249,7 +249,7 @@ case "${CI_ENDPOINT}" in
             done
 
             # Final check
-            if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "k3s kubectl cluster-info"; then
+            if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "SHLVL=0 k3s kubectl cluster-info"; then
                 CI_K8S_TYPE="K3S"
                 echo "K8S type is K3s"
             else
