@@ -220,12 +220,31 @@ case "${CI_ENDPOINT}" in
         elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "command -v k3s >/dev/null 2>&1"; then
             # K3s is installed, ensure it's running
             echo "K3s binary found, ensuring k3s service is running..."
-            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "sudo systemctl enable k3s" || true
-            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "sudo systemctl start k3s" || true
+
+            # Set SELinux to permissive mode if enforcing (K3s needs privileged operations)
+            if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "command -v getenforce >/dev/null 2>&1"; then
+                SELINUX_STATUS=$(do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "getenforce")
+                echo "SELinux status: ${SELINUX_STATUS}"
+                if [ "${SELINUX_STATUS}" = "Enforcing" ]; then
+                    echo "Setting SELinux to permissive mode for K3s..."
+                    do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "setenforce 0"
+                fi
+            fi
+
+            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl enable k3s" || true
+            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl start k3s" || true
+
             # Wait for k3s to be ready
             echo "Waiting for k3s to be ready..."
-            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "timeout 60 sh -c 'until sudo k3s kubectl cluster-info >/dev/null 2>&1; do sleep 2; done'" || true
-            if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} k3s kubectl cluster-info; then
+            for i in $(seq 1 30); do
+                if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "k3s kubectl cluster-info >/dev/null 2>&1"; then
+                    break
+                fi
+                echo "  Waiting for k3s... attempt $i/30"
+                sleep 2
+            done
+
+            if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "k3s kubectl cluster-info"; then
                 CI_K8S_TYPE="K3S"
                 echo "K8S type is K3s"
             else
