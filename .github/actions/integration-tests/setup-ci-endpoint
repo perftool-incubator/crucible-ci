@@ -69,6 +69,17 @@ case "${CI_ENDPOINT}" in
         if command -v k3s >/dev/null 2>&1; then
             echo "Detected K3s, using it for k8s endpoint"
 
+            # Set SELinux to permissive mode if it's enforcing (K3s requires many privileged operations)
+            if command -v getenforce >/dev/null 2>&1; then
+                SELINUX_STATUS=$(getenforce)
+                echo "SELinux status: ${SELINUX_STATUS}"
+                if [ "${SELINUX_STATUS}" = "Enforcing" ]; then
+                    echo "Setting SELinux to permissive mode for K3s..."
+                    setenforce 0
+                    echo "SELinux is now: $(getenforce)"
+                fi
+            fi
+
             # Ensure K3s is running (script is already running as root via sudo)
             echo "Enabling K3s service..."
             systemctl enable k3s 2>&1 || echo "Warning: Failed to enable k3s"
