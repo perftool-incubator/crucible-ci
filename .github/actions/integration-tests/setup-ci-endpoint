@@ -65,18 +65,54 @@ case "${CI_ENDPOINT}" in
     k8s|kube)
         start_github_group "Configure k8s endpoint"
 
-        # fixup some microk8s dependencies before installing it
-        update-alternatives --set iptables /usr/sbin/iptables-legacy
-        update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+        # Detect which K8s distribution is available
+        if command -v k3s >/dev/null 2>&1; then
+            echo "Detected K3s, using it for k8s endpoint"
 
-        snap install microk8s --classic
-        if ! microk8s status --wait-ready; then
-            echo "ERROR: Failed to install and initialize microk8s"
-            exit 1
+            # Ensure K3s is running
+            systemctl enable k3s || true
+            systemctl start k3s || true
+
+            # Wait for K3s to be ready
+            timeout 60 sh -c 'until k3s kubectl cluster-info >/dev/null 2>&1; do sleep 2; done' || {
+                echo "ERROR: Failed to start K3s"
+                exit 1
+            }
+
+            # Create kubectl wrapper for K3s
+            printf "#%s/bin/bash\n\nk3s kubectl \$@\n" "!" > /usr/local/bin/kubectl
+            chmod +x /usr/local/bin/kubectl
+
+            echo "K3s is ready"
+
+        elif command -v microk8s >/dev/null 2>&1; then
+            echo "Detected MicroK8S, using it for k8s endpoint"
+
+            if ! microk8s status --wait-ready; then
+                echo "ERROR: Failed to initialize microk8s"
+                exit 1
+            fi
+
+            # Create kubectl wrapper for MicroK8S
+            printf "#%s/bin/bash\n\nmicrok8s kubectl \$@\n" "!" > /usr/local/bin/kubectl
+            chmod +x /usr/local/bin/kubectl
+
+        else
+            echo "No K8s distribution found, attempting to install MicroK8S"
+
+            # fixup some microk8s dependencies before installing it
+            update-alternatives --set iptables /usr/sbin/iptables-legacy
+            update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+
+            snap install microk8s --classic
+            if ! microk8s status --wait-ready; then
+                echo "ERROR: Failed to install and initialize microk8s"
+                exit 1
+            fi
+
+            printf "#%s/bin/bash\n\nmicrok8s kubectl \$@\n" "!" > /usr/local/bin/kubectl
+            chmod +x /usr/local/bin/kubectl
         fi
-
-        printf "#%s/bin/bash\n\nmicrok8s kubectl \$@\n" "!" > /usr/local/bin/kubectl
-        chmod +x /usr/local/bin/kubectl
 
         stop_github_group
         ;;
