@@ -86,6 +86,21 @@ function do_ssh {
     ssh -o PasswordAuthentication=no $@
 }
 
+# Run command on endpoint - use direct execution for localhost, SSH otherwise
+# Usage: run_on_endpoint user host "command"
+function run_on_endpoint {
+    local user="${1}"
+    local host="${2}"
+    local cmd="${3}"
+
+    # If localhost and we're already the target user, run directly
+    if [ "${host}" = "localhost" ] && [ "$(whoami)" = "${user}" ]; then
+        bash -c "${cmd}"
+    else
+        do_ssh ${user}@${host} "${cmd}"
+    fi
+}
+
 RC_STATUS=0
 
 function run_cmd {

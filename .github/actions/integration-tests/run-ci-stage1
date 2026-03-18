@@ -217,31 +217,31 @@ case "${CI_ENDPOINT}" in
         elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} microk8s kubectl cluster-info; then
             CI_K8S_TYPE="MICROK8S"
             echo "K8S type is MicroK8S"
-        elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "command -v k3s >/dev/null 2>&1"; then
+        elif run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "command -v k3s >/dev/null 2>&1"; then
             # K3s is installed, ensure it's running
             echo "K3s binary found, ensuring k3s service is running..."
 
             # Set SELinux to permissive mode if enforcing (K3s needs privileged operations)
-            if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "command -v getenforce >/dev/null 2>&1"; then
-                SELINUX_STATUS=$(do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "getenforce")
+            if run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "command -v getenforce >/dev/null 2>&1"; then
+                SELINUX_STATUS=$(run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "getenforce")
                 echo "SELinux status: ${SELINUX_STATUS}"
                 if [ "${SELINUX_STATUS}" = "Enforcing" ]; then
                     echo "Setting SELinux to permissive mode for K3s..."
-                    do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "setenforce 0"
+                    run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "setenforce 0"
                 fi
             fi
 
-            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl enable k3s" || true
-            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl start k3s"
+            run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "systemctl enable k3s" || true
+            run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "systemctl start k3s"
 
             echo "Checking k3s service status..."
-            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl status k3s --no-pager -l" || echo "Service not yet active"
+            run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "systemctl status k3s --no-pager -l" || echo "Service not yet active"
 
             # Wait for k3s to be ready
             echo "Waiting for k3s to be ready..."
             for i in $(seq 1 30); do
                 echo "  Attempt $i/30..."
-                if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "SHLVL=0 k3s kubectl cluster-info" 2>&1; then
+                if run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "k3s kubectl cluster-info" 2>&1; then
                     echo "K3s is ready!"
                     break
                 fi
@@ -249,15 +249,15 @@ case "${CI_ENDPOINT}" in
             done
 
             # Final check
-            if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "SHLVL=0 k3s kubectl cluster-info"; then
+            if run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "k3s kubectl cluster-info"; then
                 CI_K8S_TYPE="K3S"
                 echo "K8S type is K3s"
             else
                 echo "ERROR: K3s installed but could not start properly"
                 echo "K3s service status:"
-                do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl status k3s --no-pager -l" || true
+                run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "systemctl status k3s --no-pager -l" || true
                 echo "K3s logs (last 50 lines):"
-                do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "journalctl -u k3s --no-pager -n 50" || true
+                run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "journalctl -u k3s --no-pager -n 50" || true
                 exit 1
             fi
         elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} kubectl cluster-info; then
