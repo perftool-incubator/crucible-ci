@@ -93,9 +93,10 @@ function run_on_endpoint {
     local host="${2}"
     local cmd="${3}"
 
-    # If localhost and we're already the target user, run directly
+    # If localhost and we're already the target user, run directly in current shell
+    # Avoid spawning new bash to prevent shell level recursion issues
     if [ "${host}" = "localhost" ] && [ "$(whoami)" = "${user}" ]; then
-        bash -c "${cmd}"
+        eval "${cmd}"
     else
         do_ssh ${user}@${host} "${cmd}"
     fi
