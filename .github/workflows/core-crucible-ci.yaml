@@ -194,6 +194,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-job-parameters
       with:
         runner-type: "github"
+        runner-tags: "k8s,kube"
         runner-pool: ${{ inputs.runner_pool }}
         userenv-filter: ${{ inputs.userenv_filter }}
         rickshaw-directory: "./rickshaw"

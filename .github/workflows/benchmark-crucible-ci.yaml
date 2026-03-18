@@ -86,6 +86,8 @@ jobs:
       with:
         runner-type: "github"
         userenv-filter: ${{ inputs.userenv_filter }}
+        runner-tags: "k8s,kube"
+        runner-pool: ${{ inputs.runner_pool }}
         benchmark: "${{ inputs.ci_target }}"
         rickshaw-directory: "./rickshaw"
         toolbox-directory: "./toolbox"

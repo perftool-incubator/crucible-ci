@@ -22,6 +22,10 @@ on:
         required: false
         type: string
         default: "all"
+      runner_pool:
+        required: false
+        type: string
+        default: "aws-cloud-1"
     secrets:
       registry_auth:
         required: false
@@ -81,6 +85,8 @@ jobs:
       with:
         runner-type: "github"
         userenv-filter: ${{ inputs.userenv_filter }}
+        runner-tags: "k8s,kube"
+        runner-pool: ${{ inputs.runner_pool }}
         benchmark: "fio"
         rickshaw-directory: "./rickshaw"
         toolbox-directory: "./toolbox"
