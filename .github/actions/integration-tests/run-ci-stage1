@@ -232,23 +232,32 @@ case "${CI_ENDPOINT}" in
             fi
 
             do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl enable k3s" || true
-            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl start k3s" || true
+            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl start k3s"
+
+            echo "Checking k3s service status..."
+            do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl status k3s --no-pager -l" || echo "Service not yet active"
 
             # Wait for k3s to be ready
             echo "Waiting for k3s to be ready..."
             for i in $(seq 1 30); do
-                if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "k3s kubectl cluster-info >/dev/null 2>&1"; then
+                echo "  Attempt $i/30..."
+                if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "k3s kubectl cluster-info" 2>&1; then
+                    echo "K3s is ready!"
                     break
                 fi
-                echo "  Waiting for k3s... attempt $i/30"
                 sleep 2
             done
 
+            # Final check
             if do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "k3s kubectl cluster-info"; then
                 CI_K8S_TYPE="K3S"
                 echo "K8S type is K3s"
             else
                 echo "ERROR: K3s installed but could not start properly"
+                echo "K3s service status:"
+                do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "systemctl status k3s --no-pager -l" || true
+                echo "K3s logs (last 50 lines):"
+                do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} "journalctl -u k3s --no-pager -n 50" || true
                 exit 1
             fi
         elif do_ssh ${CI_ENDPOINT_USER}@${CI_ENDPOINT_HOST} kubectl cluster-info; then
