@@ -103,9 +103,9 @@ case "${CI_ENDPOINT}" in
                 exit 1
             fi
 
-            # Create kubectl wrapper for K3s (no sudo needed, runner will use sudo when calling kubectl)
-            printf "#%s/bin/bash\n\nk3s kubectl \$@\n" "!" > /usr/local/bin/kubectl
-            chmod +x /usr/local/bin/kubectl
+            # Do NOT create kubectl wrapper for K3s - it causes infinite recursion
+            # when k3s internally tries to exec kubectl. Instead, users should call
+            # "k3s kubectl" directly.
 
             echo "K3s is ready"
 
