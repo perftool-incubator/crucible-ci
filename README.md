@@ -1,6 +1,6 @@
 # crucible-ci
 
-[![CI Actions Status](https://github.com/perftool-incubator/crucible-ci/workflows/run-core-crucible-ci/badge.svg)](https://github.com/perftool-incubator/crucible-ci/actions)
+[![CI Actions Status](https://github.com/perftool-incubator/crucible-ci/workflows/test-core-crucible-ci/badge.svg)](https://github.com/perftool-incubator/crucible-ci/actions)
 
 ## Introduction
 
@@ -26,6 +26,7 @@ Each action in Crucible-CI is unique and can be consumed in one or more [GitHub 
   - [build-controller](README.md#build-controller)
   - [check-controller-build](README.md#check-controller-build)
   - [clean-environment](README.md#clean-environment)
+  - [common-code](README.md#common-code)
   - [get-job-parameters](README.md#get-job-parameters)
   - [get-releases](README.md#get-releases)
   - [get-repo-name](README.md#get-repo-name)
@@ -53,11 +54,15 @@ The [check-controller-build](.github/actions/check-controller-build) action is u
 
 The [clean-environment](.github/actions/clean-environment) action is used to cleanup the runner environment after a run.  This really isn't necessary for GitHub hosted runners (since they are ephemeral) but self-hosted runners are not and must have their environments cleaned to avoid influencing future jobs.
 
+##### common-code
+
+The [common-code](.github/actions/common-code) action provides reusable shell functions for CI workflows including JSON processing, GitHub group/logging output, command execution with error handling, and environment validation.
+
 ##### get-job-parameters
 
 The [get-job-parameters](.github/actions/get-job-parameters) action is used to generate a list of job parameters.  Each item in the list contains multiple parameters that are used to control what, how, and where the job is run.  This action is a future replacement for the [get-scenarios](README.md#get-scenarios) and [get-userenvs](README.md#get-userenvs) and combines their functionality.  This action is currently in active development.
 
-#### get-releases
+##### get-releases
 
 The [get-releases](.github/actions/get-releases) action is used to determine which releases need to be tested.  The action will always return the "upstream" release as needing testing, but it will do some additional inspection of the state of the repo and provided inputs to determine if additional releases need to be tested as well.  Currently that additional inspection amounts to this: if a new controller is being built for testing or the installer itself has changed then the supported releases will be tested as well since they can potentially be affected by those changes.
 
@@ -94,11 +99,19 @@ There are two different kinds of workflows present in Crucible-CI.  They are:
 - Reusable Workflows
   - [benchmark-crucible-ci](README.md#benchmark-crucible-ci)
   - [core-crucible-ci](README.md#core-crucible-ci)
+  - [core-release-crucible-ci](README.md#core-release-crucible-ci)
+  - [crucible-tracking](README.md#crucible-tracking)
+  - [faux-benchmark-crucible-ci](README.md#faux-benchmark-crucible-ci)
+  - [faux-core-crucible-ci](README.md#faux-core-crucible-ci)
+  - [faux-core-release-crucible-ci](README.md#faux-core-release-crucible-ci)
+  - [faux-tool-crucible-ci](README.md#faux-tool-crucible-ci)
+  - [tool-crucible-ci](README.md#tool-crucible-ci)
 - Runnable Workflows
   - [faux-crucible-ci](README.md#faux-crucible-ci)
-  - [run-core-crucible-ci](README.md#run-core-crucible-ci)
+  - [run-crucible-tracking](README.md#run-crucible-tracking)
   - [test-benchmark-crucible-ci](README.md#test-benchmark-crucible-ci)
   - [test-core-crucible-ci](README.md#test-core-crucible-ci)
+  - [test-tool-crucible-ci](README.md#test-tool-crucible-ci)
 
 #### Reusable Workflows
 
@@ -112,6 +125,34 @@ The [benchmark-crucible-ci](.github/workflows/benchmark-crucible-ci.yaml) workfl
 
 The [core-crucible-ci](.github/workflows/core-crucible-ci.yaml) workflow is intended to be called by any of the core Crucible subprojects.  Some of the core subprojects required more detailed testing (such as controller building under certain conditions) which is implemented in this workflow.
 
+##### core-release-crucible-ci
+
+The [core-release-crucible-ci](.github/workflows/core-release-crucible-ci.yaml) workflow orchestrates testing of core Crucible subprojects against multiple releases, building controllers when necessary and delegating execution to the core-crucible-ci workflow.
+
+##### crucible-tracking
+
+The [crucible-tracking](.github/workflows/crucible-tracking.yaml) workflow manages GitHub Project tracking for pull requests and issues by adding them to the project board and setting status/date fields.
+
+##### faux-benchmark-crucible-ci
+
+The [faux-benchmark-crucible-ci](.github/workflows/faux-benchmark-crucible-ci.yaml) workflow is a "fake" reusable workflow that provides null jobs for branch protection when benchmark CI testing is not needed.
+
+##### faux-core-crucible-ci
+
+The [faux-core-crucible-ci](.github/workflows/faux-core-crucible-ci.yaml) workflow is a "fake" reusable workflow that provides null jobs for branch protection when core CI testing is not needed.
+
+##### faux-core-release-crucible-ci
+
+The [faux-core-release-crucible-ci](.github/workflows/faux-core-release-crucible-ci.yaml) workflow is a "fake" reusable workflow that provides null jobs for branch protection when core release CI testing is not needed.
+
+##### faux-tool-crucible-ci
+
+The [faux-tool-crucible-ci](.github/workflows/faux-tool-crucible-ci.yaml) workflow is a "fake" reusable workflow that provides null jobs for branch protection when tool CI testing is not needed.
+
+##### tool-crucible-ci
+
+The [tool-crucible-ci](.github/workflows/tool-crucible-ci.yaml) workflow is intended to be called from Crucible tool subprojects. It executes integration tests across GitHub-hosted runners using configurable scenarios and user environments.
+
 #### Runnable Workflows
 
 These workflows are what run as part of pull requests that are submitted against the Crucible-CI subproject itself.
@@ -120,9 +161,9 @@ These workflows are what run as part of pull requests that are submitted against
 
 The [faux-crucible-ci](.github/workflows/faux-crucible-ci.yaml) workflow is a "fake" workflow that is run when the pull request in question does not actually affect runtime behavior (such as documentation only changes).  It provides "null" jobs that satisfy Crucible-CI's GitHub branch protection rules.
 
-##### run-core-crucible-ci
+##### run-crucible-tracking
 
-The [run-core-crucible-ci](.github/workflows/run-core-crucible-ci.yaml) workflow is used to execute the [core-crucible-ci](README.md#core-crucible-ci) reusable workflow with Crucible-CI being the target core subproject.  This workflow is an excellent example to base a workflow off of for use in another core subproject.
+The [run-crucible-tracking](.github/workflows/run-crucible-tracking.yaml) workflow triggers the [crucible-tracking](README.md#crucible-tracking) reusable workflow when new pull requests or issues are opened.
 
 ##### test-benchmark-crucible-ci
 
@@ -132,6 +173,10 @@ The [test-benchmark-crucible-ci](.github/workflows/test-benchmark-crucible-ci.ya
 
 The [test-core-crucible-ci](.github/workflows/test-core-crucible-ci.yaml) workflow is used to test the [core-crucible-ci](README.md#core-crucible-ci) reusable workflow using different core subprojects.
 
+##### test-tool-crucible-ci
+
+The [test-tool-crucible-ci](.github/workflows/test-tool-crucible-ci.yaml) workflow is used to test the [tool-crucible-ci](README.md#tool-crucible-ci) reusable workflow using different tool subprojects.
+
 ## Testing Crucible-CI
 
-Crucible-CI is a subproject in the Crucible family just like any other.  This means that Crucible-CI can be used to test itself when changes to it are proposed.  As mentioned above, it also means that Crucible-CI has an [embedded workflow](README.md#run-core-crucible-ci) implemented that demonstrates how its reusable workflows can be called.
+Crucible-CI is a subproject in the Crucible family just like any other.  This means that Crucible-CI can be used to test itself when changes to it are proposed.  As mentioned above, it also means that Crucible-CI has an [embedded workflow](README.md#test-core-crucible-ci) implemented that demonstrates how its reusable workflows can be called.
