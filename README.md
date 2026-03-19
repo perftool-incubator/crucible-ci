@@ -30,8 +30,6 @@ Each action in Crucible-CI is unique and can be consumed in one or more [GitHub 
   - [get-job-parameters](README.md#get-job-parameters)
   - [get-releases](README.md#get-releases)
   - [get-repo-name](README.md#get-repo-name)
-  - [get-scenarios](README.md#get-scenarios)
-  - [get-userenvs](README.md#get-userenvs)
   - [install-crucible](README.md#install-crucible)
 - Primary Actions
   - [integration-tests](README.md#integration-tests)
@@ -60,7 +58,7 @@ The [common-code](.github/actions/common-code) action provides reusable shell fu
 
 ##### get-job-parameters
 
-The [get-job-parameters](.github/actions/get-job-parameters) action is used to generate a list of job parameters.  Each item in the list contains multiple parameters that are used to control what, how, and where the job is run.  This action is a future replacement for the [get-scenarios](README.md#get-scenarios) and [get-userenvs](README.md#get-userenvs) and combines their functionality.  This action is currently in active development.
+The [get-job-parameters](.github/actions/get-job-parameters) action is used to generate a list of job parameters.  Each item in the list contains multiple parameters that are used to control what, how, and where the job is run.
 
 ##### get-releases
 
@@ -69,14 +67,6 @@ The [get-releases](.github/actions/get-releases) action is used to determine whi
 ##### get-repo-name
 
 The [get-repo-name](.github/actions/get-repo-name) action is used to extract a repository name from the `github.repository` context variable (which includes the owner/project name).
-
-##### get-scenarios
-
-The [get-scenarios](.github/actions/get-scenarios) action is used to determine what "scenarios" should be executed as part of a specific job (where a scenario is a combination of an endpoint and a benchmark).  The parameters are combined because they cannot be adequately evaluated in isolation with respect to the different runner environments (GitHub hosted vs. self hosted).
-
-##### get-userenvs
-
-The [get-userenvs](.github/actions/get-userenvs) action is used to look at a rickshaw repository to determine what the list of currently supported userenvs is.
 
 ##### install-crucible
 
