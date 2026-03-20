@@ -185,7 +185,7 @@ jobs:
         path: toolbox
 
     - name: python-distro-deps
-      run: apt install -y python3-invoke
+      run: sudo apt install -y python3-invoke
     - name: run get-job-parameters github
       id: get-job-parameters-github
       uses: ./crucible-ci/.github/actions/get-job-parameters
