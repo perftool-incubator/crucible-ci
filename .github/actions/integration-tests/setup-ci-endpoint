@@ -49,7 +49,9 @@ validate_ci_endpoint
 
 # configure SSH for loopback connectivity
 start_github_group "Configure loop SSH access"
-apt install openssh-server
+if command -v apt >/dev/null 2>&1; then
+    apt install openssh-server
+fi
 systemctl start sshd
 ssh-keygen -t ed25519 -q -f /root/.ssh/id_ed25519 -N "" -C "crucible-ci-loopback"
 bash -c "cat /root/.ssh/id_ed25519.pub > /root/.ssh/authorized_keys"
@@ -107,7 +109,28 @@ case "${CI_ENDPOINT}" in
             # when k3s internally tries to exec kubectl. Instead, users should call
             # "k3s kubectl" directly.
 
-            echo "K3s is ready"
+            echo "K3s API server is ready"
+
+            # Verify system pods are actually running (containerd may be non-functional
+            # even though the API server responds)
+            echo "Waiting for K3s system pods to be ready (timeout 120s)..."
+            if ! timeout 120 sh -c 'until k3s kubectl wait --for=condition=ready pod -l k8s-app=kube-dns -n kube-system --timeout=5s >/dev/null 2>&1; do echo "Waiting for system pods..."; sleep 5; done'; then
+                echo "ERROR: K3s system pods not ready within 120 seconds"
+                echo ""
+                echo "=== Pod status ==="
+                k3s kubectl get pods --all-namespaces -o wide || true
+                echo ""
+                echo "=== Node status ==="
+                k3s kubectl get nodes -o wide || true
+                echo ""
+                echo "=== containerd status ==="
+                k3s crictl info || true
+                echo ""
+                echo "=== K3s logs (last 100 lines) ==="
+                journalctl -u k3s --no-pager -n 100 || true
+                exit 1
+            fi
+            echo "K3s system pods are ready"
 
         elif command -v microk8s >/dev/null 2>&1; then
             echo "Detected MicroK8S, using it for k8s endpoint"

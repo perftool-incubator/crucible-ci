@@ -253,6 +253,39 @@ case "${CI_ENDPOINT}" in
 
             # Final check
             if run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "k3s kubectl cluster-info"; then
+                echo "K3s API server is ready"
+
+                # Verify system pods are actually running (containerd may be non-functional
+                # even though the API server responds)
+                echo "Waiting for K3s system pods to be ready (timeout 120s)..."
+                PODS_READY=0
+                for i in $(seq 1 24); do
+                    if run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "k3s kubectl wait --for=condition=ready pod -l k8s-app=kube-dns -n kube-system --timeout=5s" 2>&1; then
+                        PODS_READY=1
+                        break
+                    fi
+                    echo "Waiting for system pods... (attempt $i/24)"
+                    sleep 5
+                done
+
+                if [ ${PODS_READY} -eq 0 ]; then
+                    echo "ERROR: K3s system pods not ready within 120 seconds"
+                    echo ""
+                    echo "=== Pod status ==="
+                    run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "k3s kubectl get pods --all-namespaces -o wide" || true
+                    echo ""
+                    echo "=== Node status ==="
+                    run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "k3s kubectl get nodes -o wide" || true
+                    echo ""
+                    echo "=== containerd status ==="
+                    run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "k3s crictl info" || true
+                    echo ""
+                    echo "=== K3s logs (last 100 lines) ==="
+                    run_on_endpoint ${CI_ENDPOINT_USER} ${CI_ENDPOINT_HOST} "journalctl -u k3s --no-pager -n 100" || true
+                    exit 1
+                fi
+                echo "K3s system pods are ready"
+
                 CI_K8S_TYPE="GENERIC"
                 echo "K8S type is K3s (endpoint-sub-type: GENERIC)"
             else
