@@ -16,6 +16,10 @@ on:
       - 'docs/**'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.ref }}/test-benchmark-crucible-ci
+  cancel-in-progress: true
+
 jobs:
   call-benchmark-crucible-ci:
     strategy:

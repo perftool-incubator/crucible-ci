@@ -58,11 +58,6 @@ on:
         required: false
       quay_oauth_token:
         required: false
-
-concurrency:
-  group: ${{ inputs.crucible_ci_test }}/${{ inputs.ci_target }}/${{ github.ref }}/core-crucible-ci/${{ inputs.release }}
-  cancel-in-progress: true
-
 env:
   GITHUB_WORKSPACE: ${{ inputs.github_workspace }}
 

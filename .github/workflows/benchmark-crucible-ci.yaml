@@ -36,10 +36,6 @@ on:
       quay_oauth_token:
         required: false
 
-concurrency:
-  group: ${{ inputs.ci_target }}/${{ github.ref }}/benchmark-crucible-ci
-  cancel-in-progress: true
-
 env:
   GITHUB_WORKSPACE: ${{ inputs.github_workspace }}
 
