@@ -69,7 +69,7 @@ jobs:
       quay_oauth_token: ${{ secrets.CRUCIBLE_QUAYIO_OAUTH_TOKEN }}
 
   test-core-crucible-ci-complete:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     needs:
     - call-core-crucible-ci
     - call-core-release-crucible-ci
