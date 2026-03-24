@@ -46,7 +46,7 @@ on:
       runner_pool:
         required: false
         type: string
-        default: "kmr-cloud-1"
+        default: "aws-cloud-1"
     secrets:
       registry_auth:
         required: false
@@ -58,17 +58,12 @@ on:
         required: false
       quay_oauth_token:
         required: false
-
-concurrency:
-  group: ${{ inputs.crucible_ci_test }}/${{ inputs.ci_target }}/${{ github.ref }}/core-crucible-ci/${{ inputs.release }}
-  cancel-in-progress: true
-
 env:
   GITHUB_WORKSPACE: ${{ inputs.github_workspace }}
 
 jobs:
   gen-params:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       github_hosted_jobs: ${{ steps.get-job-parameters-github.outputs.jobs }}
@@ -189,11 +184,15 @@ jobs:
         ref: ${{ inputs.release }}
         path: toolbox
 
+    - name: python-distro-deps
+      run: sudo apt install -y python3-invoke
     - name: run get-job-parameters github
       id: get-job-parameters-github
       uses: ./crucible-ci/.github/actions/get-job-parameters
       with:
         runner-type: "github"
+        runner-tags: "k8s,kube"
+        runner-pool: ${{ inputs.runner_pool }}
         userenv-filter: ${{ inputs.userenv_filter }}
         rickshaw-directory: "./rickshaw"
         toolbox-directory: "./toolbox"
@@ -233,7 +232,7 @@ jobs:
         fi
 
   display-params:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: gen-params
     steps:
@@ -247,7 +246,7 @@ jobs:
       run: echo '${{ needs.gen-params.outputs.timeout_minutes }}'
 
   github-runners:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(toJSON(matrix.job.runner_labels)) }}
     timeout-minutes: ${{ fromJSON(needs.gen-params.outputs.timeout_minutes) }}
     needs:
     - gen-params
@@ -412,7 +411,7 @@ jobs:
       run: echo "crucible-ci->integration-tests not enabled"
 
   core-crucible-ci-complete:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs:
     - github-runners

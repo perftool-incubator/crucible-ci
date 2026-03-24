@@ -49,7 +49,9 @@ validate_ci_endpoint
 
 # configure SSH for loopback connectivity
 start_github_group "Configure loop SSH access"
-apt install openssh-server
+if command -v apt >/dev/null 2>&1; then
+    apt install openssh-server
+fi
 systemctl start sshd
 ssh-keygen -t ed25519 -q -f /root/.ssh/id_ed25519 -N "" -C "crucible-ci-loopback"
 bash -c "cat /root/.ssh/id_ed25519.pub > /root/.ssh/authorized_keys"
@@ -65,18 +67,99 @@ case "${CI_ENDPOINT}" in
     k8s|kube)
         start_github_group "Configure k8s endpoint"
 
-        # fixup some microk8s dependencies before installing it
-        update-alternatives --set iptables /usr/sbin/iptables-legacy
-        update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+        # Detect which K8s distribution is available
+        if command -v k3s >/dev/null 2>&1; then
+            echo "Detected K3s, using it for k8s endpoint"
 
-        snap install microk8s --classic
-        if ! microk8s status --wait-ready; then
-            echo "ERROR: Failed to install and initialize microk8s"
-            exit 1
+            # Set SELinux to permissive mode if it's enforcing (K3s requires many privileged operations)
+            if command -v getenforce >/dev/null 2>&1; then
+                SELINUX_STATUS=$(getenforce)
+                echo "SELinux status: ${SELINUX_STATUS}"
+                if [ "${SELINUX_STATUS}" = "Enforcing" ]; then
+                    echo "Setting SELinux to permissive mode for K3s..."
+                    setenforce 0
+                    echo "SELinux is now: $(getenforce)"
+                fi
+            fi
+
+            # Ensure K3s is running (script is already running as root via sudo)
+            echo "Enabling K3s service..."
+            systemctl enable k3s 2>&1 || echo "Warning: Failed to enable k3s"
+
+            echo "Starting K3s service..."
+            systemctl start k3s 2>&1 || echo "Warning: Failed to start k3s"
+
+            echo "Waiting for K3s to be ready (timeout 60s)..."
+            # Wait for K3s to be ready
+            if ! timeout 60 sh -c 'until k3s kubectl cluster-info >/dev/null 2>&1; do echo "Waiting for k3s..."; sleep 2; done'; then
+                echo "ERROR: Failed to start K3s within 60 seconds"
+                echo ""
+                echo "=== K3s service status ==="
+                systemctl status k3s --no-pager -l || true
+                echo ""
+                echo "=== K3s logs (last 50 lines) ==="
+                journalctl -u k3s --no-pager -n 50 || true
+                echo ""
+                echo "=== Checking k3s binary ==="
+                k3s --version || echo "k3s binary not found or not executable"
+                exit 1
+            fi
+
+            # Do NOT create kubectl wrapper for K3s - it causes infinite recursion
+            # when k3s internally tries to exec kubectl. Instead, users should call
+            # "k3s kubectl" directly.
+
+            echo "K3s API server is ready"
+
+            # Verify system pods are actually running (containerd may be non-functional
+            # even though the API server responds)
+            echo "Waiting for K3s system pods to be ready (timeout 120s)..."
+            if ! timeout 120 sh -c 'until k3s kubectl wait --for=condition=ready pod -l k8s-app=kube-dns -n kube-system --timeout=5s >/dev/null 2>&1; do echo "Waiting for system pods..."; sleep 5; done'; then
+                echo "ERROR: K3s system pods not ready within 120 seconds"
+                echo ""
+                echo "=== Pod status ==="
+                k3s kubectl get pods --all-namespaces -o wide || true
+                echo ""
+                echo "=== Node status ==="
+                k3s kubectl get nodes -o wide || true
+                echo ""
+                echo "=== containerd status ==="
+                k3s crictl info || true
+                echo ""
+                echo "=== K3s logs (last 100 lines) ==="
+                journalctl -u k3s --no-pager -n 100 || true
+                exit 1
+            fi
+            echo "K3s system pods are ready"
+
+        elif command -v microk8s >/dev/null 2>&1; then
+            echo "Detected MicroK8S, using it for k8s endpoint"
+
+            if ! microk8s status --wait-ready; then
+                echo "ERROR: Failed to initialize microk8s"
+                exit 1
+            fi
+
+            # Create kubectl wrapper for MicroK8S
+            printf "#%s/bin/bash\n\nmicrok8s kubectl \$@\n" "!" > /usr/local/bin/kubectl
+            chmod +x /usr/local/bin/kubectl
+
+        else
+            echo "No K8s distribution found, attempting to install MicroK8S"
+
+            # fixup some microk8s dependencies before installing it
+            update-alternatives --set iptables /usr/sbin/iptables-legacy
+            update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+
+            snap install microk8s --classic
+            if ! microk8s status --wait-ready; then
+                echo "ERROR: Failed to install and initialize microk8s"
+                exit 1
+            fi
+
+            printf "#%s/bin/bash\n\nmicrok8s kubectl \$@\n" "!" > /usr/local/bin/kubectl
+            chmod +x /usr/local/bin/kubectl
         fi
-
-        printf "#%s/bin/bash\n\nmicrok8s kubectl \$@\n" "!" > /usr/local/bin/kubectl
-        chmod +x /usr/local/bin/kubectl
 
         stop_github_group
         ;;

@@ -86,6 +86,24 @@ function do_ssh {
     ssh -o PasswordAuthentication=no $@
 }
 
+# Run command on endpoint - use direct execution for localhost, SSH otherwise
+# Usage: run_on_endpoint user host "command"
+function run_on_endpoint {
+    local user="${1}"
+    local host="${2}"
+    local cmd="${3}"
+
+    # If localhost and we're already the target user, run directly in current shell
+    # Avoid spawning new bash to prevent shell level recursion issues
+    if [ "${host}" = "localhost" ] && [ "$(whoami)" = "${user}" ]; then
+        echo "DEBUG run_on_endpoint: executing locally (SHLVL=$SHLVL): ${cmd}" >&2
+        eval "${cmd}"
+    else
+        echo "DEBUG run_on_endpoint: executing via SSH: ${user}@${host} ${cmd}" >&2
+        do_ssh ${user}@${host} "${cmd}"
+    fi
+}
+
 RC_STATUS=0
 
 function run_cmd {

@@ -25,7 +25,7 @@ on:
       runner_pool:
         required: false
         type: string
-        default: "kmr-cloud-1"
+        default: "aws-cloud-1"
     secrets:
       registry_auth:
         required: false
@@ -36,16 +36,12 @@ on:
       quay_oauth_token:
         required: false
 
-concurrency:
-  group: ${{ inputs.ci_target }}/${{ github.ref }}/benchmark-crucible-ci
-  cancel-in-progress: true
-
 env:
   GITHUB_WORKSPACE: ${{ inputs.github_workspace }}
 
 jobs:
   gen-params:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       github_hosted_jobs: ${{ steps.get-job-parameters-github.outputs.jobs }}
@@ -80,12 +76,16 @@ jobs:
         repository: perftool-incubator/rickshaw
         ref: master
         path: rickshaw
+    - name: python-distro-deps
+      run: sudo apt install -y python3-invoke
     - name: run get-job-parameters github
       id: get-job-parameters-github
       uses: ./crucible-ci/.github/actions/get-job-parameters
       with:
         runner-type: "github"
         userenv-filter: ${{ inputs.userenv_filter }}
+        runner-tags: "k8s,kube"
+        runner-pool: ${{ inputs.runner_pool }}
         benchmark: "${{ inputs.ci_target }}"
         rickshaw-directory: "./rickshaw"
         toolbox-directory: "./toolbox"
@@ -105,7 +105,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-repo-name
 
   display-params:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: gen-params
     steps:
@@ -117,7 +117,7 @@ jobs:
       run: echo '${{ needs.gen-params.outputs.repo_name }}'
 
   github-runners:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(toJSON(matrix.job.runner_labels)) }}
     timeout-minutes: 90
     needs:
     - gen-params
@@ -264,7 +264,7 @@ jobs:
       run: echo "crucible-ci->integration-tests not enabled"
 
   benchmark-crucible-ci-complete:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs:
     - github-runners

@@ -51,16 +51,12 @@ on:
       quay_oauth_token:
         required: false
 
-concurrency:
-  group: ${{ inputs.crucible_ci_test }}/${{ inputs.ci_target }}/${{ github.ref }}/core-release-crucible-ci
-  cancel-in-progress: true
-
 env:
   GITHUB_WORKSPACE: ${{ inputs.github_workspace }}
 
 jobs:
   gen-params:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       build_controller: ${{ steps.check-controller-build.outputs.build-controller }}
@@ -163,7 +159,7 @@ jobs:
       uses: ./crucible-ci/.github/actions/get-repo-name
 
   display-params:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: gen-params
     steps:
@@ -280,7 +276,7 @@ jobs:
       quay_oauth_token: "${{ secrets.quay_oauth_token }}"
 
   core-release-crucible-ci-complete:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     needs:
     - call-core-crucible-ci
     steps:

@@ -16,6 +16,10 @@ on:
       - 'docs/**'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.ref }}/test-benchmark-crucible-ci
+  cancel-in-progress: true
+
 jobs:
   call-benchmark-crucible-ci:
     strategy:
@@ -44,7 +48,7 @@ jobs:
       quay_oauth_token: ${{ secrets.CRUCIBLE_QUAYIO_OAUTH_TOKEN }}
 
   test-benchmark-crucible-ci-complete:
-    runs-on: [ self-hosted, workflow-overhead ]
+    runs-on: ubuntu-latest
     needs: call-benchmark-crucible-ci
     steps:
     - name: Confirm Success
