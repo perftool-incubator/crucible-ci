@@ -91,7 +91,7 @@ else
     else
         echo "Contents of the workshop directory:"
         ls -l
-        if [ ! -f workshop.pl -o ! -f schema.json ]; then
+        if [ ! -f workshop.pl -a ! -f workshop.py ] || [ ! -f schema.json ]; then
             error "Could not find required workshop directory contents"
         fi
 

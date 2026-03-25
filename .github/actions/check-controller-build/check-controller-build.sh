@@ -79,7 +79,7 @@ else
             fi
             echo
 
-            workshop_files_changed=$(${diff_cmd} | grep "^workshop.pl\|^schema.json" | wc -l)
+            workshop_files_changed=$(${diff_cmd} | grep "^workshop.pl\|^workshop.py\|^schema.json" | wc -l)
             echo "workshop_files_changed=${workshop_files_changed}"
             echo
 
