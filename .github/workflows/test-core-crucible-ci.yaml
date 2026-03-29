@@ -3,17 +3,6 @@ name: test-core-crucible-ci
 on:
   pull_request:
     branches: [ main ]
-    paths-ignore:
-      - LICENSE
-      - '**.md'
-      - '.github/rulesets/**'
-      - .github/workflows/faux-crucible-ci.yaml
-      - .github/workflows/faux-benchmark-crucible-ci.yaml
-      - .github/workflows/faux-core-crucible-ci.yaml
-      - .github/workflows/faux-core-release-crucible-ci.yaml
-      - .github/workflows/faux-tool-crucible-ci.yaml
-      - '.github/runners/**'
-      - 'docs/**'
   workflow_dispatch:
 
 concurrency:
@@ -21,7 +10,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      only-docs: ${{ steps.filter.outputs.only_changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: tj-actions/changed-files@v47
+        with:
+          files: |
+            LICENSE
+            *.md
+            **/*.md
+            .github/rulesets/**
+            .github/runners/**
+            .github/workflows/faux-*.yaml
+            .github/workflows/run-crucible-tracking.yaml
+            .github/workflows/crucible-tracking.yaml
+            .github/workflows/test-benchmark-crucible-ci.yaml
+            .github/workflows/test-tool-crucible-ci.yaml
+            .github/workflows/benchmark-crucible-ci.yaml
+            .github/workflows/tool-crucible-ci.yaml
+            docs/**
+
   call-core-crucible-ci:
+    needs: changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.only-docs != 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -44,6 +59,8 @@ jobs:
       quay_oauth_token: ${{ secrets.CRUCIBLE_QUAYIO_OAUTH_TOKEN }}
 
   call-core-release-crucible-ci:
+    needs: changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.only-docs != 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -72,11 +89,21 @@ jobs:
       ci_registry_auth: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
       quay_oauth_token: ${{ secrets.CRUCIBLE_QUAYIO_OAUTH_TOKEN }}
 
+  faux-test-core-crucible-ci:
+    needs: changes
+    if: ${{ github.event_name != 'workflow_dispatch' && needs.changes.outputs.only-docs == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "faux-test-core-crucible-ci-complete"
+
   test-core-crucible-ci-complete:
     runs-on: ubuntu-latest
-    needs:
-    - call-core-crucible-ci
-    - call-core-release-crucible-ci
+    needs: [ call-core-crucible-ci, call-core-release-crucible-ci, faux-test-core-crucible-ci ]
+    if: always()
     steps:
-    - name: Confirm Success
-      run: echo "test-core-crucible-ci-complete"
+      - name: Check Results
+        if: >-
+          contains(needs.*.result, 'failure') ||
+          contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "test-core-crucible-ci-complete"

@@ -10,11 +10,10 @@ Crucible-CI is a CI testing harness for the [Crucible](https://github.com/perfto
   - `build-controller/` — builds Crucible controller images
   - `check-controller-build/` — detects if controller rebuild is needed
   - `clean-environment/` — cleans up runner environment (for self-hosted runners)
+  - `common-code/` — reusable shell functions for JSON processing, GitHub logging, and error handling
   - `get-job-parameters/` — generates job parameter lists
   - `get-releases/` — determines which releases to test
   - `get-repo-name/` — extracts repo name from github context
-  - `get-scenarios/` — determines test scenarios (endpoint + benchmark)
-  - `get-userenvs/` — lists supported userenvs from rickshaw
   - `install-crucible/` — reusable Crucible installation
   - `integration-tests/` — primary integration test execution
 - `workflows/` and `.github/workflows/` — GitHub workflow definitions
