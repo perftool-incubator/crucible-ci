@@ -25,6 +25,7 @@
       "parameters": {
         "required_approving_review_count": 1,
         "dismiss_stale_reviews_on_push": true,
+        "required_reviewers": [],
         "require_code_owner_review": false,
         "require_last_push_approval": false,
         "required_review_thread_resolution": true,
@@ -40,13 +41,16 @@
         "do_not_enforce_on_create": false,
         "required_status_checks": [
           {
-            "context": "test-benchmark-crucible-ci-complete"
+            "context": "test-benchmark-crucible-ci-complete",
+            "integration_id": 15368
           },
           {
-            "context": "test-core-crucible-ci-complete"
+            "context": "test-core-crucible-ci-complete",
+            "integration_id": 15368
           },
           {
-            "context": "test-tool-crucible-ci-complete"
+            "context": "test-tool-crucible-ci-complete",
+            "integration_id": 15368
           }
         ]
       }
