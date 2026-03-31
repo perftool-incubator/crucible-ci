@@ -336,6 +336,24 @@ function post_run_cmd {
             query+=",irq,type,cpu"
             run_cmd "${query}"
 
+            case "${CI_RELEASE}" in
+                "2025.2"|"2025.3"|"2025.4"|"2026.1")
+                    echo "Skipping forkstat and pidstat metric queries since they are not supported on the ${CI_RELEASE} release"
+                    ;;
+                *)
+                    query="crucible get metric --run ${run_id} --period ${period_id} --source forkstat --type fork --breakout cstype,csid"
+                    run_cmd "${query}"
+
+                    query="crucible get metric --run ${run_id} --period ${period_id} --source forkstat --type exec --breakout cstype,csid"
+                    run_cmd "${query}"
+
+                    query="crucible get metric --run ${run_id} --period ${period_id} --source pidstat --type Busy-CPU --breakout cstype,csid"
+                    run_cmd "${query}"
+                    query+=",cmd,pid,type"
+                    run_cmd "${query}"
+                    ;;
+            esac
+
             echo
         done 9< ${tmp_file}
         IFS=${OLD_IFS}
