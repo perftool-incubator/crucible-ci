@@ -44,11 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      github_hosted_jobs: ${{ steps.get-job-parameters-github.outputs.jobs }}
-      self_hosted_jobs: ${{ steps.get-job-parameters-self-hosted.outputs.jobs }}
-      repo_name: ${{ steps.get-repo-name.outputs.repo-name }}
+      endpoints: ${{ steps.get-endpoints.outputs.endpoints }}
     steps:
-
     - name: checkout crucible-ci default
       if: ${{ inputs.crucible_ci_test != 'yes' }}
       uses: actions/checkout@v4
@@ -64,211 +61,59 @@ jobs:
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
 
-    - name: checkout toolbox
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/toolbox
-        ref: main
-        path: toolbox
     - name: checkout rickshaw
       uses: actions/checkout@v4
       with:
         repository: perftool-incubator/rickshaw
         ref: master
         path: rickshaw
-    - name: python-distro-deps
-      run: sudo apt install -y python3-invoke
-    - name: run get-job-parameters github
-      id: get-job-parameters-github
-      uses: ./crucible-ci/.github/actions/get-job-parameters
+
+    - name: get endpoints
+      id: get-endpoints
+      uses: ./crucible-ci/.github/actions/get-endpoints
       with:
-        runner-type: "github"
-        userenv-filter: ${{ inputs.userenv_filter }}
-        runner-tags: "k8s,kube"
-        runner-pool: ${{ inputs.runner_pool }}
-        benchmark: "${{ inputs.ci_target }}"
         rickshaw-directory: "./rickshaw"
-        toolbox-directory: "./toolbox"
-    - name: run get-job-parameters self-hosted
-      id: get-job-parameters-self-hosted
-      uses: ./crucible-ci/.github/actions/get-job-parameters
-      with:
-        runner-type: "self-hosted"
-        userenv-filter: ${{ inputs.userenv_filter }}
-        runner-tags: "cpu-partitioning,remotehosts"
-        runner-pool: ${{ inputs.runner_pool }}
         benchmark: "${{ inputs.ci_target }}"
-        rickshaw-directory: "./rickshaw"
-        toolbox-directory: "./toolbox"
-    - name: run get-repo-name
-      id: get-repo-name
-      uses: ./crucible-ci/.github/actions/get-repo-name
 
   display-params:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: gen-params
     steps:
-    - name: Display github_hosted_jobs
-      run: echo '${{ needs.gen-params.outputs.github_hosted_jobs }}' | jq .
-    - name: Display self_hosted_jobs
-      run: echo '${{ needs.gen-params.outputs.self_hosted_jobs }}' | jq .
-    - name: Display repo_name
-      run: echo '${{ needs.gen-params.outputs.repo_name }}'
+    - name: Display endpoints
+      run: echo '${{ needs.gen-params.outputs.endpoints }}' | jq .
 
-  github-runners:
-    runs-on: ${{ fromJSON(toJSON(matrix.job.runner_labels)) }}
-    timeout-minutes: 90
+  call-endpoint-crucible-ci:
     needs:
     - gen-params
     - display-params
     strategy:
       fail-fast: false
       matrix:
-        job: ${{ fromJSON(needs.gen-params.outputs.github_hosted_jobs) }}
-    steps:
-    - name: Matrix Parameters => (${{ matrix.job.enabled }}, ${{ matrix.job.endpoint }}, ${{ matrix.job.benchmark }}, ${{ matrix.job.userenv }})
-      run: |
-        echo "enabled=${{ matrix.job.enabled }}"
-        echo "endpoint=${{ matrix.job.endpoint }}"
-        echo "benchmark=${{ matrix.job.benchmark }}"
-        echo "userenv=${{ matrix.job.userenv }}"
-
-    - name: free disk space
-      uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
-      with:
-        swap-storage: false
-
-    - name: checkout crucible-ci default
-      if: ${{ inputs.crucible_ci_test != 'yes' }}
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/crucible-ci
-        ref: main
-        path: crucible-ci
-    - name: checkout crucible-ci crucible_ci_test
-      if: ${{ inputs.crucible_ci_test == 'yes' }}
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/crucible-ci
-        ref: ${{ inputs.crucible_ci_test_branch }}
-        path: crucible-ci
-
-    - name: checkout bench-${{ inputs.ci_target }}
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/bench-${{ inputs.ci_target }}
-        ref: ${{ inputs.ci_target_branch }}
-        path: "bench-${{ inputs.ci_target }}"
-
-    - name: import ci secret
-      env:
-        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
-      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
-    - name: import production secret
-      env:
-        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
-      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
-
-    - name: import quay oath token
-      env:
-        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
-      if: ${{ env.QUAY_OAUTH_TOKEN != '' }}
-      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
-
-    - name: run crucible-ci->integration-tests
-      if: ${{ matrix.job.enabled }}
-      uses: ./crucible-ci/.github/actions/integration-tests
-      with:
-        artifact_tag: "${{ inputs.ci_target }}__github-runners__${{ matrix.job.endpoint }}-${{ matrix.job.benchmark }}-${{ matrix.job.userenv }}"
-        ci_endpoint: "${{ matrix.job.endpoint }}"
-        scenarios: "${{ matrix.job.benchmark }}"
-        userenvs: "${{ matrix.job.userenv }}"
-        ci_target: "${{ inputs.ci_target }}"
-        ci_target_dir: "${{ github.workspace }}/bench-${{ inputs.ci_target }}"
-    - name: skip crucible-ci->integration-tests
-      if: ${{ ! matrix.job.enabled }}
-      run: echo "crucible-ci->integration-tests not enabled"
-
-  self-hosted-runners:
-    runs-on: ${{ fromJSON(toJSON(matrix.job.runner_labels)) }}
-    timeout-minutes: 90
-    needs:
-    - gen-params
-    - display-params
-    strategy:
-      fail-fast: false
-      matrix:
-        job: ${{ fromJSON(needs.gen-params.outputs.self_hosted_jobs) }}
-    steps:
-    - name: Matrix Parameters => (${{ matrix.job.enabled }}, ${{ matrix.job.endpoint }}, ${{ matrix.job.benchmark }}, ${{ matrix.job.userenv }})
-      run: |
-        echo "enabled=${{ matrix.job.enabled }}"
-        echo "endpoint=${{ matrix.job.endpoint }}"
-        echo "benchmark=${{ matrix.job.benchmark }}"
-        echo "userenv=${{ matrix.job.userenv }}"
-
-    - name: checkout crucible-ci default
-      if: ${{ inputs.crucible_ci_test != 'yes' }}
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/crucible-ci
-        ref: main
-        path: crucible-ci
-    - name: checkout crucible-ci crucible_ci_test
-      if: ${{ inputs.crucible_ci_test == 'yes' }}
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/crucible-ci
-        ref: ${{ inputs.crucible_ci_test_branch }}
-        path: crucible-ci
-
-    - name: checkout bench-${{ inputs.ci_target }}
-      uses: actions/checkout@v4
-      with:
-        repository: perftool-incubator/bench-${{ inputs.ci_target }}
-        ref: ${{ inputs.ci_target_branch }}
-        path: "bench-${{ inputs.ci_target }}"
-
-    - name: import ci secret
-      env:
-        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
-      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
-    - name: import production secret
-      env:
-        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
-      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
-      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
-
-    - name: import quay oath token
-      env:
-        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
-      if: ${{ env.QUAY_OAUTH_TOKEN != '' }}
-      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
-
-    - name: run crucible-ci->integration-tests
-      if: ${{ matrix.job.enabled }}
-      uses: ./crucible-ci/.github/actions/integration-tests
-      with:
-        artifact_tag: "${{ inputs.ci_target }}__self-hosted-runners__${{ matrix.job.endpoint }}-${{ matrix.job.benchmark }}-${{ matrix.job.userenv }}"
-        ci_endpoint: "${{ matrix.job.endpoint }}"
-        scenarios: "${{ matrix.job.benchmark }}"
-        userenvs: "${{ matrix.job.userenv }}"
-        ci_target: "${{ inputs.ci_target }}"
-        ci_target_dir: ${{ github.workspace }}/bench-${{ inputs.ci_target }}
-    - name: skip crucible-ci->integration-tests
-      if: ${{ ! matrix.job.enabled }}
-      run: echo "crucible-ci->integration-tests not enabled"
+        endpoint: ${{ fromJSON(needs.gen-params.outputs.endpoints) }}
+    uses: ./.github/workflows/endpoint-crucible-ci.yaml
+    with:
+      endpoint: "${{ matrix.endpoint }}"
+      ci_target: "${{ inputs.ci_target }}"
+      ci_target_dir: "bench-${{ inputs.ci_target }}"
+      crucible_ci_test: "${{ inputs.crucible_ci_test }}"
+      ci_target_branch: "${{ inputs.ci_target_branch }}"
+      crucible_ci_test_branch: "${{ inputs.crucible_ci_test_branch }}"
+      github_workspace: "${{ inputs.github_workspace }}"
+      userenv_filter: "${{ inputs.userenv_filter }}"
+      runner_pool: "${{ inputs.runner_pool }}"
+      benchmark: "${{ inputs.ci_target }}"
+    secrets:
+      registry_auth: ${{ secrets.registry_auth }}
+      ci_registry_auth: ${{ secrets.ci_registry_auth }}
+      production_registry_auth: ${{ secrets.production_registry_auth }}
+      quay_oauth_token: ${{ secrets.quay_oauth_token }}
 
   benchmark-crucible-ci-complete:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs:
-    - github-runners
-    - self-hosted-runners
+    - call-endpoint-crucible-ci
     steps:
     - name: Confirm Success
       run: echo "benchmark-crucible-ci-complete"

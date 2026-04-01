@@ -1,0 +1,188 @@
+name: endpoint-crucible-ci
+
+on:
+  workflow_call:
+    inputs:
+      endpoint:
+        required: true
+        type: string
+      ci_target:
+        required: true
+        type: string
+      ci_target_dir:
+        required: true
+        type: string
+      crucible_ci_test:
+        required: false
+        type: string
+        default: "no"
+      ci_target_branch:
+        required: true
+        type: string
+      crucible_ci_test_branch:
+        required: false
+        type: string
+      github_workspace:
+        required: true
+        type: string
+      userenv_filter:
+        required: false
+        type: string
+        default: "all"
+      runner_pool:
+        required: false
+        type: string
+        default: "aws-cloud-1"
+      benchmark:
+        required: false
+        type: string
+        default: "all"
+    secrets:
+      registry_auth:
+        required: false
+      ci_registry_auth:
+        required: false
+      production_registry_auth:
+        required: false
+      quay_oauth_token:
+        required: false
+
+env:
+  GITHUB_WORKSPACE: ${{ inputs.github_workspace }}
+
+jobs:
+  gen-params:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      jobs: ${{ steps.get-job-parameters.outputs.jobs }}
+    steps:
+    - name: checkout crucible-ci default
+      if: ${{ inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: main
+        path: crucible-ci
+    - name: checkout crucible-ci crucible_ci_test
+      if: ${{ inputs.crucible_ci_test == 'yes' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: ${{ inputs.crucible_ci_test_branch }}
+        path: crucible-ci
+
+    - name: checkout toolbox
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/toolbox
+        ref: main
+        path: toolbox
+    - name: checkout rickshaw
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/rickshaw
+        ref: master
+        path: rickshaw
+
+    - name: python-distro-deps
+      run: sudo apt install -y python3-invoke
+    - name: run get-job-parameters for ${{ inputs.endpoint }}
+      id: get-job-parameters
+      uses: ./crucible-ci/.github/actions/get-job-parameters
+      with:
+        runner-type: "github"
+        runner-tags: "k8s,kube,cpu-partitioning,remotehosts"
+        runner-pool: ${{ inputs.runner_pool }}
+        userenv-filter: ${{ inputs.userenv_filter }}
+        benchmark: ${{ inputs.benchmark }}
+        endpoint: ${{ inputs.endpoint }}
+        rickshaw-directory: "./rickshaw"
+        toolbox-directory: "./toolbox"
+
+  display-params:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: gen-params
+    steps:
+    - name: Display jobs for endpoint ${{ inputs.endpoint }}
+      run: echo '${{ needs.gen-params.outputs.jobs }}' | jq .
+
+  runners:
+    runs-on: ${{ fromJSON(toJSON(matrix.job.runner_labels)) }}
+    timeout-minutes: 90
+    needs:
+    - gen-params
+    - display-params
+    strategy:
+      fail-fast: false
+      matrix:
+        job: ${{ fromJSON(needs.gen-params.outputs.jobs) }}
+    steps:
+    - name: Matrix Parameters => (${{ matrix.job.enabled }}, ${{ matrix.job.endpoint }}, ${{ matrix.job.benchmark }}, ${{ matrix.job.userenv }})
+      run: |
+        echo "enabled=${{ matrix.job.enabled }}"
+        echo "endpoint=${{ matrix.job.endpoint }}"
+        echo "benchmark=${{ matrix.job.benchmark }}"
+        echo "userenv=${{ matrix.job.userenv }}"
+
+    - name: checkout crucible-ci default
+      if: ${{ inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: main
+        path: crucible-ci
+    - name: checkout crucible-ci crucible_ci_test
+      if: ${{ inputs.crucible_ci_test == 'yes' }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: ${{ inputs.crucible_ci_test_branch }}
+        path: crucible-ci
+
+    - name: checkout ${{ inputs.ci_target_dir }}
+      uses: actions/checkout@v4
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target_dir }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: ${{ inputs.ci_target_dir }}
+
+    - name: import ci secret
+      env:
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: import production secret
+      env:
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+    - name: import quay oath token
+      env:
+        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
+      if: ${{ env.QUAY_OAUTH_TOKEN != '' }}
+      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
+
+    - name: run crucible-ci->integration-tests
+      if: ${{ matrix.job.enabled }}
+      uses: ./crucible-ci/.github/actions/integration-tests
+      with:
+        artifact_tag: "${{ inputs.ci_target }}__${{ inputs.endpoint }}__${{ matrix.job.benchmark }}-${{ matrix.job.userenv }}"
+        ci_endpoint: "${{ matrix.job.endpoint }}"
+        scenarios: "${{ matrix.job.benchmark }}"
+        userenvs: "${{ matrix.job.userenv }}"
+        ci_target: "${{ inputs.ci_target }}"
+        ci_target_dir: "${{ github.workspace }}/${{ inputs.ci_target_dir }}"
+    - name: skip crucible-ci->integration-tests
+      if: ${{ ! matrix.job.enabled }}
+      run: echo "crucible-ci->integration-tests not enabled"
+
+  endpoint-crucible-ci-complete:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+    - runners
+    steps:
+    - name: Confirm Success
+      run: echo "endpoint-crucible-ci-complete for ${{ inputs.endpoint }}"
