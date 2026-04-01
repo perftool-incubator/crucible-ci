@@ -12,7 +12,7 @@ on:
 
 jobs:
   project-tracking:
-    runs-on: [ self-hosted, project-tracker ]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
 
