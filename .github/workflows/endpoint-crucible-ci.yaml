@@ -52,6 +52,7 @@ env:
 
 jobs:
   gen-params:
+    name: gen-params(${{ inputs.endpoint }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -101,6 +102,7 @@ jobs:
         toolbox-directory: "./toolbox"
 
   display-params:
+    name: display-params(${{ inputs.endpoint }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: gen-params
@@ -109,6 +111,7 @@ jobs:
       run: echo '${{ needs.gen-params.outputs.jobs }}' | jq .
 
   runners:
+    name: runners(${{ inputs.endpoint }})
     runs-on: ${{ fromJSON(toJSON(matrix.job.runner_labels)) }}
     timeout-minutes: 90
     needs:

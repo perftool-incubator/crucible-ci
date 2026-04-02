@@ -62,7 +62,7 @@ env:
   GITHUB_WORKSPACE: ${{ inputs.github_workspace }}
 
 jobs:
-  gen-params:
+  gen-endpoints:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -145,31 +145,31 @@ jobs:
           echo "timeout-minutes=${no_build_controller_timeout_minutes}" >> $GITHUB_OUTPUT
         fi
 
-  display-params:
+  display-endpoints:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: gen-params
+    needs: gen-endpoints
     steps:
     - name: Display endpoints
-      run: echo '${{ needs.gen-params.outputs.endpoints }}' | jq .
+      run: echo '${{ needs.gen-endpoints.outputs.endpoints }}' | jq .
     - name: Display ci_target_dir
-      run: echo '${{ needs.gen-params.outputs.ci_target_dir }}'
+      run: echo '${{ needs.gen-endpoints.outputs.ci_target_dir }}'
     - name: Display timeout_minutes
-      run: echo '${{ needs.gen-params.outputs.timeout_minutes }}'
+      run: echo '${{ needs.gen-endpoints.outputs.timeout_minutes }}'
 
   call-core-endpoint-crucible-ci:
     needs:
-    - gen-params
-    - display-params
+    - gen-endpoints
+    - display-endpoints
     strategy:
       fail-fast: false
       matrix:
-        endpoint: ${{ fromJSON(needs.gen-params.outputs.endpoints) }}
+        endpoint: ${{ fromJSON(needs.gen-endpoints.outputs.endpoints) }}
     uses: ./.github/workflows/core-endpoint-crucible-ci.yaml
     with:
       endpoint: "${{ matrix.endpoint }}"
       ci_target: "${{ inputs.ci_target }}"
-      ci_target_dir: "${{ needs.gen-params.outputs.ci_target_dir }}"
+      ci_target_dir: "${{ needs.gen-endpoints.outputs.ci_target_dir }}"
       crucible_ci_test: "${{ inputs.crucible_ci_test }}"
       ci_target_branch: "${{ inputs.ci_target_branch }}"
       crucible_ci_test_branch: "${{ inputs.crucible_ci_test_branch }}"
@@ -180,7 +180,7 @@ jobs:
       ci_built_controller_tag: "${{ inputs.ci_built_controller_tag }}"
       disable_force_builds: "${{ inputs.disable_force_builds }}"
       runner_pool: "${{ inputs.runner_pool }}"
-      timeout_minutes: ${{ fromJSON(needs.gen-params.outputs.timeout_minutes) }}
+      timeout_minutes: ${{ fromJSON(needs.gen-endpoints.outputs.timeout_minutes) }}
     secrets:
       registry_auth: ${{ secrets.registry_auth }}
       weekly_ci_registry_auth: ${{ secrets.weekly_ci_registry_auth }}

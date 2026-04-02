@@ -44,7 +44,7 @@ env:
   GITHUB_WORKSPACE: ${{ inputs.github_workspace }}
 
 jobs:
-  gen-params:
+  gen-endpoints:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -79,22 +79,22 @@ jobs:
         rickshaw-directory: "./rickshaw"
         benchmark: "${{ inputs.benchmark }}"
 
-  display-params:
+  display-endpoints:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: gen-params
+    needs: gen-endpoints
     steps:
     - name: Display endpoints
-      run: echo '${{ needs.gen-params.outputs.endpoints }}' | jq .
+      run: echo '${{ needs.gen-endpoints.outputs.endpoints }}' | jq .
 
   call-endpoint-crucible-ci:
     needs:
-    - gen-params
-    - display-params
+    - gen-endpoints
+    - display-endpoints
     strategy:
       fail-fast: false
       matrix:
-        endpoint: ${{ fromJSON(needs.gen-params.outputs.endpoints) }}
+        endpoint: ${{ fromJSON(needs.gen-endpoints.outputs.endpoints) }}
     uses: ./.github/workflows/endpoint-crucible-ci.yaml
     with:
       endpoint: "${{ matrix.endpoint }}"
