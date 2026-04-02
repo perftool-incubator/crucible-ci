@@ -111,7 +111,6 @@ jobs:
       run: echo '${{ needs.gen-params.outputs.jobs }}' | jq .
 
   runners:
-    name: runners(${{ inputs.endpoint }})
     runs-on: ${{ fromJSON(toJSON(matrix.job.runner_labels)) }}
     timeout-minutes: 90
     needs:
