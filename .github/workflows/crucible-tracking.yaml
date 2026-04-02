@@ -102,9 +102,12 @@ jobs:
           STATUS_OPTION_ID: ${{ github.event.pull_request && env.IN_PROGRESS_OPTION_ID || env.QUEUED_OPTION_ID }}
         run: |
           # Only set status if the item does not already have one
+          status_vars=""
           status_mutation=""
+          status_args=""
           if [ -z "${CURRENT_STATUS}" ]; then
             echo "No current status set, setting to requested value"
+            status_vars='$status_field: ID!, $status_value: String!,'
             status_mutation='set_status: updateProjectV2ItemFieldValue(input: {
               projectId: $project
               itemId: $item
@@ -117,6 +120,7 @@ jobs:
                 id
               }
             }'
+            status_args="-f status_field=$STATUS_FIELD_ID -f status_value=${{ env.STATUS_OPTION_ID }}"
           else
             echo "Status already set to '${CURRENT_STATUS}', not overriding"
           fi
@@ -125,8 +129,7 @@ jobs:
             mutation (
               \$project: ID!
               \$item: ID!
-              \$status_field: ID!
-              \$status_value: String!
+              ${status_vars}
               \$date_field: ID!
               \$date_value: Date!
             ) {
@@ -143,4 +146,4 @@ jobs:
                   id
                 }
               }
-            }" -f project=$PROJECT_ID -f item=$ITEM_ID -f status_field=$STATUS_FIELD_ID -f status_value=${{ env.STATUS_OPTION_ID }} -f date_field=$DATE_FIELD_ID -f date_value=$DATE --silent
+            }" -f project=$PROJECT_ID -f item=$ITEM_ID ${status_args} -f date_field=$DATE_FIELD_ID -f date_value=$DATE --silent
