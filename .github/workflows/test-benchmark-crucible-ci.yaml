@@ -38,6 +38,8 @@ jobs:
             .github/actions/get-releases/**
             .github/actions/install-crucible/**
             docs/**
+      - name: Display changes
+        run: echo '${{ toJSON(steps.filter.outputs) }}' | jq .
 
   call-benchmark-crucible-ci:
     needs: changes

@@ -26,6 +26,10 @@ inputs:
     description: "Which benchmark to restrict the scenarios to"
     required: false
     default: "all"
+  endpoint:
+    description: "Filter jobs to a specific endpoint (e.g., 'kube' or 'remotehosts')"
+    required: false
+    default: "all"
 outputs:
   jobs:
     description: "The list of userenvs that were found"
@@ -36,4 +40,4 @@ runs:
     - name: "Generate jobs list"
       id: generate-jobs
       shell: bash
-      run: TOOLBOX_HOME=${{ inputs.toolbox-directory }} ${{ inputs.rickshaw-directory }}/util/generate-ci-jobs.py --runner-type "${{ inputs.runner-type }}" --runner-tags "${{ inputs.runner-tags }}" --runner-pool "${{ inputs.runner-pool }}" --userenv-filter "${{ inputs.userenv-filter }}" --runtime-env "github" --benchmark "${{ inputs.benchmark }}"
+      run: TOOLBOX_HOME=${{ inputs.toolbox-directory }} ${{ inputs.rickshaw-directory }}/util/generate-ci-jobs.py --runner-type "${{ inputs.runner-type }}" --runner-tags "${{ inputs.runner-tags }}" --runner-pool "${{ inputs.runner-pool }}" --userenv-filter "${{ inputs.userenv-filter }}" --runtime-env "github" --benchmark "${{ inputs.benchmark }}" --endpoint "${{ inputs.endpoint }}"

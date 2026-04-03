@@ -1,0 +1,21 @@
+name: "crucible-ci get endpoints"
+description: "Gets the list of unique endpoints from the CI configuration"
+inputs:
+  rickshaw-directory:
+    description: "Where is the rickshaw repository to query"
+    required: true
+  benchmark:
+    description: "Which benchmark to restrict the endpoint lookup to"
+    required: false
+    default: "all"
+outputs:
+  endpoints:
+    description: "The JSON array of unique endpoints"
+    value: ${{ steps.get-endpoints.outputs.endpoints }}
+runs:
+  using: "composite"
+  steps:
+    - name: "Get endpoints"
+      id: get-endpoints
+      shell: bash
+      run: ${{ github.action_path }}/get-endpoints.py --rickshaw-directory "${{ inputs.rickshaw-directory }}" --benchmark "${{ inputs.benchmark }}"

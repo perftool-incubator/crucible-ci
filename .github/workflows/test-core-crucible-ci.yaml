@@ -33,6 +33,8 @@ jobs:
             .github/workflows/benchmark-crucible-ci.yaml
             .github/workflows/tool-crucible-ci.yaml
             docs/**
+      - name: Display changes
+        run: echo '${{ toJSON(steps.filter.outputs) }}' | jq .
 
   call-core-crucible-ci:
     needs: changes
