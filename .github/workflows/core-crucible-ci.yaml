@@ -63,6 +63,7 @@ env:
 
 jobs:
   gen-endpoints:
+    name: gen-endpoints(${{ inputs.release }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -146,6 +147,7 @@ jobs:
         fi
 
   display-endpoints:
+    name: display-endpoints(${{ inputs.release }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: gen-endpoints
