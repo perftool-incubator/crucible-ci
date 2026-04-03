@@ -32,6 +32,7 @@ jobs:
             .github/workflows/test-tool-crucible-ci.yaml
             .github/workflows/core-crucible-ci.yaml
             .github/workflows/core-release-crucible-ci.yaml
+            .github/workflows/core-endpoint-crucible-ci.yaml
             .github/workflows/tool-crucible-ci.yaml
             .github/actions/build-controller/**
             .github/actions/check-controller-build/**
