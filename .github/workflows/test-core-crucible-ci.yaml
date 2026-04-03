@@ -31,6 +31,7 @@ jobs:
             .github/workflows/test-benchmark-crucible-ci.yaml
             .github/workflows/test-tool-crucible-ci.yaml
             .github/workflows/benchmark-crucible-ci.yaml
+            .github/workflows/endpoint-crucible-ci.yaml
             .github/workflows/tool-crucible-ci.yaml
             docs/**
       - name: Display changes

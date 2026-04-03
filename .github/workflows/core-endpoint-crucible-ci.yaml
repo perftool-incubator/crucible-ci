@@ -70,7 +70,7 @@ env:
 
 jobs:
   gen-params:
-    name: gen-params(${{ inputs.endpoint }})
+    name: gen-params(${{ inputs.release }}, ${{ inputs.endpoint }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -159,7 +159,7 @@ jobs:
         toolbox-directory: "./toolbox"
 
   display-params:
-    name: display-params(${{ inputs.endpoint }})
+    name: display-params(${{ inputs.release }}, ${{ inputs.endpoint }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: gen-params
