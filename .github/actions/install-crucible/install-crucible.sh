@@ -291,6 +291,8 @@ else
             echo "INFO: When a release tag is specified and crucible is the CI target, only the installer script is used from the PR/upstream code"
         elif [ "${CI_TARGET}" == "workshop" ]; then
             echo "INFO: When a release tag is specified and workshop is the CI target, the PR/upstream code was used to build an experimental controller image that is being tested against a release in it's entirety (no experimental workshop code present)."
+        elif [ "${CI_CONTROLLER}" == "yes" ]; then
+            echo "INFO: When a release tag is specified and a controller was built, the CI target '${CI_TARGET}' contributed requirements to the experimental controller image that is being tested against a release in its entirety (no experimental ${CI_TARGET} code present)."
         elif [ "${CI_TARGET}" != "none" ]; then
             echo "ERROR: It does not make sense to set a release tag and CI target (unless set to Crucible to test installer changes) since the CI target would override the release tag"
             exit 1
