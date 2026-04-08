@@ -472,6 +472,21 @@ run_cmd "cat /etc/sysconfig/crucible"
 
 run_cmd "crucible help"
 
+case "${CI_RELEASE}" in
+    "2025.3"|"2025.4"|"2026.1"|"2026.2")
+        echo "Skipping 'crucible userenvs' since it is not supported on the ${CI_RELEASE} release"
+        ;;
+    *)
+        run_cmd "crucible userenvs"
+        run_cmd "crucible userenvs list"
+        run_cmd "crucible userenvs list --official"
+        run_cmd "crucible userenvs list --external"
+        run_cmd "crucible userenvs list --deprecated"
+        run_cmd "crucible userenvs list --official --external --deprecated"
+        run_cmd "crucible userenvs help"
+        ;;
+esac
+
 run_cmd "crucible repo info"
 
 run_cmd "crucible repo config show"
