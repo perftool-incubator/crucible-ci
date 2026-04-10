@@ -48,7 +48,7 @@ else
             fi
             echo
 
-            workshop_files_changed=$(${diff_cmd} | grep "^workshop/" | wc -l)
+            workshop_files_changed=$(${diff_cmd} | grep -E "^workshop/(controller-workshop\.json|crucible-controller-requirements\.json|fedora\.json|crucible-controller-userenv\.json|build-controller\.sh|controller\.conf|controller\.json|controller-image\.py)" | wc -l)
             echo "workshop_files_changed=${workshop_files_changed}"
             echo
 

@@ -71,7 +71,8 @@ else
         error "Could not pushd to the crucible directory '${crucible_directory}'"
     else
         echo "Contents of crucible workshop directory:"
-        if [ -f crucible-install.sh -a -d workshop -a -f workshop/build-controller.sh -a -f workshop/controller-workshop.json ]; then
+        if [ -f crucible-install.sh -a -d workshop -a -f workshop/build-controller.sh ] && \
+           [ -f workshop/controller-workshop.json -o -f workshop/crucible-controller-requirements.json ]; then
             ls -l workshop/
         else
             ls -l
