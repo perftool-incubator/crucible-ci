@@ -100,8 +100,6 @@ else
 
     if [ "${ci_target_directory}" == "${crucible_directory}" -o "./${ci_target_directory}" == "${crucible_directory}" ]; then
         echo "CI target is Crucible -> no analysis required"
-    elif [ "${ci_target_directory}" == "${workshop_directory}" -o "./${ci_target_directory}" == "${workshop_directory}" ]; then
-        echo "CI target is Workshop -> no analysis required"
     else
         echo "CI target directory is '${ci_target_directory}'"
         echo "Conducting CI target change analysis:"
