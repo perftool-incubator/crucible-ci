@@ -43,18 +43,6 @@ function log_rc {
     fi
 }
 
-function validate_ci_build_controller {
-    case "${CI_BUILD_CONTROLLER}" in
-        yes|no)
-            echo "CI Build Controller is '${CI_BUILD_CONTROLLER}'"
-            echo
-            ;;
-        *)
-            echo "ERROR: Unknown CI_BUILD_CONTROLLER value [${CI_BUILD_CONTROLLER}]"
-            exit 1
-            ;;
-    esac
-}
 
 function validate_ci_run_environment {
     case "${CI_RUN_ENVIRONMENT}" in

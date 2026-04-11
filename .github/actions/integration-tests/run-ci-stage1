@@ -59,13 +59,11 @@ CI_ENDPOINT_USER="root"
 
 CI_RUN_UPDATE="yes"
 
-CI_BUILD_CONTROLLER="no"
-
 CI_PARAM_MODE="all"
 
 CI_RELEASE="upstream"
 
-longopts="verbose,scenarios:,userenvs:,samples:,repeat-runs:,run-environment:,ci-endpoint:,ci-endpoint-host:,ci-endpoint-user:,ci-build-controller:"
+longopts="verbose,scenarios:,userenvs:,samples:,repeat-runs:,run-environment:,ci-endpoint:,ci-endpoint-host:,ci-endpoint-user:"
 longopts+=",ci-param-mode:,disable-update-test,ci-release:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
@@ -83,11 +81,6 @@ while true; do
         --ci-param-mode)
             shift
             CI_PARAM_MODE="${1}"
-            shift
-            ;;
-        --ci-build-controller)
-            shift
-            CI_BUILD_CONTROLLER="${1}"
             shift
             ;;
         --disable-update-test)
@@ -153,7 +146,6 @@ done
 # validate inputs
 validate_ci_run_environment
 validate_ci_endpoint
-validate_ci_build_controller
 
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
     case "${scenario}" in
@@ -439,34 +431,6 @@ function remove_k8s_images {
             ;;
     esac
 }
-
-if [ "${CI_BUILD_CONTROLLER}" == "yes" ]; then
-    run_cmd "crucible wrapper /opt/crucible/workshop/build-controller.sh"
-
-    run_and_capture_cmd "podman images"
-    podman_images="${captured_output}"
-
-    if [ ${RC_STATUS} == 0 -a -n "${podman_images}" ]; then
-        header="Identifying New Crucible Controller Image"
-        start_github_group "${header}"
-        echo "${header}"
-        echo
-
-        controller_image_line=$(echo "${podman_images}" | grep crucible-controller)
-
-        if [ -n "${controller_image_line}" ]; then
-            controller_image=$(echo "${controller_image_line}" | awk '{ print $1":"$2 }')
-            echo "New controller image name: ${controller_image}"
-        else
-            echo "ERROR: Failed to isolate new Crucible controller image"
-            RC_STATUS=1
-        fi
-
-        stop_github_group
-    fi
-
-    run_cmd "sed -i -e s#^\(CRUCIBLE_CONTAINER_IMAGE=\).*#\1${controller_image}# /etc/sysconfig/crucible"
-fi
 
 run_cmd "cat /etc/sysconfig/crucible"
 
