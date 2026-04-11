@@ -48,7 +48,7 @@ while true; do
     esac
 done
 
-run_cmd "crucible wrapper /opt/crucible/workshop/build-controller.sh --config /opt/crucible/subprojects/core/crucible-ci/actions/build-controller/files/ci-config.json"
+run_cmd "crucible wrapper /opt/crucible/workshop/controller-image.py build --config /opt/crucible/subprojects/core/crucible-ci/actions/build-controller/files/ci-config.json"
 
 run_and_capture_cmd "podman images"
 podman_images="${captured_output}"
