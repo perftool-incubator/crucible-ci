@@ -27,6 +27,7 @@ jobs:
             .github/runners/**
             .github/workflows/faux-*.yaml
             .github/workflows/run-crucible-tracking.yaml
+            .github/workflows/fork-check.yaml
             .github/workflows/crucible-tracking.yaml
             .github/workflows/test-benchmark-crucible-ci.yaml
             .github/workflows/test-tool-crucible-ci.yaml
@@ -39,7 +40,7 @@ jobs:
 
   call-core-crucible-ci:
     needs: changes
-    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.only-docs != 'true' }}
+    if: ${{ github.event.pull_request.head.repo.fork != true && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.only-docs != 'true') }}
     strategy:
       fail-fast: false
       matrix:
@@ -63,7 +64,7 @@ jobs:
 
   call-core-release-crucible-ci:
     needs: changes
-    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.only-docs != 'true' }}
+    if: ${{ github.event.pull_request.head.repo.fork != true && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.only-docs != 'true') }}
     strategy:
       fail-fast: false
       matrix:
@@ -94,7 +95,7 @@ jobs:
 
   faux-test-core-crucible-ci:
     needs: changes
-    if: ${{ github.event_name != 'workflow_dispatch' && needs.changes.outputs.only-docs == 'true' }}
+    if: ${{ github.event.pull_request.head.repo.fork != true && github.event_name != 'workflow_dispatch' && needs.changes.outputs.only-docs == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - run: echo "faux-test-core-crucible-ci-complete"
