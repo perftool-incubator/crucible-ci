@@ -148,7 +148,7 @@ function run_and_capture_cmd {
         start_github_group "${header}"
         echo "${header}"
         echo
-        captured_output=$(${cmd} | sed -e "/^\*\*\* NOTICE/d" -e "/^$/d")
+        captured_output=$(${cmd} | tr -d '\r' | sed -e "/^\*\*\* NOTICE/d" -e "/^$/d")
         rc=${?}
         echo "captured_output:"
         echo ">>>>>"
