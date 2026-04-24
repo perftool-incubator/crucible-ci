@@ -814,6 +814,22 @@ case "${CI_RELEASE}" in
         ;;
 esac
 
+case "${CI_RELEASE}" in
+    "2024.4"|"2025.1"|"2025.2"|"2025.3"|"2025.4"|"2026.1"|"2026.2")
+        echo "Skipping new log features since they are not supported on the ${CI_RELEASE} release"
+        ;;
+    *)
+        run_cmd "crucible log help" "force"
+        run_cmd "crucible log sessions" "force"
+        run_cmd "crucible log sessions --format json" "force"
+        run_cmd "crucible log info --json" "force"
+        run_cmd "crucible log view last --tail 10" "force"
+        run_cmd "crucible log view last --stream stdout" "force"
+        run_cmd "crucible log view last --grep crucible" "force"
+        run_cmd "crucible log view --since 1h" "force"
+        ;;
+esac
+
 run_cmd "crucible log info" "force"
 
 run_cmd "crucible log view" "force"
