@@ -178,15 +178,25 @@ case "${CI_RELEASE}" in
         ;;
 esac
 
+CI_BENCHMARK_CI_CONFIG="${CRUCIBLE_HOME}/subprojects/core/rickshaw/util/crucible-ci.json"
 for scenario in $(echo "${CI_SCENARIOS}" | sed -e "s/,/ /g"); do
-    case "${scenario}" in
-        fio|uperf|iperf|oslat|cyclictest|multi|sleep|hwnoise)
-            ;;
-        *)
-            echo "ERROR: Unknown CI scenario [${scenario}]"
+    if [ -f "${CI_BENCHMARK_CI_CONFIG}" ]; then
+        if ! jq --exit-status --arg benchmark "${scenario}" \
+            '(.config.enabled == true) and ([.benchmarks[]? | select(.name == $benchmark and .enabled == true)] | length > 0)' \
+            "${CI_BENCHMARK_CI_CONFIG}" > /dev/null; then
+            echo "ERROR: CI benchmark [${scenario}] is not enabled in ${CI_BENCHMARK_CI_CONFIG}"
             exit 1
-            ;;
-    esac
+        fi
+    else
+        case "${scenario}" in
+            fio|uperf|iperf|oslat|cyclictest|multi|sleep|hwnoise)
+                ;;
+            *)
+                echo "ERROR: Unknown CI scenario [${scenario}]"
+                exit 1
+                ;;
+        esac
+    fi
 done
 
 if [ -n "${CI_REPEAT_RUNS}" ]; then
