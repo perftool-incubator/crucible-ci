@@ -155,6 +155,9 @@ jobs:
         endpoint: ${{ inputs.endpoint }}
         rickshaw-directory: "./rickshaw"
         toolbox-directory: "./toolbox"
+        pr-base-sha: ${{ inputs.ci_target == 'rickshaw' && (github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)) && github.event.pull_request.base.sha || '' }}
+        pr-head-sha: ${{ inputs.ci_target == 'rickshaw' && (github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)) && github.event.pull_request.head.sha || '' }}
+        pr-number: ${{ inputs.ci_target == 'rickshaw' && (github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)) && github.event.pull_request.number || '' }}
 
   display-params:
     name: display-params(${{ inputs.release }}, ${{ inputs.endpoint }})
