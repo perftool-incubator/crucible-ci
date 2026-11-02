@@ -31,6 +31,18 @@ inputs:
     description: "Filter jobs to a specific endpoint (e.g., 'kube' or 'remotehosts')"
     required: false
     default: "all"
+  pr-base-sha:
+    description: "Base commit SHA for an eligible pull request diff"
+    required: false
+    default: ""
+  pr-head-sha:
+    description: "Head commit SHA for an eligible pull request diff"
+    required: false
+    default: ""
+  pr-number:
+    description: "Pull request number used to resolve its head commit"
+    required: false
+    default: ""
 outputs:
   jobs:
     description: "The list of userenvs that were found"
@@ -41,4 +53,19 @@ runs:
     - name: "Generate jobs list"
       id: generate-jobs
       shell: bash
-      run: TOOLBOX_HOME=${{ inputs.toolbox-directory }} ${{ inputs.rickshaw-directory }}/util/generate-ci-jobs.py --runner-pool "${{ inputs.runner-pool }}" --userenv-filter "${{ inputs.userenv-filter }}" --runtime-env "github" --benchmark "${{ inputs.benchmark }}" --endpoint "${{ inputs.endpoint }}"
+      env:
+        PR_BASE_SHA: ${{ inputs.pr-base-sha }}
+        PR_HEAD_SHA: ${{ inputs.pr-head-sha }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+      run: |
+        pr_args=()
+        if [[ -n "$PR_BASE_SHA" && -n "$PR_HEAD_SHA" && -n "$PR_NUMBER" ]]; then
+          pr_args+=(--pr-base-sha "$PR_BASE_SHA" --pr-head-sha "$PR_HEAD_SHA" --pr-number "$PR_NUMBER")
+        fi
+        TOOLBOX_HOME="${{ inputs.toolbox-directory }}" "${{ inputs.rickshaw-directory }}/util/generate-ci-jobs.py" \
+          --runner-pool "${{ inputs.runner-pool }}" \
+          --userenv-filter "${{ inputs.userenv-filter }}" \
+          --runtime-env "github" \
+          --benchmark "${{ inputs.benchmark }}" \
+          --endpoint "${{ inputs.endpoint }}" \
+          "${pr_args[@]}"
