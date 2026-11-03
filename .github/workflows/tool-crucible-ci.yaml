@@ -52,21 +52,21 @@ jobs:
     steps:
     - name: checkout crucible-ci default
       if: ${{ inputs.crucible_ci_test != 'yes' }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: perftool-incubator/crucible-ci
         ref: main
         path: crucible-ci
     - name: checkout crucible-ci crucible_ci_test
       if: ${{ inputs.crucible_ci_test == 'yes' }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: perftool-incubator/crucible-ci
         ref: ${{ inputs.crucible_ci_test_branch }}
         path: crucible-ci
 
     - name: checkout rickshaw
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: perftool-incubator/rickshaw
         ref: master
