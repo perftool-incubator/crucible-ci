@@ -63,7 +63,7 @@ runs:
     - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-param-mode ${{ inputs.ci_param_mode }} --ci-release ${{ inputs.crucible_release }}
       shell: bash
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: crucible-ci-artifact__integration-tests__${{ github.run_number }}.${{ github.run_attempt }}__${{ inputs.artifact_tag }}
         path: /var/lib/crucible-ci-artifact*.tar.xz

@@ -73,21 +73,21 @@ jobs:
     steps:
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: perftool-incubator/crucible-ci
         ref: main
         path: crucible-ci
     - name: checkout crucible-ci ci_target
       if: ${{ inputs.ci_target == 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: perftool-incubator/${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
         path: crucible-ci
     - name: checkout crucible-ci crucible_ci_test
       if: ${{ inputs.crucible_ci_test == 'yes' }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: perftool-incubator/crucible-ci
         ref: ${{ inputs.crucible_ci_test_branch }}
@@ -95,14 +95,14 @@ jobs:
 
     - name: checkout rickshaw default
       if: ${{ inputs.ci_target != 'rickshaw' && inputs.release == 'upstream' }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: perftool-incubator/rickshaw
         ref: master
         path: rickshaw
     - name: checkout rickshaw ci_target
       if: ${{ inputs.ci_target == 'rickshaw' && inputs.release == 'upstream' }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: perftool-incubator/${{ inputs.ci_target }}
         ref: ${{ inputs.ci_target_branch }}
@@ -110,7 +110,7 @@ jobs:
         fetch-depth: 2
     - name: checkout rickshaw release
       if: ${{ inputs.release != 'upstream' }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: perftool-incubator/rickshaw
         ref: ${{ inputs.release }}
