@@ -29,6 +29,10 @@ inputs:
     description: "Should crucible use --mv-params or --from-file (single json)"
     required: false
     default: "all"
+  ci_interface:
+    description: "Which Crucible interface should integration testing use"
+    required: false
+    default: "cli"
   ci_controller:
     description: "Whether a CI built controller should be used or not"
     required: false
@@ -60,7 +64,7 @@ runs:
     - run: sudo ${{ github.action_path }}/setup-ci-endpoint --run-environment github --ci-endpoint ${{ inputs.ci_endpoint }}
       shell: bash
 
-    - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-param-mode ${{ inputs.ci_param_mode }} --ci-release ${{ inputs.crucible_release }}
+    - run: sudo ${{ github.action_path }}/run-ci-stage1 --run-environment github --scenarios ${{ inputs.scenarios }} --userenvs ${{ inputs.userenvs }} --ci-endpoint ${{ inputs.ci_endpoint }} --ci-param-mode ${{ inputs.ci_param_mode }} --ci-interface ${{ inputs.ci_interface }} --ci-release ${{ inputs.crucible_release }}
       shell: bash
 
     - uses: actions/upload-artifact@v7

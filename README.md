@@ -82,6 +82,8 @@ The [integration-tests](.github/actions/integration-tests) action is where, as t
 
 The integration test is comprised of multiple shell scripts that perform different actions.  Some of these scripts are usually specific to the GitHub runner environment, such as [setup-ci-environment](.github/actions/integration-tests/setup-ci-environment) (since it performs a custom install of Crucible), while others can be used outside of the GitHub runner environment to perform testing in a development environment with an existing running Crucible installation.  An example of this is the use of [run-ci-stage1](.github/actions/integration-tests/run-ci-stage1) (which is the actual "test" in this action, the other scripts are primarily for setup and reporting) by the Crucible [`run-ci`](https://github.com/perftool-incubator/crucible/blob/bcdde354c751baff60f8cb9d68203113ec4c3439/bin/_help#L48) command.
 
+The action's `ci_interface` input selects the normal CLI path (`cli`, the default) or the MCP path (`mcp`).  MCP integration testing requires `ci_param_mode` to be `run-file`.  The core endpoint workflow uses this input for one fixed sleep and default-userenv MCP smoke job against each selected endpoint, using the remotehosts and kube endpoints on each MCP-capable Crucible release selected by the workflow; the generated benchmark, endpoint, and userenv matrix remains CLI-only.
+
 ### Workflows
 
 There are two different kinds of workflows present in Crucible-CI.  They are:
@@ -118,6 +120,8 @@ The [core-crucible-ci](.github/workflows/core-crucible-ci.yaml) workflow is inte
 ##### core-release-crucible-ci
 
 The [core-release-crucible-ci](.github/workflows/core-release-crucible-ci.yaml) workflow orchestrates testing of core Crucible subprojects against multiple releases, building controllers when necessary and delegating execution to the core-crucible-ci workflow.
+
+For MCP-capable Crucible releases selected by the workflow, the endpoint workflow also runs the fixed remotehosts and kube MCP smoke job described under [integration-tests](README.md#integration-tests).  The jobs are outside the generated CI matrix and do not add MCP coverage for other benchmarks, userenvs, or releases.
 
 ##### crucible-tracking
 

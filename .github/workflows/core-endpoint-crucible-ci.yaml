@@ -75,6 +75,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       jobs: ${{ steps.get-job-parameters.outputs.jobs }}
+      mcp_supported: ${{ steps.detect-mcp-support.outputs.mcp_supported }}
     steps:
     - name: checkout crucible-ci default
       if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
@@ -144,6 +145,14 @@ jobs:
         ref: ${{ inputs.release }}
         path: rickshaw
 
+    - name: checkout crucible for MCP support
+      if: ${{ inputs.ci_target == 'crucible' }}
+      uses: actions/checkout@v7
+      with:
+        repository: perftool-incubator/crucible
+        ref: ${{ inputs.release == 'upstream' && inputs.ci_target_branch || inputs.release }}
+        path: crucible
+
     - name: python-distro-deps
       run: sudo apt install -y python3-invoke
     - name: run get-job-parameters for ${{ inputs.endpoint }}
@@ -158,6 +167,19 @@ jobs:
         pr-base-sha: ${{ inputs.ci_target == 'rickshaw' && inputs.release == 'upstream' && (github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)) && github.event.pull_request.base.sha || '' }}
         pr-head-sha: ${{ inputs.ci_target == 'rickshaw' && inputs.release == 'upstream' && (github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)) && github.event.pull_request.head.sha || '' }}
         pr-number: ${{ inputs.ci_target == 'rickshaw' && inputs.release == 'upstream' && (github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)) && github.event.pull_request.number || '' }}
+
+    - name: detect MCP support
+      id: detect-mcp-support
+      env:
+        CI_TARGET: ${{ inputs.ci_target }}
+      run: |
+        if [[ "$CI_TARGET" == "crucible" ]] \
+           && [[ -f crucible/mcp/crucible_mcp/server.py ]] \
+           && jq -e '."mcp-server" != null' crucible/config/services.json >/dev/null; then
+          echo "mcp_supported=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "mcp_supported=false" >> "$GITHUB_OUTPUT"
+        fi
 
   display-params:
     name: display-params(${{ inputs.release }}, ${{ inputs.endpoint }})
@@ -247,11 +269,80 @@ jobs:
       if: ${{ ! matrix.job.enabled }}
       run: echo "crucible-ci->integration-tests not enabled"
 
+  mcp-integration:
+    if: ${{ inputs.ci_target == 'crucible' && (inputs.endpoint == 'remotehosts' || inputs.endpoint == 'kube') && needs.gen-params.outputs.mcp_supported == 'true' }}
+    runs-on: ${{ inputs.runner_pool }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    needs:
+    - gen-params
+    - display-params
+    steps:
+    - name: checkout ${{ inputs.ci_target_dir }} ci_target
+      uses: actions/checkout@v7
+      with:
+        repository: perftool-incubator/${{ inputs.ci_target_dir }}
+        ref: ${{ inputs.ci_target_branch }}
+        path: ${{ inputs.ci_target_dir }}
+
+    - name: checkout crucible-ci default
+      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test != 'yes' }}
+      uses: actions/checkout@v7
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: main
+        path: crucible-ci
+    - name: checkout crucible-ci crucible_ci_test
+      if: ${{ inputs.ci_target != 'crucible-ci' && inputs.crucible_ci_test == 'yes' }}
+      uses: actions/checkout@v7
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: ${{ inputs.crucible_ci_test_branch }}
+        path: crucible-ci
+
+    - name: import weekly ci secret
+      env:
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.weekly_ci_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-weekly-ci-engines-token.json"
+    - name: import ci secret
+      env:
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.registry_auth != '' && secrets.registry_auth || secrets.ci_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-ci-engines-token.json"
+    - name: import production secret
+      env:
+        ENGINE_REGISTRY_AUTH_SECRET: ${{ secrets.production_registry_auth }}
+      if: ${{ env.ENGINE_REGISTRY_AUTH_SECRET != '' }}
+      run: sudo bash -c "echo \"$ENGINE_REGISTRY_AUTH_SECRET\" > /root/crucible-production-engines-token.json"
+    - name: import quay oauth token
+      env:
+        QUAY_OAUTH_TOKEN: ${{ secrets.quay_oauth_token }}
+      if: ${{ env.QUAY_OAUTH_TOKEN != '' }}
+      run: sudo bash -c "echo \"$QUAY_OAUTH_TOKEN\" > /root/quay-oauth.token"
+
+    - name: run crucible-ci->mcp-integration
+      uses: ./crucible-ci/.github/actions/integration-tests
+      with:
+        artifact_tag: "crucible__mcp__${{ inputs.endpoint }}__sleep-default-${{ inputs.release }}"
+        ci_endpoint: "${{ inputs.endpoint }}"
+        scenarios: "sleep"
+        userenvs: "default"
+        ci_param_mode: "run-file"
+        ci_interface: "mcp"
+        ci_target: "${{ inputs.ci_target }}"
+        ci_target_dir: "${{ github.workspace }}/${{ inputs.ci_target_dir }}"
+        ci_controller: ${{ inputs.ci_built_controller }}
+        controller_tag: ${{ inputs.ci_built_controller_tag }}
+        crucible_release: "${{ inputs.release }}"
+        disable_force_builds: "${{ inputs.disable_force_builds }}"
+
   core-endpoint-crucible-ci-complete:
+    if: ${{ !cancelled() && needs.runners.result == 'success' && (needs.mcp-integration.result == 'success' || needs.mcp-integration.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs:
     - runners
+    - mcp-integration
     steps:
     - name: Confirm Success
       run: echo "core-endpoint-crucible-ci-complete for ${{ inputs.endpoint }}"
