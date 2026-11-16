@@ -240,15 +240,21 @@ if [ "${CI_INTERFACE}" == "mcp" -a "${CI_PARAM_MODE}" != "run-file" ]; then
     exit 1
 fi
 
-MCP_BIND=$(jq_query ${SERVICES_CFG} '."mcp-server".bind // ""')
-MCP_PORT=$(jq_query ${SERVICES_CFG} '."mcp-server".port // ""')
-MCP_TOKEN_FILE=$(jq_query ${SERVICES_CFG} '."mcp-server"."token-file" // ""')
-MCP_INPUT_ROOT=$(jq_query ${SERVICES_CFG} '."mcp-server"."input-root" // ""')
-MCP_TLS_CERT=$(jq_query ${SERVICES_CFG} '."mcp-server"."tls-cert" // ""')
-
 if [ "${CI_INTERFACE}" == "mcp" ]; then
+    MCP_SERVICES_CFG="${CRUCIBLE_HOME}/config/services.json"
+    if [ ! -r "${MCP_SERVICES_CFG}" ]; then
+        echo "ERROR: Could not read mcp-server configuration from ${MCP_SERVICES_CFG}"
+        exit 1
+    fi
+
+    MCP_BIND=$(jq -r '."mcp-server".bind // ""' "${MCP_SERVICES_CFG}")
+    MCP_PORT=$(jq -r '."mcp-server".port // ""' "${MCP_SERVICES_CFG}")
+    MCP_TOKEN_FILE=$(jq -r '."mcp-server"."token-file" // ""' "${MCP_SERVICES_CFG}")
+    MCP_INPUT_ROOT=$(jq -r '."mcp-server"."input-root" // ""' "${MCP_SERVICES_CFG}")
+    MCP_TLS_CERT=$(jq -r '."mcp-server"."tls-cert" // ""' "${MCP_SERVICES_CFG}")
+
     if [ -z "${MCP_BIND}" -o -z "${MCP_PORT}" -o -z "${MCP_TOKEN_FILE}" -o -z "${MCP_INPUT_ROOT}" ]; then
-        echo "ERROR: mcp-server configuration is incomplete in ${SERVICES_CFG}"
+        echo "ERROR: mcp-server configuration is incomplete in ${MCP_SERVICES_CFG}"
         exit 1
     fi
 
