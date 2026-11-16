@@ -174,8 +174,8 @@ jobs:
         CI_TARGET: ${{ inputs.ci_target }}
       run: |
         if [[ "$CI_TARGET" == "crucible" ]] \
-           && [[ -f crucible/mcp/crucible_mcp/server.py ]] \
-           && jq -e '."mcp-server" != null' crucible/config/services.json >/dev/null; then
+           && python3 crucible-ci/.github/actions/integration-tests/mcp-support-check.py \
+                --crucible-home crucible; then
           echo "mcp_supported=true" >> "$GITHUB_OUTPUT"
         else
           echo "mcp_supported=false" >> "$GITHUB_OUTPUT"

@@ -279,12 +279,18 @@ class McpLiveTest:
         run_id = status.get("cdm_run_id")
         if not isinstance(run_id, str) or not run_id:
             raise RuntimeError("completed MCP job has no CDM run ID")
-        indexed = self.tool(
-            "list_indexed_results",
-            {"run": run_id, "limit": 1},
-        )
-        if run_id not in indexed.get("run_ids", []):
-            raise RuntimeError("completed MCP run was not returned by list_indexed_results")
+        deadline = time.monotonic() + 60
+        while True:
+            indexed = self.tool(
+                "list_indexed_results",
+                {"run": run_id, "limit": 1},
+            )
+            if run_id in indexed.get("run_ids", []):
+                return
+            if time.monotonic() >= deadline:
+                raise RuntimeError("completed MCP run was not returned by list_indexed_results")
+            print(f"Waiting for indexed result {run_id} to become visible")
+            time.sleep(5)
 
     def run(self):
         self.check_authentication()
