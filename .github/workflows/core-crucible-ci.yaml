@@ -166,7 +166,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        endpoint: ${{ fromJSON(needs.gen-endpoints.outputs.endpoints) }}
+        endpoint: [remotehosts, kube]
     uses: ./.github/workflows/core-endpoint-crucible-ci.yaml
     with:
       endpoint: "${{ matrix.endpoint }}"
