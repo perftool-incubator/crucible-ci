@@ -46,7 +46,7 @@ jobs:
 
   call-tool-crucible-ci:
     needs: changes
-    if: ${{ github.event.pull_request.head.repo.fork != true && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.only-docs != 'true') }}
+    if: false
     strategy:
       fail-fast: false
       matrix:

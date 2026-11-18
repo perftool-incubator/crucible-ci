@@ -61,6 +61,8 @@ CI_RUN_UPDATE="yes"
 
 CI_PARAM_MODE="all"
 
+CI_INTERFACE="cli"
+
 CI_RELEASE="upstream"
 
 # use a more detailed log-level than crucible's own default ("normal") for
@@ -74,7 +76,7 @@ CI_RELEASE="upstream"
 CI_LOG_LEVEL="debug"
 
 longopts="verbose,scenarios:,userenvs:,samples:,repeat-runs:,run-environment:,ci-endpoint:,ci-endpoint-host:,ci-endpoint-user:"
-longopts+=",ci-param-mode:,disable-update-test,ci-release:,ci-log-level:"
+longopts+=",ci-param-mode:,ci-interface:,disable-update-test,ci-release:,ci-log-level:"
 opts=$(getopt -q -o "" --longoptions "${longopts}" -n "$0" -- "$@")
 if [ ${?} -ne 0 ]; then
     echo "ERROR: Unrecognized option specified: $@"
@@ -96,6 +98,11 @@ while true; do
         --ci-param-mode)
             shift
             CI_PARAM_MODE="${1}"
+            shift
+            ;;
+        --ci-interface)
+            shift
+            CI_INTERFACE="${1}"
             shift
             ;;
         --disable-update-test)
@@ -218,6 +225,49 @@ case "${CI_PARAM_MODE}" in
         exit 1
         ;;
 esac
+
+case "${CI_INTERFACE}" in
+    cli|mcp)
+        ;;
+    *)
+        echo "ERROR: Unknown value for --ci-interface [${CI_INTERFACE}].  Acceptable values are 'cli' and 'mcp'."
+        exit 1
+        ;;
+esac
+
+if [ "${CI_INTERFACE}" == "mcp" -a "${CI_PARAM_MODE}" != "run-file" ]; then
+    echo "ERROR: The mcp CI interface requires --ci-param-mode run-file"
+    exit 1
+fi
+
+if [ "${CI_INTERFACE}" == "mcp" ]; then
+    MCP_SERVICES_CFG="${CRUCIBLE_HOME}/config/services.json"
+    if [ ! -r "${MCP_SERVICES_CFG}" ]; then
+        echo "ERROR: Could not read mcp-server configuration from ${MCP_SERVICES_CFG}"
+        exit 1
+    fi
+
+    MCP_BIND=$(jq -r '."mcp-server".bind // ""' "${MCP_SERVICES_CFG}")
+    MCP_PORT=$(jq -r '."mcp-server".port // ""' "${MCP_SERVICES_CFG}")
+    MCP_TOKEN_FILE=$(jq -r '."mcp-server"."token-file" // ""' "${MCP_SERVICES_CFG}")
+    MCP_INPUT_ROOT=$(jq -r '."mcp-server"."input-root" // ""' "${MCP_SERVICES_CFG}")
+    MCP_TLS_CERT=$(jq -r '."mcp-server"."tls-cert" // ""' "${MCP_SERVICES_CFG}")
+
+    if [ -z "${MCP_BIND}" -o -z "${MCP_PORT}" -o -z "${MCP_TOKEN_FILE}" -o -z "${MCP_INPUT_ROOT}" ]; then
+        echo "ERROR: mcp-server configuration is incomplete in ${MCP_SERVICES_CFG}"
+        exit 1
+    fi
+
+    MCP_URL_HOST="${MCP_BIND}"
+    if [[ "${MCP_BIND}" == *:* && "${MCP_BIND}" != \[* ]]; then
+        MCP_URL_HOST="[${MCP_BIND}]"
+    fi
+    MCP_URL_SCHEME="http"
+    if [ -n "${MCP_TLS_CERT}" ]; then
+        MCP_URL_SCHEME="https"
+    fi
+    MCP_URL="${MCP_URL_SCHEME}://${MCP_URL_HOST}:${MCP_PORT}/mcp"
+fi
 
 CI_ACTIVE_USERENVS=""
 for userenv in $(echo "${CI_USERENVS}" | sed -e "s/,/ /g"); do
@@ -415,8 +465,12 @@ function post_run_cmd {
                     fi
 
                     if [ ${RC_STATUS} == 0 ]; then
-                        if [ -n "${aggregation_default_value}" ] && [ -n "${aggregation_sum_value}" ] && [ -n "${aggregation_avg_value}" ] \
-                            && [ -n "${aggregation_max_value}" ] && [ -n "${aggregation_min_value}" ] \
+                        # each value must be well-formed numeric before it reaches awk --
+                        # jq returning "null" (a query miss) or an error string would
+                        # otherwise pass a plain -n check and produce a bogus awk result
+                        numeric_re='^-?[0-9]+(\.[0-9]+)?$'
+                        if [[ "${aggregation_default_value}" =~ ${numeric_re} ]] && [[ "${aggregation_sum_value}" =~ ${numeric_re} ]] && [[ "${aggregation_avg_value}" =~ ${numeric_re} ]] \
+                            && [[ "${aggregation_max_value}" =~ ${numeric_re} ]] && [[ "${aggregation_min_value}" =~ ${numeric_re} ]] \
                             && awk -v a="${aggregation_default_value}" -v b="${aggregation_sum_value}" 'BEGIN { exit !(a == b) }' \
                             && awk -v a="${aggregation_min_value}" -v b="${aggregation_avg_value}" 'BEGIN { exit !(a <= b) }' \
                             && awk -v a="${aggregation_avg_value}" -v b="${aggregation_max_value}" 'BEGIN { exit !(a <= b) }' \
@@ -512,6 +566,18 @@ function post_run_cmd {
         echo "No update required for rickshaw-settings value workshop.force-builds in ${RICKSHAW_SETTINGS_FILE}"
     fi
     stop_github_group
+}
+
+function run_ci_run_file {
+    if [ "${CI_INTERFACE}" == "mcp" ]; then
+        run_cmd "python3 ${SCRIPT_DIR}/mcp-live-test.py --url ${MCP_URL} --token-file ${MCP_TOKEN_FILE} --run-file ${CI_RUN_FILE} --input-root ${MCP_INPUT_ROOT}"
+        post_run_cmd
+    else
+        # CI_LOG_LEVEL_ARG is deliberately unquoted -- when empty it word-splits
+        # into nothing, but quoting it would pass crucible an empty-string arg
+        run_cmd "crucible run ${CI_RUN_FILE} ${CI_LOG_LEVEL_ARG}"
+        post_run_cmd
+    fi
 }
 
 function remove_k8s_images {
@@ -851,7 +917,21 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                     ;;
             esac
 
-            CI_RUN_FILE="/root/ci-run-file.json"
+            if [ "${CI_INTERFACE}" == "mcp" ]; then
+                run_cmd "install -d -m 700 ${MCP_INPUT_ROOT}"
+                CI_RUN_FILE="${MCP_INPUT_ROOT}/ci-run-file-${scenario}-${userenv}.json"
+                # Temporary workaround: UBI 9.9's latest tag currently fails
+                # signature verification. Pin rhubi9 to the newest working
+                # minor release until upstream signatures are fixed.
+                jq --indent 4 '.userenv.origin.tag = "9.8"' \
+                    /opt/crucible/subprojects/core/rickshaw/userenvs/rhubi9.json \
+                    > /opt/crucible/subprojects/core/rickshaw/userenvs/rhubi9.json.tmp
+                mv /opt/crucible/subprojects/core/rickshaw/userenvs/rhubi9.json.tmp \
+                    /opt/crucible/subprojects/core/rickshaw/userenvs/rhubi9.json
+                run_cmd "crucible start mcp-server"
+            else
+                CI_RUN_FILE="/root/ci-run-file.json"
+            fi
 
             if [ -e ${CI_RUN_FILE} ]; then
                rm ${CI_RUN_FILE}
@@ -875,8 +955,7 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
             )
             cmd="${cmd[@]}"
             run_cmd "${cmd}"
-            run_cmd "crucible run ${CI_RUN_FILE} ${CI_LOG_LEVEL_ARG}"
-            post_run_cmd
+            run_ci_run_file
 
             if [ "${CI_REPEAT_RUNS}" == "yes" ]; then
                 echo "Attempting repeat run"
@@ -903,8 +982,14 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
                 )
                 cmd="${cmd[@]}"
                 run_cmd "${cmd}"
-                run_cmd "crucible run ${CI_RUN_FILE} ${CI_LOG_LEVEL_ARG}"
-                post_run_cmd
+                run_ci_run_file
+            fi
+
+            if [ "${CI_INTERFACE}" == "mcp" ]; then
+                if [ ${RC_STATUS} != 0 ]; then
+                    run_cmd "podman logs crucible-mcp-server" "force"
+                fi
+                run_cmd "crucible stop mcp-server" "force"
             fi
         fi
     done
