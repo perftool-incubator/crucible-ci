@@ -305,8 +305,8 @@ class McpLiveTest:
         status = self.poll_run(job_id)
         self.check_idempotency(plan_handle, idempotency_key, job_id)
         self.check_logs(job_id)
-        self.check_results(job_id)
         self.check_indexed_result(status)
+        self.check_results(job_id)
         print(f"MCP live test completed job {job_id}")
 
 
