@@ -920,6 +920,14 @@ for userenv in ${CI_ACTIVE_USERENVS}; do
             if [ "${CI_INTERFACE}" == "mcp" ]; then
                 run_cmd "install -d -m 700 ${MCP_INPUT_ROOT}"
                 CI_RUN_FILE="${MCP_INPUT_ROOT}/ci-run-file-${scenario}-${userenv}.json"
+                # Temporary workaround: UBI 9.9's latest tag currently fails
+                # signature verification. Pin rhubi9 to the newest working
+                # minor release until upstream signatures are fixed.
+                jq --indent 4 '.userenv.origin.tag = "9.8"' \
+                    /opt/crucible/subprojects/core/rickshaw/userenvs/rhubi9.json \
+                    > /opt/crucible/subprojects/core/rickshaw/userenvs/rhubi9.json.tmp
+                mv /opt/crucible/subprojects/core/rickshaw/userenvs/rhubi9.json.tmp \
+                    /opt/crucible/subprojects/core/rickshaw/userenvs/rhubi9.json
                 run_cmd "crucible start mcp-server"
             else
                 CI_RUN_FILE="/root/ci-run-file.json"
